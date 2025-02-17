@@ -767,8 +767,12 @@ type IgnitionFirstboot struct {
 type ImageRequest struct {
 	// Architecture CPU architecture of the image, x86_64 and aarch64 are currently supported.
 	Architecture ImageRequestArchitecture `json:"architecture"`
-	ImageType    ImageTypes               `json:"image_type"`
-	Ostree       *OSTree                  `json:"ostree,omitempty"`
+
+	// ContentTemplate ID of the content template. A content template and snapshot date cannot both be specified.
+	// If a content template is specified, the snapshot date used will be the one from the content template.
+	ContentTemplate *string    `json:"content_template,omitempty"`
+	ImageType       ImageTypes `json:"image_type"`
+	Ostree          *OSTree    `json:"ostree,omitempty"`
 
 	// Size Size of image, in bytes. When set to 0 the image size is a minimum
 	// defined by the image type.

@@ -75,9 +75,10 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 		"distribution": "centos-9",
 		"image_requests": []map[string]interface{}{
 			{
-				"architecture":   "x86_64",
-				"image_type":     "aws",
-				"upload_request": map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"architecture":     "x86_64",
+				"image_type":       "aws",
+				"upload_request":   map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"content_template": mocks.TemplateID,
 			},
 		},
 	}
@@ -115,6 +116,11 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	err = json.Unmarshal([]byte(resp), &jsonResp)
 	require.NoError(t, err)
 	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
+
+	// Test the content template ID was saved to the blueprint
+	blueprintResp, err := v1.BlueprintFromEntry(be)
+	require.NoError(t, err)
+	require.Equal(t, *blueprintResp.ImageRequests[0].ContentTemplate, mocks.TemplateID)
 }
 
 func TestUser_MergeForUpdate(t *testing.T) {

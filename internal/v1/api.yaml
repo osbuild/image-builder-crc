@@ -1217,6 +1217,11 @@ components:
             be used. If no snapshots made before the specified date can be found, the snapshot
             closest to, but after the specified date will be used. If no snapshots can be found at
             all, the request will fail. The format must be YYYY-MM-DD (ISO 8601 extended).
+        content_template:
+          type: string
+          description: |
+            ID of the content template. A content template and snapshot date cannot both be specified.
+            If a content template is specified, the snapshot date used will be the one from the content template.
     ImageTypes:
       type: string
       enum:
