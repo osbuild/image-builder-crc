@@ -93,6 +93,7 @@ func (h *Handlers) GetDistributions(ctx echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to filter available distributions").SetInternal(err)
 	}
+
 	return ctx.JSON(http.StatusOK, distributions)
 }
 
