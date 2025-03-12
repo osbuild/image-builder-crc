@@ -27,7 +27,7 @@ go mod tidy
 go get github.com/oapi-codegen/oapi-codegen/v2@v$OAPI_VERSION
 
 # Ensure dev tools are installed
-test -e "$TOOLS_PATH/goimports" || GOBIN=$TOOLS_PATH go install golang.org/x/tools/cmd/goimports@latest
+test -e "$TOOLS_PATH/goimports" || GOBIN=$TOOLS_PATH go install golang.org/x/tools/cmd/goimports@v0.30.0
 ("$TOOLS_PATH/oapi-codegen" -version | grep "$OAPI_VERSION" >/dev/null) || GOBIN=$TOOLS_PATH go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v$OAPI_VERSION
 
 # Generate source (skip vendor/):
