@@ -1,0 +1,47 @@
+{
+  "module_platform_id": "platform:el10",
+  "oscap_name": "rhel10",
+  "distribution": {
+    "name": "rhel-10.1-nightly",
+    "composer_name": "rhel-10.1",
+    "description": "Red Hat Enterprise Linux (RHEL) 10.1 Nightly",
+    "no_package_list": true,
+    "restricted_access": true
+  },
+  "x86_64": {
+    "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "openstack", "vsphere", "vsphere-ova"],
+    "repositories": [{
+      "id": "baseos",
+      "baseurl": "http://download.devel.redhat.com/rhel-10/nightly/RHEL-10/latest-RHEL-10.1/compose/BaseOS/x86_64/os/",
+      "rhsm": false
+    }, {
+      "id": "appstream",
+      "baseurl": "http://download.devel.redhat.com/rhel-10/nightly/RHEL-10/latest-RHEL-10.1/compose/AppStream/x86_64/os/",
+      "rhsm": false
+    }, {
+      "id": "google-compute-engine",
+      "baseurl": "https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable",
+      "rhsm": false,
+      "image_type_tags": ["gcp"],
+      "check_gpg": false
+    }, {
+      "id": "google-cloud-sdk",
+      "baseurl": "https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64",
+      "rhsm": false,
+      "image_type_tags": ["gcp"],
+      "check_gpg": false
+    }]
+  },
+  "aarch64": {
+    "image_types": [ "aws", "azure", "guest-image", "openstack"],
+    "repositories": [{
+      "id": "baseos",
+      "baseurl": "http://download.devel.redhat.com/rhel-10/nightly/RHEL-10/latest-RHEL-10.1/compose/BaseOS/aarch64/os/",
+      "rhsm": false
+    }, {
+      "id": "appstream",
+      "baseurl": "http://download.devel.redhat.com/rhel-10/nightly/RHEL-10/latest-RHEL-10.1/compose/AppStream/aarch64/os/",
+      "rhsm": false
+    }]
+  }
+}
