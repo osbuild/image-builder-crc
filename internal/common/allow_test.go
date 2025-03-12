@@ -48,7 +48,7 @@ func TestLoadAllowList(t *testing.T) {
 		expected := AllowList{
 			"000000": {"fedora-*", "centos-*", "rhel-.*-nightly"},
 			"000001": {},
-			"*":      {"rhel-[0-9]+-nightly"},
+			"*":      {"rhel-[0-9.]+-nightly"},
 		}
 		require.Equal(t, expected, actual)
 	})
