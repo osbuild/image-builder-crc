@@ -74,7 +74,8 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	}
 
 	var repositories []composer.Repository
-	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.Customizations.Template == nil {
+	if composeRequest.ImageRequests[0].SnapshotDate != nil &&
+		(composeRequest.Customizations == nil || composeRequest.Customizations.Template == nil) {
 		repoURLs := []string{}
 		for _, r := range arch.Repositories {
 			// Assume that non-rh repositories that are defined in the distributions file will not be snapshotted,
@@ -106,7 +107,6 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		if len(repositories) != expected {
 			return ComposeResponse{}, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
 		}
-
 	} else {
 		repositories = buildRepositories(arch, composeRequest.ImageRequests[0].ImageType)
 	}
@@ -468,28 +468,36 @@ func (h *Handlers) buildCustomRepositories(ctx echo.Context, custRepos []CustomR
 }
 
 func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string) ([]composer.Repository, []composer.CustomRepository, error) {
-	var rhRepoIDs []string
 	var customRepoIDs []string
+
 	template, err := h.server.csClient.GetTemplateByID(ctx.Request().Context(), templateID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Unable to retrieve template: %v", err)
 	}
-	if template.RepositoryUuids != nil {
-		for _, id := range *template.RepositoryUuids {
-			// Check if repo is Red Hat
-			rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, []string{id}, false)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
-			}
-			// Separate Red Hat repos from custom
-			if len(rhRepoMap) > 0 {
-				rhRepoIDs = append(rhRepoIDs, id)
-			} else {
-				customRepoIDs = append(customRepoIDs, id)
-			}
-		}
-	} else {
+
+	if template == nil || template.RepositoryUuids == nil {
 		return nil, nil, fmt.Errorf("Template %v has no repositories", templateID)
+	}
+	for _, id := range *template.RepositoryUuids {
+		// Check if repo is Red Hat
+		rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, []string{id}, false)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
+		}
+		// Separate Red Hat repos from custom
+		if len(rhRepoMap) > 0 {
+			continue
+		} else {
+			customRepoIDs = append(customRepoIDs, id)
+		}
+	}
+
+	var repositories []composer.Repository
+	var customRepositories []composer.CustomRepository
+
+	// No custom repos in template, only Red Hat repos
+	if len(customRepoIDs) == 0 {
+		return repositories, customRepositories, nil
 	}
 
 	repoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, customRepoIDs, true)
@@ -497,49 +505,53 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 		return nil, nil, fmt.Errorf("Unable to retrieve external repositories: %v", err)
 	}
 
-	var repositories []composer.Repository
-	var customRepositories []composer.CustomRepository
-	if template.Snapshots != nil {
-		for _, snap := range *template.Snapshots {
-			if slices.Contains(customRepoIDs, *snap.RepositoryUuid) {
-				repo, ok := repoMap[*snap.RepositoryUuid]
-				if !ok {
-					return repositories, customRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
-				}
-
-				composerRepo := composer.Repository{
-					Baseurl: common.ToPtr(h.server.csReposURL.JoinPath(*snap.RepositoryPath).String()),
-					Rhsm:    common.ToPtr(false),
-				}
-
-				if repo.GpgKey != nil && *repo.GpgKey != "" {
-					composerRepo.Gpgkey = repo.GpgKey
-				}
-				if composerRepo.Gpgkey != nil && *composerRepo.Gpgkey != "" {
-					composerRepo.CheckGpg = common.ToPtr(true)
-				}
-				composerRepo.ModuleHotfixes = repo.ModuleHotfixes
-				composerRepo.CheckRepoGpg = repo.MetadataVerification
-				repositories = append(repositories, composerRepo)
-
-				// Don't enable custom repositories, as they require further setup to be useable.
-				customRepo := composer.CustomRepository{
-					Id:      *snap.RepositoryUuid,
-					Name:    repo.Name,
-					Baseurl: &[]string{*snap.Url},
-					Enabled: common.ToPtr(false),
-				}
-				if repo.GpgKey != nil && *repo.GpgKey != "" {
-					customRepo.Gpgkey = &[]string{*repo.GpgKey}
-					customRepo.CheckGpg = common.ToPtr(true)
-				}
-				customRepo.ModuleHotfixes = repo.ModuleHotfixes
-				customRepo.CheckRepoGpg = repo.MetadataVerification
-				customRepositories = append(customRepositories, customRepo)
-			}
-		}
-	} else {
+	// We should never hit this condition, but checking just in case
+	if template.Snapshots == nil {
 		return nil, nil, fmt.Errorf("Template %v has no snapshots", templateID)
+	}
+	for _, snap := range *template.Snapshots {
+		if snap.RepositoryUuid == nil {
+			return repositories, customRepositories, fmt.Errorf("No repository UUID is associated with this snapshot")
+		}
+		if slices.Contains(customRepoIDs, *snap.RepositoryUuid) {
+			repo, ok := repoMap[*snap.RepositoryUuid]
+			if !ok {
+				return repositories, customRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+			}
+
+			if snap.RepositoryPath == nil {
+				return repositories, customRepositories, fmt.Errorf("No repository path is associated with this snapshot")
+			}
+			composerRepo := composer.Repository{
+				Baseurl: common.ToPtr(h.server.csReposURL.JoinPath(*snap.RepositoryPath).String()),
+				Rhsm:    common.ToPtr(false),
+			}
+
+			if repo.GpgKey != nil && *repo.GpgKey != "" {
+				composerRepo.Gpgkey = repo.GpgKey
+			}
+			if composerRepo.Gpgkey != nil && *composerRepo.Gpgkey != "" {
+				composerRepo.CheckGpg = common.ToPtr(true)
+			}
+			composerRepo.ModuleHotfixes = repo.ModuleHotfixes
+			composerRepo.CheckRepoGpg = repo.MetadataVerification
+			repositories = append(repositories, composerRepo)
+
+			// Don't enable custom repositories, as they require further setup to be useable.
+			customRepo := composer.CustomRepository{
+				Id:      *snap.RepositoryUuid,
+				Name:    repo.Name,
+				Baseurl: &[]string{*snap.Url},
+				Enabled: common.ToPtr(false),
+			}
+			if repo.GpgKey != nil && *repo.GpgKey != "" {
+				customRepo.Gpgkey = &[]string{*repo.GpgKey}
+				customRepo.CheckGpg = common.ToPtr(true)
+			}
+			customRepo.ModuleHotfixes = repo.ModuleHotfixes
+			customRepo.CheckRepoGpg = repo.MetadataVerification
+			customRepositories = append(customRepositories, customRepo)
+		}
 	}
 
 	ctx.Logger().Debugf("Resolved repository snapshots from template: %v", repositories)
