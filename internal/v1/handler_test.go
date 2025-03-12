@@ -827,6 +827,8 @@ func TestGetDistributions(t *testing.T) {
 				"rhel-95",
 				"rhel-10-beta",
 				"rhel-10-nightly",
+				"rhel-10.0-nightly",
+				"rhel-10.1-nightly",
 				"centos-9",
 				"centos-10",
 				"fedora-37",
@@ -872,6 +874,8 @@ func TestGetDistributions(t *testing.T) {
 				"rhel-95",
 				"rhel-10-beta",
 				"rhel-10-nightly",
+				"rhel-10.0-nightly",
+				"rhel-10.1-nightly",
 				"centos-9",
 			},
 			distros)
