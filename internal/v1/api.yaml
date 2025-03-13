@@ -1601,6 +1601,9 @@ components:
           items:
             $ref: '#/components/schemas/CustomRepository'
           description: List of custom repositories.
+        template:
+          type: string
+          description: ID of template.
         openscap:
           $ref: '#/components/schemas/OpenSCAP'
         filesystem:
