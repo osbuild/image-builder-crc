@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/osbuild/image-builder-crc/internal/oauth2"
-	"github.com/osbuild/logging/pkg/logrus"
 )
 
 type ComposerClient struct {
@@ -33,7 +33,7 @@ var contentHeaders = map[string]string{"Content-Type": "application/json"}
 
 func NewClient(conf ComposerClientConfig) (*ComposerClient, error) {
 	if conf.URL == "" {
-		logrus.Warn("Composer URL not set, client will fail")
+		slog.Warn("composer URL not set, client will fail")
 	}
 	client, err := createClient(conf.URL, conf.CA)
 	if err != nil {

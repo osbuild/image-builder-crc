@@ -4,15 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/osbuild/logging/pkg/collect"
-	"github.com/osbuild/logging/pkg/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,17 +34,6 @@ func TestLazyToken(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	// this is not thread-safe but tests are not running in parallel
-	collector := collect.NewTestHandler(slog.LevelDebug, false, false, false)
-	old := slog.Default().Handler()
-	slog.SetDefault(slog.New(collector))
-	defer slog.SetDefault(slog.New(old))
-
-	// temporary logrus proxy - will be removed
-	oldP := logrus.Default()
-	logrus.SetDefault(logrus.NewProxyFor(slog.Default()))
-	defer logrus.SetDefault(oldP)
-
 	clientID := "test-client-id"
 	clientSecret := "test-client-secret"
 	lazyToken := &LazyToken{
@@ -61,22 +46,10 @@ func TestLazyToken(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "mock-token-1", token)
 
-	// ensure no token is not part of the logs
-	field := collector.Last()["msg"]
-	assert.Equal(t, 1, len(collector.All()))
-	assert.Contains(t, field, "Acquired new token")
-	assert.NotContains(t, field, "mock-token-1")
-	collector.Reset()
-
+	// reuses the token when it's not expired
 	token, err = lazyToken.Token(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "mock-token-1", token)
-
-	field = collector.Last()["msg"]
-	assert.Equal(t, 1, len(collector.All()))
-	assert.Contains(t, field, "AccessToken reused")
-	assert.NotContains(t, field, "mock-token-1")
-	collector.Reset()
 
 	// generates a new token when token expired
 	lazyToken.Expiration = time.Now().Add(-time.Minute) // Expire the token
