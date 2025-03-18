@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/osbuild/image-builder-crc/internal/oauth2"
-	"github.com/osbuild/logging/pkg/logrus"
 )
 
 type RecommendationsClient struct {
@@ -35,7 +35,7 @@ var contentHeaders = map[string]string{"Content-Type": "application/json"}
 
 func NewClient(conf RecommendationsClientConfig) (*RecommendationsClient, error) {
 	if conf.URL == "" {
-		logrus.Warn("Recommendation URL not set, client will fail")
+		slog.Warn("recommendation URL not set, client will fail")
 	}
 	client, err := createClient(conf.URL, conf.CA, conf.Proxy)
 	if err != nil {

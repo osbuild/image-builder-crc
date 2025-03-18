@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-
-	"github.com/osbuild/logging/pkg/logrus"
 )
 
 // Tokener is an interface that defines the AccessToken method.
@@ -52,9 +51,9 @@ func (lt *LazyToken) acquireNewToken(ctx context.Context, forceRefresh bool) (st
 		lt.AccessToken = tokenRes.AccessToken
 		lt.Expiration = time.Now().Add(time.Duration(tokenRes.ExpiresIn) * time.Second)
 
-		logrus.WithContext(ctx).Infof("Acquired new token with expiration at: %s", lt.Expiration)
+		slog.DebugContext(ctx, "acquired new token", "expiration", lt.Expiration)
 	} else {
-		logrus.WithContext(ctx).Infof("AccessToken reused, which expires at %s", lt.Expiration)
+		slog.DebugContext(ctx, "reusing token", "expiration", lt.Expiration)
 	}
 
 	return lt.AccessToken, nil

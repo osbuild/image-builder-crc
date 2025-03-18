@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/osbuild/logging/pkg/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
@@ -33,6 +32,9 @@ import (
 var dbc *tutils.PSQLContainer
 
 func TestMain(m *testing.M) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
 	code := runTests(m)
 	os.Exit(code)
 }
@@ -48,7 +50,7 @@ func runTests(m *testing.M) int {
 	defer func() {
 		err = dbc.Stop()
 		if err != nil {
-			logrus.Errorf("Error stopping postgres container: %v", err)
+			slog.Error("error stopping postgres container", "err", err)
 		}
 	}()
 	return code
@@ -120,9 +122,6 @@ type testServer struct {
 
 func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfig) *testServer {
 	ctx := context.Background()
-
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	slog.SetDefault(logger)
 
 	tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

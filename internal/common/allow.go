@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
-
-	"github.com/osbuild/logging/pkg/logrus"
 )
 
 type AllowList map[string][]string
@@ -35,7 +34,7 @@ func LoadAllowList(allowFile string) (AllowList, error) {
 	}
 	defer func() {
 		if err := jsonFile.Close(); err != nil {
-			logrus.Errorln(fmt.Sprintf("error closing file: %s", err))
+			slog.Error("error closing file", "err", err)
 		}
 	}()
 

@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-
-	"github.com/osbuild/logging/pkg/logrus"
 )
 
 const (
@@ -100,7 +99,7 @@ func (d *maintenanceDB) LogVacuumStats(ctx context.Context) (int64, error) {
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
-			logrus.Errorf("Context cancelled LogVacuumStats: %v", err)
+			slog.ErrorContext(ctx, "context cancelled LogVacuumStats", "err", err)
 			return int64(0), err
 		default:
 			var relName, relSize string
@@ -114,23 +113,32 @@ func (d *maintenanceDB) LogVacuumStats(ctx context.Context) (int64, error) {
 				return int64(0), err
 			}
 
-			logrus.WithFields(logrus.Fields{
-				"table_name":        relName,
-				"table_size":        relSize,
-				"tuples_inserted":   ins,
-				"tuples_updated":    upd,
-				"tuples_deleted":    del,
-				"tuples_live":       live,
-				"tuples_dead":       dead,
-				"vacuum_count":      vc,
-				"autovacuum_count":  avc,
-				"last_vacuum":       lvc,
-				"last_autovacuum":   lavc,
-				"analyze_count":     ac,
-				"autoanalyze_count": aac,
-				"last_analyze":      lan,
-				"last_autoanalyze":  laan,
-			}).Info("Vacuum and analyze stats for table")
+			attrs := []any{
+				slog.String("table_name", relName),
+				slog.String("table_size", relSize),
+				slog.Int64("tuples_inserted", ins),
+				slog.Int64("tuples_updated", upd),
+				slog.Int64("tuples_deleted", del),
+				slog.Int64("tuples_live", live),
+				slog.Int64("tuples_dead", dead),
+				slog.Int64("vacuum_count", vc),
+				slog.Int64("autovacuum_count", avc),
+				slog.Int64("analyze_count", ac),
+				slog.Int64("autoanalyze_count", aac),
+			}
+			if lvc != nil {
+				attrs = append(attrs, slog.Time("last_vacuum", *lvc))
+			}
+			if lavc != nil {
+				attrs = append(attrs, slog.Time("last_autovacuum", *lavc))
+			}
+			if lan != nil {
+				attrs = append(attrs, slog.Time("last_analyze", *lan))
+			}
+			if laan != nil {
+				attrs = append(attrs, slog.Time("last_autoanalyze", *laan))
+			}
+			slog.With(attrs...).InfoContext(ctx, "vacuum and analyze stats for table")
 		}
 	}
 	if rows.Err() != nil {
@@ -148,7 +156,7 @@ func DBCleanup(ctx context.Context, dbURL string, dryRun bool, ComposesRetention
 
 	_, err = db.LogVacuumStats(ctx)
 	if err != nil {
-		logrus.Errorf("Error running vacuum stats: %v", err)
+		slog.ErrorContext(ctx, "error running vacuum stats", "err", err)
 	}
 
 	var rowsClones int64
@@ -160,7 +168,7 @@ func DBCleanup(ctx context.Context, dbURL string, dryRun bool, ComposesRetention
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
-			logrus.Errorf("Context cancelled DBCleanup: %v", err)
+			slog.ErrorContext(ctx, "context cancelled DBCleanup", "err", err)
 			return err
 		default:
 			// continue execution outside of select
@@ -169,26 +177,26 @@ func DBCleanup(ctx context.Context, dbURL string, dryRun bool, ComposesRetention
 		if dryRun {
 			rowsClones, err = db.ExpiredClonesCount(ctx, emailRetentionDate)
 			if err != nil {
-				logrus.Warningf("Error querying expired clones: %v", err)
+				slog.ErrorContext(ctx, "error querying expired clones", "err", err)
 			}
 
 			rows, err = db.ExpiredComposesCount(ctx, emailRetentionDate)
 			if err != nil {
-				logrus.Warningf("Error querying expired composes: %v", err)
+				slog.WarnContext(ctx, "error querying expired composes", "err", err)
 			}
-			logrus.Infof("Dryrun, expired composes count: %d (affecting %d clones)", rows, rowsClones)
+			slog.InfoContext(ctx, "dryrun", "expired_composes_count", rows, "expired_clones_count", rowsClones)
 			break
 		}
 
 		rows, err = db.DeleteComposes(ctx, emailRetentionDate)
 		if err != nil {
-			logrus.Errorf("Error deleting composes: %v, %d rows affected", rows, err)
+			slog.ErrorContext(ctx, "error deleting composes", "err", err, "rows_affected", rows)
 			return err
 		}
 
 		err = db.VacuumAnalyze(ctx)
 		if err != nil {
-			logrus.Errorf("Error running vacuum analyze: %v", err)
+			slog.ErrorContext(ctx, "error running vacuum analyze", "err", err)
 			return err
 		}
 
@@ -196,12 +204,12 @@ func DBCleanup(ctx context.Context, dbURL string, dryRun bool, ComposesRetention
 			break
 		}
 
-		logrus.Infof("Deleted results for %d", rows)
+		slog.InfoContext(ctx, "deleted results", "deleted_composes", rows)
 	}
 
 	_, err = db.LogVacuumStats(ctx)
 	if err != nil {
-		logrus.Errorf("Error running vacuum stats: %v", err)
+		slog.ErrorContext(ctx, "error running vacuum stats", "err", err)
 	}
 
 	return nil
