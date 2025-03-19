@@ -37,6 +37,8 @@ type BlueprintBody struct {
 	ImageRequests  []ImageRequest `json:"image_requests"`
 }
 
+type BlueprintBodyOption func(*BlueprintBody)
+
 func (u *User) CryptPassword() error {
 	// Prevent empty and already hashed password  from being hashed
 	if u.Password == nil || len(*u.Password) == 0 || crypt.PasswordIsCrypted(*u.Password) {
@@ -79,6 +81,10 @@ func (bb *BlueprintBody) RedactPasswords() {
 			(*bb.Customizations.Users)[i].RedactPassword()
 		}
 	}
+}
+
+func (bb *BlueprintBody) RedactCertificates() {
+	bb.Customizations.Cacerts = nil
 }
 
 // Merges Password or SshKey from other User struct to this User struct if it is not set
@@ -147,22 +153,45 @@ func BlueprintFromAPI(cbr CreateBlueprintRequest) (BlueprintBody, error) {
 }
 
 // Util function used to create Blueprint sctruct from DB entry (READ)
-func BlueprintFromEntry(be *db.BlueprintEntry) (BlueprintBody, error) {
+func BlueprintFromEntry(be *db.BlueprintEntry, options ...BlueprintBodyOption) (BlueprintBody, error) {
 	var result BlueprintBody
 	err := json.Unmarshal(be.Body, &result)
 	if err != nil {
 		return BlueprintBody{}, err
 	}
+
+	for _, option := range options {
+		option(&result)
+	}
+
 	return result, nil
 }
 
-func BlueprintFromEntryWithRedactedPasswords(be *db.BlueprintEntry) (BlueprintBody, error) {
-	result, err := BlueprintFromEntry(be)
-	if err != nil {
-		return BlueprintBody{}, err
+func WithRedactedPasswords() BlueprintBodyOption {
+	return func(bp *BlueprintBody) {
+		bp.RedactPasswords()
 	}
-	result.RedactPasswords()
-	return result, nil
+}
+
+func WithRedactedCertificates() BlueprintBodyOption {
+	return func(bp *BlueprintBody) {
+		bp.RedactCertificates()
+	}
+}
+
+func WithRedactedFiles(paths []string) BlueprintBodyOption {
+	return func(bp *BlueprintBody) {
+		if bp.Customizations.Files != nil {
+			files := slices.DeleteFunc(*bp.Customizations.Files, func(file File) bool {
+				return slices.Contains(paths, file.Path)
+			})
+			if len(files) == 0 {
+				bp.Customizations.Files = nil
+			} else {
+				bp.Customizations.Files = &files
+			}
+		}
+	}
 }
 
 func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
@@ -270,7 +299,10 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		return err
 	}
 
-	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	blueprint, err := BlueprintFromEntry(
+		blueprintEntry,
+		WithRedactedPasswords(),
+	)
 	if err != nil {
 		return err
 	}
@@ -326,7 +358,16 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 		return err
 	}
 
-	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	// Preventing users from exporting their tokens for Satellite registration, their certificates or passwords
+	blueprint, err := BlueprintFromEntry(
+		blueprintEntry,
+		WithRedactedPasswords(),
+		WithRedactedCertificates(),
+		WithRedactedFiles([]string{
+			"/etc/systemd/system/register-satellite.service",
+			"/usr/local/sbin/register-satellite",
+		}),
+	)
 	if err != nil {
 		return err
 	}
@@ -488,7 +529,10 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 		}
 		return err
 	}
-	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	blueprint, err := BlueprintFromEntry(
+		blueprintEntry,
+		WithRedactedPasswords(),
+	)
 	if err != nil {
 		return err
 	}
@@ -695,7 +739,10 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
-	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	blueprint, err := BlueprintFromEntry(
+		blueprintEntry,
+		WithRedactedPasswords(),
+	)
 	if err != nil {
 		return err
 	}

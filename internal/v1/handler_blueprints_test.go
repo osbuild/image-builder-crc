@@ -408,7 +408,10 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	blueprintEntry, err = dbase.GetBlueprint(ctx, result.Id, "000000", nil)
 	require.NoError(t, err)
 
-	updatedBlueprint, err = v1.BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	updatedBlueprint, err = v1.BlueprintFromEntry(
+		blueprintEntry,
+		v1.WithRedactedPasswords(),
+	)
 	require.NoError(t, err)
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].Password)
 
@@ -703,7 +706,10 @@ func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
 		be := &db.BlueprintEntry{
 			Body: body,
 		}
-		result, err := v1.BlueprintFromEntryWithRedactedPasswords(be)
+		result, err := v1.BlueprintFromEntry(
+			be,
+			v1.WithRedactedPasswords(),
+		)
 		require.NoError(t, err)
 		require.NotEqual(t, common.ToPtr("foo"), (*result.Customizations.Users)[0].Password)
 		require.True(t, *(*result.Customizations.Users)[0].HasPassword)
@@ -713,11 +719,91 @@ func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
 		be := &db.BlueprintEntry{
 			Body: body,
 		}
-		result, err := v1.BlueprintFromEntryWithRedactedPasswords(be)
+		result, err := v1.BlueprintFromEntry(
+			be,
+			v1.WithRedactedPasswords(),
+		)
 		require.NoError(t, err)
 
 		require.Nil(t, (*result.Customizations.Users)[0].Password)
 		require.True(t, *(*result.Customizations.Users)[0].HasPassword)
+	})
+}
+
+func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
+	t.Run("bp with cacerts and only satellite files", func(t *testing.T) {
+		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"cacerts":  { "pemcerts": ["---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---"] },
+				"files": [
+				  {
+					"data": "WeNeedToGetRidOfThisFile",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/etc/systemd/system/register-satellite.service"
+				  },
+				  {
+					"data": "ThisOneToo",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/usr/local/sbin/register-satellite"
+				  }
+				],
+				"distribution": "centos-9"}}`)
+		be := &db.BlueprintEntry{
+			Body: body,
+		}
+		result, err := v1.BlueprintFromEntry(
+			be,
+			v1.WithRedactedPasswords(),
+			v1.WithRedactedCertificates(),
+			v1.WithRedactedFiles([]string{
+				"/etc/systemd/system/register-satellite.service",
+				"/usr/local/sbin/register-satellite",
+			}),
+		)
+		require.NoError(t, err)
+		require.Nil(t, result.Customizations.Cacerts)
+		require.Nil(t, result.Customizations.Files)
+	})
+
+	t.Run("blueprint with two satellite files and one different file", func(t *testing.T) {
+		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"files": [
+				  {
+					"data": "WeNeedToGetRidOfThisFile",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/etc/systemd/system/register-satellite.service"
+				  },
+				  {
+					"data": "ThisOneToo",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/usr/local/sbin/register-satellite"
+				  },
+				  {
+					"data": "Let's keep this one",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/usr/local/sbin/some-firstboot-script"
+				  }
+				],
+				"distribution": "centos-9"}}`)
+		be := &db.BlueprintEntry{
+			Body: body,
+		}
+		result, err := v1.BlueprintFromEntry(
+			be,
+			v1.WithRedactedPasswords(),
+			v1.WithRedactedCertificates(),
+			v1.WithRedactedFiles([]string{
+				"/etc/systemd/system/register-satellite.service",
+				"/usr/local/sbin/register-satellite",
+			}),
+		)
+
+		require.NoError(t, err)
+		require.Nil(t, result.Customizations.Cacerts)
+		require.Len(t, *result.Customizations.Files, 1)
+		require.Equal(t, "/usr/local/sbin/some-firstboot-script", (*result.Customizations.Files)[0].Path)
 	})
 }
 
