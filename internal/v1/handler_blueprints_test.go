@@ -730,6 +730,65 @@ func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
 	})
 }
 
+func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
+	t.Run("bp with cacerts and only satellite files", func(t *testing.T) {
+		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"cacerts":  { "pemcerts": ["---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---"] },
+				"files": [
+				  {
+					"data": "WeNeedToGetRidOfThisFile",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/etc/systemd/system/register-satellite.service"
+				  },
+				  {
+					"data": "ThisOneToo",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/usr/local/sbin/register-satellite"
+				  }
+				],
+				"distribution": "centos-9"}}`)
+		be := &db.BlueprintEntry{
+			Body: body,
+		}
+		result, err := v1.BlueprintFromEntryRedactedForExport(be)
+		require.NoError(t, err)
+		require.Nil(t, result.Customizations.Cacerts)
+		require.Nil(t, result.Customizations.Files)
+	})
+
+	t.Run("blueprint with two satellite files and one different file", func(t *testing.T) {
+		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"files": [
+				  {
+					"data": "WeNeedToGetRidOfThisFile",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/etc/systemd/system/register-satellite.service"
+				  },
+				  {
+					"data": "ThisOneToo",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/usr/local/sbin/register-satellite"
+				  },
+				  {
+					"data": "Let's keep this one",
+					"data_encoding": "base64",
+					"ensure_parents": true,
+					"path": "/usr/local/sbin/some-firstboot-script"
+				  }
+				],
+				"distribution": "centos-9"}}`)
+		be := &db.BlueprintEntry{
+			Body: body,
+		}
+		result, err := v1.BlueprintFromEntryRedactedForExport(be)
+		require.NoError(t, err)
+		require.Nil(t, result.Customizations.Cacerts)
+		require.Len(t, *result.Customizations.Files, 1)
+	})
+}
+
 func TestHandlers_GetBlueprint(t *testing.T) {
 	ctx := context.Background()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
