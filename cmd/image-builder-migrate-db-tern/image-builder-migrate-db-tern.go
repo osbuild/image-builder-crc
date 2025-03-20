@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -90,14 +88,11 @@ func main() {
 		"--sslmode", conf.PGSSLMode)
 	out, err := cmd.CombinedOutput()
 
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	for scanner.Scan() {
-		slog.InfoContext(ctx, scanner.Text())
-	}
-
 	if err != nil {
+		slog.ErrorContext(ctx, "migration output", "output", string(out))
 		panic(err)
 	}
 
+	slog.InfoContext(ctx, "migration output", "output", string(out))
 	slog.InfoContext(ctx, "DB migration successful")
 }

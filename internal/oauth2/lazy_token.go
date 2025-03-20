@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/osbuild/logging/pkg/strc"
 )
 
 // Tokener is an interface that defines the AccessToken method.
@@ -43,7 +45,7 @@ func (lt *LazyToken) acquireNewToken(ctx context.Context, forceRefresh bool) (st
 	defer lt.mutex.Unlock()
 
 	if forceRefresh || lt.AccessToken == "" || time.Now().Add(time.Minute).After(lt.Expiration) {
-		tokenRes, err := lt.requestToken()
+		tokenRes, err := lt.requestToken(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -69,7 +71,10 @@ func (lt *LazyToken) ForceRefresh(ctx context.Context) (string, error) {
 }
 
 // ForceRefresh forces the acquisition of a new access token by clearing the current AccessToken and calling Token().
-func (lt *LazyToken) requestToken() (*tokenResponse, error) {
+func (lt *LazyToken) requestToken(ctx context.Context) (*tokenResponse, error) {
+	span, _ := strc.Start(ctx, "oauth2 token request")
+	defer span.End()
+
 	data := url.Values{}
 	data.Set("client_id", lt.ClientId)
 	if lt.ClientSecret != "" {

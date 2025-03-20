@@ -81,6 +81,9 @@ func main() {
 			Enabled: conf.GlitchTipDSN != "",
 			DSN:     conf.GlitchTipDSN,
 		},
+		TracingConfig: sinit.TracingConfig{
+			Enabled: true,
+		},
 	}
 
 	err = sinit.InitializeLogging(ctx, loggingConfig)
