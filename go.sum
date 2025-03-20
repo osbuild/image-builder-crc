@@ -4,8 +4,8 @@ github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0
 github.com/Masterminds/semver/v3 v3.3.1 h1:QtNSWtVZ3nBfk8mAOu/B6v7FMJ+NHTIgUPi7rj+4nv4=
 github.com/Masterminds/semver/v3 v3.3.1/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/RaveNoX/go-jsoncommentstrip v1.0.0/go.mod h1:78ihd09MekBnJnxpICcwzCMzGrKSKYe4AqU6PDYYpjk=
-github.com/Unleash/unleash-client-go/v4 v4.2.0 h1:ZsH9LcJ5HYDY9/27wpoEkpMVjQRLFB7BdYR8Z6NmJaY=
-github.com/Unleash/unleash-client-go/v4 v4.2.0/go.mod h1:k7LRAXyKeZ1DwqGaKn1KZo92e9JVlEPut4CAhutPJmU=
+github.com/Unleash/unleash-client-go/v4 v4.3.0 h1:OqVWsnF4wUIeNs8jMJocapb3wDgcvVVL5peFYPNSgSE=
+github.com/Unleash/unleash-client-go/v4 v4.3.0/go.mod h1:k7LRAXyKeZ1DwqGaKn1KZo92e9JVlEPut4CAhutPJmU=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0 h1:axGnT1gRIfimI7gJifB699GoE/oq+F2MU7Dml6nw9rQ=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0/go.mod h1:lvDnEdqiQrp0O42VQGgmlKpxL1AP2+08jFMw88y4klk=
 github.com/aws/aws-sdk-go-v2 v1.32.7 h1:ky5o35oENWi0JYWUZkB7WYvVPP+bcRF5/Iq7JWSb5Rw=

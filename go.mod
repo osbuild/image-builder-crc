@@ -4,7 +4,7 @@ go 1.22.9
 
 require (
 	github.com/BurntSushi/toml v1.4.0
-	github.com/Unleash/unleash-client-go/v4 v4.2.0
+	github.com/Unleash/unleash-client-go/v4 v4.3.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/getsentry/sentry-go/echo v0.31.1
 	github.com/google/uuid v1.6.0
