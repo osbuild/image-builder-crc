@@ -3,8 +3,8 @@ module github.com/osbuild/image-builder-crc
 go 1.22.9
 
 require (
-	github.com/BurntSushi/toml v1.4.0
-	github.com/Unleash/unleash-client-go/v4 v4.2.0
+	github.com/BurntSushi/toml v1.5.0
+	github.com/Unleash/unleash-client-go/v4 v4.3.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/getsentry/sentry-go/echo v0.31.1
 	github.com/google/uuid v1.6.0
@@ -15,9 +15,9 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20240208125334-43c3aac2bb9c
-	github.com/osbuild/images v0.117.0
+	github.com/osbuild/images v0.125.0
 	github.com/osbuild/logging v0.0.3
-	github.com/prometheus/client_golang v1.20.5
+	github.com/prometheus/client_golang v1.21.1
 	github.com/redhatinsights/app-common-go v1.6.8
 	github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1
 	github.com/stretchr/testify v1.10.0
@@ -57,7 +57,7 @@ require (
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.55.0 // indirect
+	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/samber/lo v1.47.0 // indirect
 	github.com/samber/slog-common v0.18.0 // indirect
