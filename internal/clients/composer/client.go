@@ -2,6 +2,7 @@ package composer
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/osbuild/image-builder-crc/internal/oauth2"
+	"github.com/osbuild/logging/pkg/strc"
 )
 
 type ComposerClient struct {
@@ -72,8 +74,8 @@ func createClient(composerURL string, ca string) (*http.Client, error) {
 	return &http.Client{Transport: transport}, nil
 }
 
-func (cc *ComposerClient) request(method, url string, headers map[string]string, body io.ReadSeeker) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, body)
+func (cc *ComposerClient) request(ctx context.Context, method, url string, headers map[string]string, body io.ReadSeeker) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -105,41 +107,41 @@ func (cc *ComposerClient) request(method, url string, headers map[string]string,
 				return nil, err
 			}
 		}
-		resp, err = cc.client.Do(req)
+		resp, err = strc.NewTracingDoer(cc.client).Do(req)
 	}
 
 	return resp, err
 }
 
-func (cc *ComposerClient) ComposeStatus(id uuid.UUID) (*http.Response, error) {
-	return cc.request("GET", fmt.Sprintf("%s/composes/%s", cc.composerURL, id), nil, nil)
+func (cc *ComposerClient) ComposeStatus(ctx context.Context, id uuid.UUID) (*http.Response, error) {
+	return cc.request(ctx, "GET", fmt.Sprintf("%s/composes/%s", cc.composerURL, id), nil, nil)
 }
 
-func (cc *ComposerClient) ComposeMetadata(id uuid.UUID) (*http.Response, error) {
-	return cc.request("GET", fmt.Sprintf("%s/composes/%s/metadata", cc.composerURL, id), nil, nil)
+func (cc *ComposerClient) ComposeMetadata(ctx context.Context, id uuid.UUID) (*http.Response, error) {
+	return cc.request(ctx, "GET", fmt.Sprintf("%s/composes/%s/metadata", cc.composerURL, id), nil, nil)
 }
 
-func (cc *ComposerClient) Compose(compose ComposeRequest) (*http.Response, error) {
+func (cc *ComposerClient) Compose(ctx context.Context, compose ComposeRequest) (*http.Response, error) {
 	buf, err := json.Marshal(compose)
 	if err != nil {
 		return nil, err
 	}
 
-	return cc.request("POST", fmt.Sprintf("%s/compose", cc.composerURL), contentHeaders, bytes.NewReader(buf))
+	return cc.request(ctx, "POST", fmt.Sprintf("%s/compose", cc.composerURL), contentHeaders, bytes.NewReader(buf))
 }
 
-func (cc *ComposerClient) OpenAPI() (*http.Response, error) {
-	return cc.request("GET", fmt.Sprintf("%s/openapi", cc.composerURL), nil, nil)
+func (cc *ComposerClient) OpenAPI(ctx context.Context) (*http.Response, error) {
+	return cc.request(ctx, "GET", fmt.Sprintf("%s/openapi", cc.composerURL), nil, nil)
 }
 
-func (cc *ComposerClient) CloneCompose(id uuid.UUID, clone CloneComposeBody) (*http.Response, error) {
+func (cc *ComposerClient) CloneCompose(ctx context.Context, id uuid.UUID, clone CloneComposeBody) (*http.Response, error) {
 	buf, err := json.Marshal(clone)
 	if err != nil {
 		return nil, err
 	}
-	return cc.request("POST", fmt.Sprintf("%s/composes/%s/clone", cc.composerURL, id), contentHeaders, bytes.NewReader(buf))
+	return cc.request(ctx, "POST", fmt.Sprintf("%s/composes/%s/clone", cc.composerURL, id), contentHeaders, bytes.NewReader(buf))
 }
 
-func (cc *ComposerClient) CloneStatus(id uuid.UUID) (*http.Response, error) {
-	return cc.request("GET", fmt.Sprintf("%s/clones/%s", cc.composerURL, id), nil, nil)
+func (cc *ComposerClient) CloneStatus(ctx context.Context, id uuid.UUID) (*http.Response, error) {
+	return cc.request(ctx, "GET", fmt.Sprintf("%s/clones/%s", cc.composerURL, id), nil, nil)
 }

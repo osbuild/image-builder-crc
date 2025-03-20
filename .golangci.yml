@@ -2,3 +2,15 @@
 linters:
   enable:
   - bodyclose
+  - sloglint
+
+linters-settings:
+  sloglint:
+    # Enforce using methods that accept a context within functions with a context parameter.
+    context: "scope"
+    # Enforce using static values for log messages.
+    static-msg: true
+    # Enforce a single key naming convention.
+    key-naming-case: snake
+    # Enforce lowercase messages (https://github.com/go-simpler/sloglint/pull/76)
+    #lowercase-msg: true
