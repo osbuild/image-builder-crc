@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/osbuild/logging/pkg/strc"
 	"github.com/redhatinsights/identity"
 )
 
@@ -37,8 +38,8 @@ func NewClient(conf ContentSourcesClientConfig) (*ContentSourcesClient, error) {
 	return &csc, nil
 }
 
-func (csc *ContentSourcesClient) request(method, url string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, body)
+func (csc *ContentSourcesClient) request(ctx context.Context, method, url string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +48,7 @@ func (csc *ContentSourcesClient) request(method, url string, headers map[string]
 		req.Header.Add(k, v)
 	}
 
-	return csc.client.Do(req)
+	return strc.NewTracingDoer(csc.client).Do(req)
 }
 
 func (csc *ContentSourcesClient) fetchRepositories(ctx context.Context, repoURLs []string, repoIDs []string, external bool) (*ApiRepositoryCollectionResponse, error) {
@@ -72,7 +73,7 @@ func (csc *ContentSourcesClient) fetchRepositories(ctx context.Context, repoURLs
 	}
 	csReposURL.RawQuery = queryValues.Encode()
 
-	resp, err := csc.request("GET", csReposURL.String(), map[string]string{
+	resp, err := csc.request(ctx, "GET", csReposURL.String(), map[string]string{
 		"x-rh-identity": id,
 	}, nil)
 	if err != nil {
@@ -137,7 +138,7 @@ func (csc *ContentSourcesClient) BulkExportRepositories(ctx context.Context, bod
 		return nil, err
 	}
 
-	return csc.request("POST", csc.url.JoinPath("repositories", "bulk_export/").String(), map[string]string{
+	return csc.request(ctx, "POST", csc.url.JoinPath("repositories", "bulk_export/").String(), map[string]string{
 		"x-rh-identity": id,
 		"content-type":  "application/json",
 	}, bytes.NewReader(buf))
@@ -155,7 +156,7 @@ func (csc *ContentSourcesClient) GetSnapshotsForDate(ctx context.Context, body A
 		return nil, err
 	}
 
-	return csc.request("POST", csc.url.JoinPath("snapshots", "for_date/").String(), map[string]string{
+	return csc.request(ctx, "POST", csc.url.JoinPath("snapshots", "for_date/").String(), map[string]string{
 		"x-rh-identity": id,
 		"content-type":  "application/json",
 	}, bytes.NewReader(buf))

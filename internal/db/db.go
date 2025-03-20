@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/osbuild/logging/pkg/sinit"
 )
 
 // ErrComposeEntryNotFound occurs when no compose request is found for a user.
@@ -163,7 +165,7 @@ func InitDBConnectionPool(ctx context.Context, connStr string) (DB, error) {
 		return nil, err
 	}
 
-	dbConfig.ConnConfig.Tracer = &dbTracer{}
+	dbConfig.ConnConfig.Tracer = sinit.PgxTracer(slog.Default())
 
 	pool, err := pgxpool.NewWithConfig(ctx, dbConfig)
 	if err != nil {

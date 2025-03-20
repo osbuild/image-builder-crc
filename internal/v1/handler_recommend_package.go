@@ -31,7 +31,7 @@ func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, uploadPackage
 		RecommendedPackages: uploadPackageRequest.RecommendedPackages,
 	}
 
-	resp, err := h.server.rClient.RecommendationsPackages(cloudRP)
+	resp, err := h.server.rClient.RecommendationsPackages(ctx.Request().Context(), cloudRP)
 	if err != nil {
 		ctx.Logger().Errorf("Failed to get recommendation response: %v", err)
 		return RecommendationsResponse{}, err

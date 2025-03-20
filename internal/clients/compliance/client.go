@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/osbuild/logging/pkg/strc"
 	"github.com/redhatinsights/identity"
 )
 
@@ -41,7 +42,7 @@ func NewClient(conf ComplianceClientConfig) *ComplianceClient {
 }
 
 func (cc *ComplianceClient) request(ctx context.Context, method, url string) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func (cc *ComplianceClient) request(ctx context.Context, method, url string) (*h
 	req.Header.Add("x-rh-identity", id)
 	req.Header.Add("content-type", "application/json")
 
-	return cc.client.Do(req)
+	return strc.NewTracingDoer(cc.client).Do(req)
 }
 
 type v2PolicyResponse struct {
