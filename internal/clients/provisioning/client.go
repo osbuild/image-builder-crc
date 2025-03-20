@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/osbuild/logging/pkg/strc"
 	"github.com/redhatinsights/identity"
 )
 
@@ -27,8 +28,8 @@ func NewClient(conf ProvisioningClientConfig) (*ProvisioningClient, error) {
 	return &pc, nil
 }
 
-func (pc *ProvisioningClient) request(method, url string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, body)
+func (pc *ProvisioningClient) request(ctx context.Context, method, url string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (pc *ProvisioningClient) request(method, url string, headers map[string]str
 		req.Header.Add(k, v)
 	}
 
-	return pc.client.Do(req)
+	return strc.NewTracingDoer(pc.client).Do(req)
 }
 
 func (pc *ProvisioningClient) GetUploadInfo(ctx context.Context, sourceID string) (*http.Response, error) {
@@ -46,7 +47,7 @@ func (pc *ProvisioningClient) GetUploadInfo(ctx context.Context, sourceID string
 		return nil, fmt.Errorf("unable to get identity from context")
 	}
 
-	return pc.request("GET", fmt.Sprintf("%s/sources/%s/upload_info", pc.url, sourceID), map[string]string{
+	return pc.request(ctx, "GET", fmt.Sprintf("%s/sources/%s/upload_info", pc.url, sourceID), map[string]string{
 		"x-rh-identity": id,
 	}, nil)
 }
