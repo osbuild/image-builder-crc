@@ -2,6 +2,7 @@ package recommendations
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/osbuild/image-builder-crc/internal/oauth2"
+	"github.com/osbuild/logging/pkg/strc"
 )
 
 type RecommendationsClient struct {
@@ -86,12 +88,12 @@ func createClient(recommendationsURL string, ca string, proxyURL string) (*http.
 	return &http.Client{Transport: transport}, nil
 }
 
-func (rc *RecommendationsClient) request(method, url string, headers map[string]string, body io.ReadSeeker) (*http.Response, error) {
+func (rc *RecommendationsClient) request(ctx context.Context, method, url string, headers map[string]string, body io.ReadSeeker) (*http.Response, error) {
 	if rc.URL == "" {
 		return nil, fmt.Errorf("recommendation client URL was not set")
 
 	}
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +108,7 @@ func (rc *RecommendationsClient) request(method, url string, headers map[string]
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
-	resp, err := rc.client.Do(req)
+	resp, err := strc.NewTracingDoer(rc.client).Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -121,15 +123,15 @@ func (rc *RecommendationsClient) request(method, url string, headers map[string]
 		if err != nil {
 			return nil, err
 		}
-		resp, err = rc.client.Do(req)
+		resp, err = strc.NewTracingDoer(rc.client).Do(req)
 	}
 	return resp, err
 }
 
-func (rc *RecommendationsClient) RecommendationsPackages(recommendationsPackages RecommendPackageRequest) (*http.Response, error) {
+func (rc *RecommendationsClient) RecommendationsPackages(ctx context.Context, recommendationsPackages RecommendPackageRequest) (*http.Response, error) {
 	buf, err := json.Marshal(recommendationsPackages)
 	if err != nil {
 		return nil, err
 	}
-	return rc.request("POST", fmt.Sprintf("%s/packages/recommendations", rc.URL), contentHeaders, bytes.NewReader(buf))
+	return rc.request(ctx, "POST", fmt.Sprintf("%s/packages/recommendations", rc.URL), contentHeaders, bytes.NewReader(buf))
 }
