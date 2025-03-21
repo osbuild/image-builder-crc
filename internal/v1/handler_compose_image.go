@@ -56,6 +56,10 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Exactly one upload request should be included")
 	}
 
+	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate != nil {
+		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Either a snapshot date or content template can be specified, but not both")
+	}
+
 	d, err := h.server.getDistro(ctx, composeRequest.Distribution)
 	if err != nil {
 		return ComposeResponse{}, err
@@ -74,7 +78,8 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	}
 
 	var repositories []composer.Repository
-	if composeRequest.ImageRequests[0].SnapshotDate != nil {
+	// We should only build repository snapshots in the case where there is a snapshot date and no content template
+	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate == nil {
 		repoURLs := []string{}
 		for _, r := range arch.Repositories {
 			// Assume that non-rh repositories that are defined in the distributions file will not be snapshotted,
@@ -106,7 +111,6 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		if len(repositories) != expected {
 			return ComposeResponse{}, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
 		}
-
 	} else {
 		repositories = buildRepositories(arch, composeRequest.ImageRequests[0].ImageType)
 	}
@@ -467,6 +471,97 @@ func (h *Handlers) buildCustomRepositories(ctx echo.Context, custRepos []CustomR
 	return res, nil
 }
 
+func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string) ([]composer.Repository, []composer.CustomRepository, error) {
+	var customRepoIDs []string
+
+	template, err := h.server.csClient.GetTemplateByID(ctx.Request().Context(), templateID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Unable to retrieve template: %v", err)
+	}
+
+	if template == nil || template.RepositoryUuids == nil {
+		return nil, nil, fmt.Errorf("Template %v has no repositories", templateID)
+	}
+	for _, id := range *template.RepositoryUuids {
+		// Check if repo is Red Hat
+		rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, []string{id}, false)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
+		}
+		// Separate Red Hat repos from custom
+		if len(rhRepoMap) > 0 {
+			continue
+		} else {
+			customRepoIDs = append(customRepoIDs, id)
+		}
+	}
+
+	var repositories []composer.Repository
+	var customRepositories []composer.CustomRepository
+
+	// No custom repos in template, only Red Hat repos
+	if len(customRepoIDs) == 0 {
+		return repositories, customRepositories, nil
+	}
+
+	repoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, customRepoIDs, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Unable to retrieve external repositories: %v", err)
+	}
+
+	// We should never hit this condition, but checking just in case
+	if template.Snapshots == nil {
+		return nil, nil, fmt.Errorf("Template %v has no snapshots", templateID)
+	}
+	for _, snap := range *template.Snapshots {
+		if snap.RepositoryUuid == nil {
+			return repositories, customRepositories, fmt.Errorf("No repository UUID is associated with this snapshot")
+		}
+		if slices.Contains(customRepoIDs, *snap.RepositoryUuid) {
+			repo, ok := repoMap[*snap.RepositoryUuid]
+			if !ok {
+				return repositories, customRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+			}
+
+			if snap.RepositoryPath == nil {
+				return repositories, customRepositories, fmt.Errorf("No repository path is associated with this snapshot")
+			}
+			composerRepo := composer.Repository{
+				Baseurl: common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.RepositoryPath).String()),
+				Rhsm:    common.ToPtr(false),
+			}
+
+			if repo.GpgKey != nil && *repo.GpgKey != "" {
+				composerRepo.Gpgkey = repo.GpgKey
+			}
+			if composerRepo.Gpgkey != nil && *composerRepo.Gpgkey != "" {
+				composerRepo.CheckGpg = common.ToPtr(true)
+			}
+			composerRepo.ModuleHotfixes = repo.ModuleHotfixes
+			composerRepo.CheckRepoGpg = repo.MetadataVerification
+			repositories = append(repositories, composerRepo)
+
+			// Don't enable custom repositories, as they require further setup to be useable.
+			customRepo := composer.CustomRepository{
+				Id:      *snap.RepositoryUuid,
+				Name:    repo.Name,
+				Baseurl: &[]string{*snap.Url},
+				Enabled: common.ToPtr(false),
+			}
+			if repo.GpgKey != nil && *repo.GpgKey != "" {
+				customRepo.Gpgkey = &[]string{*repo.GpgKey}
+				customRepo.CheckGpg = common.ToPtr(true)
+			}
+			customRepo.ModuleHotfixes = repo.ModuleHotfixes
+			customRepo.CheckRepoGpg = repo.MetadataVerification
+			customRepositories = append(customRepositories, customRepo)
+		}
+	}
+
+	ctx.Logger().Debugf("Resolved repository snapshots from template: %v", repositories)
+	return repositories, customRepositories, nil
+}
+
 func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it ImageTypes) (composer.UploadOptions, composer.ImageTypes, error) {
 	var uploadOptions composer.UploadOptions
 	switch ur.Type {
@@ -705,12 +800,25 @@ func validateComposeRequest(cr *ComposeRequest) error {
 }
 
 func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *distribution.DistributionFile) (*composer.Customizations, error) {
+	res := &composer.Customizations{}
+
+	if cr.ImageRequests[0].ContentTemplate != nil {
+		_, templateRepositories, err := h.buildTemplateRepositories(ctx, *cr.ImageRequests[0].ContentTemplate)
+		if err != nil {
+			return nil, err
+		}
+		res.CustomRepositories = &templateRepositories
+	}
+
 	cust := cr.Customizations
 	if cust == nil {
+		// If no customizations requested, just return the repository snapshots resolved from the content template if one was specified
+		if res.CustomRepositories != nil {
+			return res, nil
+		}
 		return nil, nil
 	}
 
-	res := &composer.Customizations{}
 	if cust.Subscription != nil {
 		res.Subscription = &composer.Subscription{
 			ActivationKey: cust.Subscription.ActivationKey,
