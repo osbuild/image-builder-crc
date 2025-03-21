@@ -1592,6 +1592,12 @@ components:
           example: ['postgresql']
           items:
             type: string
+        enabled_modules:
+          type: array
+          description: |
+            List of dnf modules to enable, so that packages can be installed from them.
+          items:
+            $ref: '#/components/schemas/Module'
         payload_repositories:
           type: array
           items:
@@ -2122,3 +2128,20 @@ components:
           type: boolean
         module_hotfixes:
           type: boolean
+    Module:
+      type: object
+      required:
+        - name
+        - stream
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          example: 'nodejs'
+          description: |
+            Name of the module to enable.
+        stream:
+          type: string
+          example: '22'
+          description: |
+            Stream to enable.
