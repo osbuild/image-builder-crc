@@ -1520,6 +1520,12 @@ func TestComposeCustomizations(t *testing.T) {
 						"some",
 						"packages",
 					},
+					EnabledModules: &[]v1.Module{
+						{
+							Name:   "node",
+							Stream: "345",
+						},
+					},
 					PayloadRepositories: &[]v1.Repository{
 						{
 							Baseurl:      common.ToPtr("https://some-repo-base-url.org"),
@@ -1600,6 +1606,12 @@ func TestComposeCustomizations(t *testing.T) {
 					Packages: &[]string{
 						"some",
 						"packages",
+					},
+					EnabledModules: &[]composer.Module{
+						{
+							Name:   "node",
+							Stream: "345",
+						},
 					},
 					PayloadRepositories: &[]composer.Repository{
 						{

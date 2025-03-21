@@ -483,6 +483,9 @@ type Customizations struct {
 	CustomRepositories *[]CustomRepository `json:"custom_repositories,omitempty"`
 	Directories        *[]Directory        `json:"directories,omitempty"`
 
+	// EnabledModules List of dnf modules to enable, so that packages can be installed from them.
+	EnabledModules *[]Module `json:"enabled_modules,omitempty"`
+
 	// Fdo FIDO device onboard configuration
 	Fdo        *FDO          `json:"fdo,omitempty"`
 	Files      *[]File       `json:"files,omitempty"`
@@ -815,6 +818,15 @@ type Locale struct {
 
 	// Languages List of locales to be installed, the first one becomes primary, subsequent ones are secondary
 	Languages *[]string `json:"languages,omitempty"`
+}
+
+// Module defines model for Module.
+type Module struct {
+	// Name Name of the module to enable.
+	Name string `json:"name"`
+
+	// Stream Stream to enable.
+	Stream string `json:"stream"`
 }
 
 // OCIUploadRequestOptions defines model for OCIUploadRequestOptions.
