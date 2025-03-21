@@ -726,6 +726,17 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		res.Packages = cust.Packages
 	}
 
+	if cust.EnabledModules != nil {
+		modules := []composer.Module{}
+		for _, em := range *cust.EnabledModules {
+			modules = append(modules, composer.Module{
+				Name:   em.Name,
+				Stream: em.Stream,
+			})
+		}
+		res.EnabledModules = &modules
+	}
+
 	snapshotDate := cr.ImageRequests[0].SnapshotDate
 	if cust.PayloadRepositories != nil && snapshotDate != nil {
 		var repoURLs []string

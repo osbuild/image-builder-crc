@@ -1520,6 +1520,12 @@ func TestComposeCustomizations(t *testing.T) {
 						"some",
 						"packages",
 					},
+					EnabledModules: &[]v1.Module{
+						{
+							Name:   "node",
+							Stream: "345",
+						},
+					},
 					PayloadRepositories: &[]v1.Repository{
 						{
 							Baseurl:      common.ToPtr("https://some-repo-base-url.org"),
@@ -1600,6 +1606,12 @@ func TestComposeCustomizations(t *testing.T) {
 					Packages: &[]string{
 						"some",
 						"packages",
+					},
+					EnabledModules: &[]composer.Module{
+						{
+							Name:   "node",
+							Stream: "345",
+						},
 					},
 					PayloadRepositories: &[]composer.Repository{
 						{
@@ -1836,65 +1848,6 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
-		{
-			imageBuilderRequest: v1.ComposeRequest{
-				Customizations: &v1.Customizations{
-					Packages: nil,
-				},
-				Distribution: "rhel-8",
-				ImageRequests: []v1.ImageRequest{
-					{
-						Architecture: "x86_64",
-						ImageType:    v1.ImageTypesEdgeCommit,
-						Ostree: &v1.OSTree{
-							Ref: common.ToPtr("edge/ref"),
-						},
-						UploadRequest: v1.UploadRequest{
-							Type:    v1.UploadTypesAwsS3,
-							Options: uo,
-						},
-					},
-				},
-			},
-			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
-				Customizations: &composer.Customizations{
-					Packages: nil,
-				},
-				ImageRequest: &composer.ImageRequest{
-					Architecture: "x86_64",
-					ImageType:    composer.ImageTypesEdgeCommit,
-					Ostree: &composer.OSTree{
-						Ref: common.ToPtr("edge/ref"),
-					},
-					Repositories: []composer.Repository{
-						{
-							Baseurl:     common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-							Rhsm:        common.ToPtr(true),
-							CheckGpg:    common.ToPtr(true),
-							Gpgkey:      common.ToPtr(mocks.RhelGPG),
-						},
-						{
-							Baseurl:     common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-							Rhsm:        common.ToPtr(true),
-							CheckGpg:    common.ToPtr(true),
-							Gpgkey:      common.ToPtr(mocks.RhelGPG),
-						},
-					},
-					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
-						Region: "",
-					}),
-				},
-			},
-		},
 		// ostree, ignition, fdo
 		{
 			imageBuilderRequest: v1.ComposeRequest{
@@ -2120,6 +2073,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
+		// AWS upload
 		{
 			imageBuilderRequest: v1.ComposeRequest{
 				Distribution: "centos-9",
@@ -2169,6 +2123,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
+		// Image size
 		{
 			imageBuilderRequest: v1.ComposeRequest{
 				Distribution: "centos-9",
@@ -2284,6 +2239,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
+		// OCI
 		{
 			imageBuilderRequest: v1.ComposeRequest{
 				Distribution: "rhel-8",
