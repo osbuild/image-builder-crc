@@ -77,6 +77,10 @@ func (bb *BlueprintBody) RedactPasswords() {
 	}
 }
 
+func (bb *BlueprintBody) RedactCertificates() {
+	bb.Customizations.Cacerts = nil
+}
+
 // Merges Password or SshKey from other User struct to this User struct if it is not set
 func (u *User) MergeExisting(other User) {
 	if u.Password == nil {
@@ -160,6 +164,32 @@ func BlueprintFromEntryWithRedactedPasswords(be *db.BlueprintEntry) (BlueprintBo
 	}
 	result.RedactPasswords()
 	return result, nil
+}
+
+func BlueprintFromEntryRedactedForExport(be *db.BlueprintEntry) (BlueprintBody, error) {
+	blueprint, err := BlueprintFromEntryWithRedactedPasswords(be)
+	if err != nil {
+		return BlueprintBody{}, err
+	}
+
+	blueprint.RedactCertificates()
+	var files []File
+	if blueprint.Customizations.Files != nil {
+		for _, file := range *blueprint.Customizations.Files {
+			if file.Path != "/etc/systemd/system/register-satellite.service" &&
+				file.Path != "/usr/local/sbin/register-satellite" {
+				files = append(files, file)
+			}
+		}
+	}
+
+	if blueprint.Customizations.Files == nil || len(files) == 0 {
+		blueprint.Customizations.Files = nil
+	} else {
+		blueprint.Customizations.Files = &files
+	}
+
+	return blueprint, nil
 }
 
 func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
@@ -299,7 +329,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 		return err
 	}
 
-	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	blueprint, err := BlueprintFromEntryRedactedForExport(blueprintEntry)
 	if err != nil {
 		return err
 	}
