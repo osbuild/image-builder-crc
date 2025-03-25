@@ -102,12 +102,11 @@ func makeUploadOptions(t *testing.T, uploadOptions interface{}) *composer.Upload
 }
 
 type testServerClientsConf struct {
-	ComposerURL   string
-	ProvURL       string
-	RecommendURL  string
-	ComplianceURL string
-	OAuthURL      string
-	Proxy         string
+	ComposerURL  string
+	ProvURL      string
+	RecommendURL string
+	OAuthURL     string
+	Proxy        string
 }
 
 type testServer struct {
@@ -164,8 +163,9 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	})
 	require.NoError(t, err)
 
+	complSrv := httptest.NewServer(mocks.Compliance())
 	complianceClient := compliance.NewClient(compliance.ComplianceClientConfig{
-		URL: tscc.ComplianceURL,
+		URL: complSrv.URL,
 	})
 
 	//store the quotas in a temporary file

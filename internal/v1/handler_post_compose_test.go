@@ -732,6 +732,52 @@ func TestComposeImageAllowList(t *testing.T) {
 	})
 }
 
+func TestCompliancePolicyErrors(t *testing.T) {
+	srv := startServer(t, &testServerClientsConf{}, nil)
+	defer srv.Shutdown(t)
+
+	var uo v1.UploadRequest_Options
+	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+	cr := v1.ComposeRequest{
+		Customizations: &v1.Customizations{
+			Openscap: nil,
+		},
+		Distribution: "rhel-8",
+		ImageRequests: []v1.ImageRequest{
+			{
+				Architecture: "x86_64",
+				ImageType:    v1.ImageTypesGuestImage,
+				UploadRequest: v1.UploadRequest{
+					Type:    v1.UploadTypesAwsS3,
+					Options: uo,
+				},
+			},
+		},
+	}
+
+	var badPolicy v1.OpenSCAP
+	badId := uuid.New()
+	require.NoError(t, badPolicy.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
+		PolicyId: badId,
+	}))
+	cr.Customizations.Openscap = &badPolicy
+
+	respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", cr)
+	require.Equal(t, http.StatusBadRequest, respStatusCode)
+	require.Contains(t, body, fmt.Sprintf("Compliance policy (%s) does not exist", badId))
+
+	var goodPolicy v1.OpenSCAP
+	require.NoError(t, goodPolicy.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
+		PolicyId: uuid.MustParse(mocks.PolicyID),
+	}))
+	cr.Customizations.Openscap = &goodPolicy
+	cr.Distribution = "rhel-89"
+
+	respStatusCode, body = tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", cr)
+	require.Equal(t, http.StatusBadRequest, respStatusCode)
+	require.Contains(t, body, fmt.Sprintf("Compliance policy (%s) does not have tailoring for RHEL 8, minor version 9", mocks.PolicyID))
+}
+
 func TestComposeWithSnapshots(t *testing.T) {
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
@@ -1420,43 +1466,9 @@ func TestComposeCustomizations(t *testing.T) {
 		require.NoError(t, err)
 	}))
 
-	policyID := uuid.New()
-	complSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case fmt.Sprintf("/policies/%s", policyID):
-			policyData := struct {
-				Data struct {
-					ID             string `json:"id"`
-					RefID          string `json:"ref_id"`
-					OSMajorVersion int    `json:"os_major_version"`
-				} `json:"data"`
-			}{
-				Data: struct {
-					ID             string `json:"id"`
-					RefID          string `json:"ref_id"`
-					OSMajorVersion int    `json:"os_major_version"`
-				}{
-					ID:             policyID.String(),
-					RefID:          "openscap-ref-id",
-					OSMajorVersion: 8,
-				},
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			err := json.NewEncoder(w).Encode(policyData)
-			require.NoError(t, err)
-		case fmt.Sprintf("/policies/%s/tailorings/10/tailoring_file.json", policyID):
-			tailoringData := "{ \"data\": \"some-tailoring-data\"}"
-			w.WriteHeader(http.StatusOK)
-			_, err := w.Write([]byte(tailoringData))
-			require.NoError(t, err)
-		}
-	}))
-
 	srv := startServer(t, &testServerClientsConf{
-		ComposerURL:   apiSrv.URL,
-		ProvURL:       provSrv.URL,
-		ComplianceURL: complSrv.URL,
+		ComposerURL: apiSrv.URL,
+		ProvURL:     provSrv.URL,
 	}, nil)
 	defer srv.Shutdown(t)
 
@@ -1487,7 +1499,7 @@ func TestComposeCustomizations(t *testing.T) {
 	}))
 	var openscapTailoring v1.OpenSCAP
 	require.NoError(t, openscapTailoring.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
-		PolicyId: policyID,
+		PolicyId: uuid.MustParse(mocks.PolicyID),
 	}))
 
 	var fileGroup v1.File_Group
@@ -2667,7 +2679,7 @@ func TestComposeCustomizations(t *testing.T) {
 				Customizations: &composer.Customizations{
 					Openscap: &composer.OpenSCAP{
 						ProfileId: "openscap-ref-id",
-						PolicyId:  &policyID,
+						PolicyId:  common.ToPtr(uuid.MustParse(mocks.PolicyID)),
 						JsonTailoring: &composer.OpenSCAPJSONTailoring{
 							ProfileId: "openscap-ref-id",
 							Filepath:  "/etc/osbuild/openscap-tailoring.json",
