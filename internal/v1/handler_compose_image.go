@@ -70,6 +70,9 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	customizations, err = h.buildCustomizations(ctx, &composeRequest, d)
 	if err != nil {
 		ctx.Logger().Errorf("Failed building customizations: %v", err)
+		if _, ok := err.(*echo.HTTPError); ok {
+			return ComposeResponse{}, err
+		}
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to build customizations: %v", err))
 	}
 
