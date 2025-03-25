@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	ErrorAuth         = errors.New("user is not authorized")
-	ErrorMajorVersion = errors.New("major version of policy doesn't match requested major version")
-	ErrorNotFound     = errors.New("policy or its tailorings are missing")
-	ErrorNotOk        = errors.New("unexpected http status")
+	ErrorAuth              = errors.New("user is not authorized")
+	ErrorMajorVersion      = errors.New("major version of policy doesn't match requested major version")
+	ErrorPolicyNotFound    = errors.New("compliance policy not found")
+	ErrorTailoringNotFound = errors.New("tailorings for a policy not found")
+	ErrorNotOk             = errors.New("unexpected http status")
 )
 
 type ComplianceClient struct {
@@ -75,7 +76,7 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 	if policiesResp.StatusCode == http.StatusUnauthorized || policiesResp.StatusCode == http.StatusForbidden {
 		return nil, ErrorAuth
 	} else if policiesResp.StatusCode == http.StatusNotFound {
-		return nil, ErrorNotFound
+		return nil, ErrorPolicyNotFound
 	} else if policiesResp.StatusCode != http.StatusOK {
 		return nil, ErrorNotOk
 	}
@@ -100,7 +101,7 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 	if tailoringFileResp.StatusCode == http.StatusUnauthorized || tailoringFileResp.StatusCode == http.StatusForbidden {
 		return nil, ErrorAuth
 	} else if tailoringFileResp.StatusCode == http.StatusNotFound {
-		return nil, ErrorNotFound
+		return nil, ErrorTailoringNotFound
 	} else if tailoringFileResp.StatusCode != http.StatusOK && tailoringFileResp.StatusCode != http.StatusNoContent {
 		return nil, ErrorNotOk
 	}
