@@ -57,7 +57,7 @@ func (h *Handlers) GetVersion(ctx echo.Context) error {
 }
 
 func (h *Handlers) GetReadiness(ctx echo.Context) error {
-	resp, err := h.server.cClient.OpenAPI()
+	resp, err := h.server.cClient.OpenAPI(ctx.Request().Context())
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func (h *Handlers) GetComposeStatus(ctx echo.Context, composeId uuid.UUID) error
 		}
 	}
 
-	resp, err := h.server.cClient.ComposeStatus(composeId)
+	resp, err := h.server.cClient.ComposeStatus(ctx.Request().Context(), composeId)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get compose status from client").SetInternal(err)
 	}
@@ -453,7 +453,7 @@ func (h *Handlers) GetComposeMetadata(ctx echo.Context, composeId uuid.UUID) err
 		return err
 	}
 
-	resp, err := h.server.cClient.ComposeMetadata(composeId)
+	resp, err := h.server.cClient.ComposeMetadata(ctx.Request().Context(), composeId)
 	if err != nil {
 		return err
 	}
@@ -667,7 +667,7 @@ func (h *Handlers) CloneCompose(ctx echo.Context, composeId uuid.UUID) error {
 			return err
 		}
 
-		resp, err = h.server.cClient.CloneCompose(composeId, ccb)
+		resp, err = h.server.cClient.CloneCompose(ctx.Request().Context(), composeId, ccb)
 		if err != nil {
 			return err
 		}
@@ -727,7 +727,7 @@ func (h *Handlers) GetCloneStatus(ctx echo.Context, id uuid.UUID) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Requested clone cannot be found")
 	}
 
-	resp, err := h.server.cClient.CloneStatus(id)
+	resp, err := h.server.cClient.CloneStatus(ctx.Request().Context(), id)
 	if err != nil {
 		ctx.Logger().Errorf("Error requesting clone status for clone %v: %v", id, err)
 		return err
