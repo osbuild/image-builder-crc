@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/BurntSushi/toml"
+	"github.com/osbuild/blueprint/pkg/blueprint"
 	"github.com/osbuild/logging/pkg/strc"
 	"github.com/redhatinsights/identity"
 )
@@ -121,4 +123,28 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 		ProfileID:     v2pr.Data.RefID,
 		TailoringData: tailoringData,
 	}, nil
+}
+
+func (cc *ComplianceClient) PolicyCustomizations(ctx context.Context, majorVersion, minorVersion int, policyID string) (*blueprint.Blueprint, error) {
+	blueprintResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s/tailorings/%d/tailoring_file.toml", cc.url, policyID, minorVersion))
+	if err != nil {
+		return nil, err
+	}
+	defer blueprintResp.Body.Close()
+
+	if blueprintResp.StatusCode == http.StatusUnauthorized || blueprintResp.StatusCode == http.StatusForbidden {
+		return nil, ErrorAuth
+	} else if blueprintResp.StatusCode == http.StatusNotFound {
+		return nil, ErrorTailoringNotFound
+	} else if blueprintResp.StatusCode != http.StatusOK && blueprintResp.StatusCode != http.StatusNoContent {
+		return nil, ErrorNotOk
+	}
+
+	var bp blueprint.Blueprint
+	dec := toml.NewDecoder(blueprintResp.Body)
+	_, err = dec.Decode(&bp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse blueprint for compliance policy: %w", err)
+	}
+	return &bp, nil
 }
