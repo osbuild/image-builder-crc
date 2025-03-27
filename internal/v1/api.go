@@ -275,6 +275,18 @@ type BlueprintItem struct {
 	Version        int                `json:"version"`
 }
 
+// BlueprintLint Linting errors in the current blueprint, these might need to be resolved before the
+// blueprint can be used to build images again.
+type BlueprintLint struct {
+	Errors []BlueprintLintItem `json:"errors"`
+}
+
+// BlueprintLintItem defines model for BlueprintLintItem.
+type BlueprintLintItem struct {
+	Description string `json:"description"`
+	Name        string `json:"name"`
+}
+
 // BlueprintMetadata defines model for BlueprintMetadata.
 type BlueprintMetadata struct {
 	ExportedAt string              `json:"exported_at"`
@@ -296,7 +308,11 @@ type BlueprintResponse struct {
 
 	// ImageRequests Array of image requests. Having more image requests in a single blueprint is currently not supported.
 	ImageRequests []ImageRequest `json:"image_requests"`
-	Name          string         `json:"name"`
+
+	// Lint Linting errors in the current blueprint, these might need to be resolved before the
+	// blueprint can be used to build images again.
+	Lint BlueprintLint `json:"lint"`
+	Name string        `json:"name"`
 }
 
 // BlueprintsResponse defines model for BlueprintsResponse.

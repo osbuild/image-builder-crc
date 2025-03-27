@@ -1028,6 +1028,7 @@ components:
         - id
         - name
         - description
+        - lint
         - distribution
         - image_requests
         - customizations
@@ -1039,6 +1040,8 @@ components:
           type: string
         description:
           type: string
+        lint:
+          $ref: "#/components/schemas/BlueprintLint"
         distribution:
           $ref: '#/components/schemas/Distributions'
         image_requests:
@@ -1097,6 +1100,29 @@ components:
         is_on_prem:
           type: boolean
           default: false
+    BlueprintLint:
+      required:
+        - errors
+      description: |
+        Linting errors in the current blueprint, these might need to be resolved before the
+        blueprint can be used to build images again.
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlueprintLintItem'
+    BlueprintLintItem:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          example: Compliance
+        description:
+          type: string
+          example: package a required by policy is not present
     Distributions:
       type: string
       description: |
