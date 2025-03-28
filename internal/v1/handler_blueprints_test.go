@@ -1246,3 +1246,108 @@ func TestUser_RedactPassword(t *testing.T) {
 	user.RedactPassword()
 	require.Nil(t, user.Password)
 }
+
+func TestLintBlueprint(t *testing.T) {
+	srv := startServer(t, &testServerClientsConf{}, nil)
+	defer srv.Shutdown(t)
+
+	var oscap v1.OpenSCAP
+	require.NoError(t, oscap.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
+		PolicyId: uuid.MustParse(mocks.PolicyID),
+	}))
+	var oscap2 v1.OpenSCAP
+	require.NoError(t, oscap2.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
+		PolicyId: uuid.MustParse(mocks.PolicyID2),
+	}))
+
+	cases := []struct {
+		blueprint  v1.BlueprintBody
+		lintErrors []v1.BlueprintLintItem
+	}{
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-8",
+				Customizations: v1.Customizations{
+					Openscap: &oscap,
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{
+				{Name: "Compliance", Description: "package required-by-compliance required by policy is not present"},
+				{Name: "Compliance", Description: "service enabled-required-by-compliance required as enabled by policy is not present"},
+				{Name: "Compliance", Description: "service masked-required-by-compliance required as masked by policy is not present"},
+			},
+		},
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-8",
+				Customizations: v1.Customizations{
+					Openscap: &oscap,
+					Packages: &[]string{
+						"required-by-compliance",
+					},
+					Services: &v1.Services{
+						Enabled: &[]string{
+							"enabled-required-by-compliance",
+						},
+						Masked: &[]string{
+							"masked-required-by-compliance",
+						},
+					},
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{},
+		},
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-8",
+				Customizations: v1.Customizations{
+					Openscap: &oscap2,
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{
+				{Name: "Compliance", Description: "mountpoint /tmp required by policy is not present"},
+				{Name: "Compliance", Description: "mountpoint /var required by policy is not present"},
+				{Name: "Compliance", Description: "kernel command line parameter '-compliance' required by policy not set"},
+			},
+		},
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-8",
+				Customizations: v1.Customizations{
+					Openscap: &oscap2,
+					Kernel: &v1.Kernel{
+						Append: common.ToPtr("-somearg -compliance -anotherarg"),
+					},
+					Filesystem: &[]v1.Filesystem{
+						{
+							Mountpoint: "/tmp",
+							MinSize:    5000,
+						},
+						{
+							Mountpoint: "/var",
+							MinSize:    4000,
+						},
+					},
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{},
+		},
+	}
+
+	for idx, c := range cases {
+		fmt.Printf("TestLintBlueprint case %d\n", idx)
+
+		bpID := uuid.New()
+		bpjson, err := json.Marshal(c.blueprint)
+		require.NoError(t, err)
+		require.NoError(t, srv.DB.InsertBlueprint(context.Background(), bpID, uuid.New(), "000000", "000000", "bp1", "", bpjson, nil))
+
+		var result v1.BlueprintResponse
+		respStatusCode, body := tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srv.URL, bpID), &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, respStatusCode)
+		require.NoError(t, json.Unmarshal([]byte(body), &result))
+		require.ElementsMatch(t, c.lintErrors, result.Lint.Errors)
+
+		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000", "000000"))
+	}
+}
