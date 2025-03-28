@@ -790,3 +790,61 @@ func (h *Handlers) DeleteBlueprint(ctx echo.Context, blueprintId openapi_types.U
 	}
 	return ctx.NoContent(http.StatusNoContent)
 }
+
+func (h *Handlers) PostExperimentalBlueprintsIdFixup(ctx echo.Context, id openapi_types.UUID) error {
+	userID, err := h.server.getIdentity(ctx)
+	if err != nil {
+		return err
+	}
+
+	blueprintEntry, err := h.server.db.GetBlueprint(ctx.Request().Context(), id, userID.OrgID(), nil)
+	if err != nil {
+		if errors.Is(err, db.ErrBlueprintNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return err
+	}
+
+	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	if err != nil {
+		return err
+	}
+
+	_, err = h.lintBlueprint(ctx, &blueprint, true)
+	if err != nil {
+		return err
+	}
+
+	var md BlueprintMetadata
+	if len(blueprintEntry.Metadata) > 0 {
+		err = json.Unmarshal(blueprintEntry.Metadata, &md)
+		if err != nil {
+			return err
+		}
+	}
+
+	blueprintRequest := CreateBlueprintRequest{
+		Name:           blueprintEntry.Name,
+		Description:    &blueprintEntry.Description,
+		Metadata:       &md,
+		Distribution:   blueprint.Distribution,
+		ImageRequests:  blueprint.ImageRequests,
+		Customizations: blueprint.Customizations,
+	}
+
+	body, err := json.Marshal(blueprintRequest)
+	if err != nil {
+		return err
+	}
+	desc := common.FromPtr(blueprintRequest.Description)
+
+	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), uuid.New(), blueprintEntry.Id, userID.OrgID(), blueprintRequest.Name, desc, body)
+	if err != nil {
+		ctx.Logger().Errorf("Error updating blueprint in db: %v", err)
+		if errors.Is(err, db.ErrBlueprintNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return err
+	}
+	return ctx.NoContent(http.StatusCreated)
+}
