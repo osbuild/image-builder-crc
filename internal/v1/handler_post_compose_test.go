@@ -2849,6 +2849,14 @@ func TestComposeCustomizations(t *testing.T) {
 							Id:       mocks.RepoPLID,
 						},
 					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr("some-gpg-key"),
+							Rhsm:     common.ToPtr(false),
+						},
+					},
 				},
 				Distribution: "rhel-8.10",
 				ImageRequest: &composer.ImageRequest{
@@ -2857,20 +2865,6 @@ func TestComposeCustomizations(t *testing.T) {
 					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
 						Region: "",
 					}),
-					Repositories: []composer.Repository{
-						{
-							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
-							Rhsm:     common.ToPtr(true),
-							CheckGpg: common.ToPtr(true),
-							Gpgkey:   common.ToPtr(mocks.RhelGPG),
-						},
-						{
-							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
-							Rhsm:     common.ToPtr(true),
-							CheckGpg: common.ToPtr(true),
-							Gpgkey:   common.ToPtr(mocks.RhelGPG),
-						},
-					},
 				},
 			},
 		},
@@ -2908,6 +2902,18 @@ func TestComposeCustomizations(t *testing.T) {
 							Id:      mocks.RepoPLID2,
 						},
 					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr("some-gpg-key"),
+							Rhsm:     common.ToPtr(false),
+						},
+						{
+							Baseurl: common.ToPtr("https://content-sources.org/api/neat/template/snapshot2"),
+							Rhsm:    common.ToPtr(false),
+						},
+					},
 				},
 				Distribution: "rhel-8.10",
 				ImageRequest: &composer.ImageRequest{
@@ -2916,20 +2922,6 @@ func TestComposeCustomizations(t *testing.T) {
 					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
 						Region: "",
 					}),
-					Repositories: []composer.Repository{
-						{
-							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
-							Rhsm:     common.ToPtr(true),
-							CheckGpg: common.ToPtr(true),
-							Gpgkey:   common.ToPtr(mocks.RhelGPG),
-						},
-						{
-							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
-							Rhsm:     common.ToPtr(true),
-							CheckGpg: common.ToPtr(true),
-							Gpgkey:   common.ToPtr(mocks.RhelGPG),
-						},
-					},
 				},
 			},
 		},
