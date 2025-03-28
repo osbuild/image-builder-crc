@@ -505,6 +505,9 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 		}
 	}
 
+	ctx.Logger().Debugf("Found RH repositories from template: %v", rhRepoIDs)
+	ctx.Logger().Debugf("Found custom repositories from template: %v", customRepoIDs)
+
 	var payloadRepositories []composer.Repository
 	var customRepositories []composer.CustomRepository
 	var rhRepositories []composer.Repository
