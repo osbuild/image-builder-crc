@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
@@ -19,8 +21,6 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/images/pkg/crypt"
-
-	"slices"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -272,6 +272,11 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		return err
 	}
 
+	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false)
+	if err != nil {
+		return err
+	}
+
 	blueprintResponse := BlueprintResponse{
 		Id:             id,
 		Name:           blueprintEntry.Name,
@@ -279,9 +284,123 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		ImageRequests:  blueprint.ImageRequests,
 		Distribution:   blueprint.Distribution,
 		Customizations: blueprint.Customizations,
+		Lint: BlueprintLint{
+			Errors: lintErrors,
+		},
 	}
 
 	return ctx.JSON(http.StatusOK, blueprintResponse)
+}
+
+// func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]string, error) {
+func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]string, error) {
+	var lintErrors []string
+	// TODO split out to separate fn, lint blueprint & set warnings / errors
+	if blueprint.Customizations.Openscap != nil {
+
+		errs, err := h.lintOpenscap(ctx, blueprint, fixup)
+		if err != nil {
+			return nil, err
+		}
+		lintErrors = append(lintErrors, errs...)
+	}
+	return lintErrors, nil
+}
+
+func (h *Handlers) lintOpenscap(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]string, error) {
+	var lintErrors []string
+	var compl OpenSCAPCompliance
+	var err error
+	if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err != nil || compl.PolicyId == uuid.Nil {
+		return lintErrors, nil
+	}
+
+	d, err := h.server.getDistro(ctx, blueprint.Distribution)
+	if err != nil {
+		return nil, err
+	}
+	major, minor, err := d.RHELMajorMinor()
+	if err != nil {
+		return nil, err
+	}
+	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args
+	for _, pkg := range bp.GetPackagesEx(false) {
+		if blueprint.Customizations.Packages == nil || !slices.Contains(*blueprint.Customizations.Packages, pkg) {
+			lintErrors = append(lintErrors, fmt.Sprintf("package %s required by policy is not present", pkg))
+			if fixup {
+				blueprint.Customizations.Packages = common.ToPtr(append(common.DerefOrDefault(blueprint.Customizations.Packages), pkg))
+			}
+		}
+	}
+
+	for _, fsc := range bp.Customizations.GetFilesystems() {
+		if blueprint.Customizations.Filesystem == nil || !slices.ContainsFunc(*blueprint.Customizations.Filesystem, func(fs Filesystem) bool {
+			return fs.Mountpoint == fsc.Mountpoint
+		}) {
+			lintErrors = append(lintErrors, fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint))
+			if fixup {
+				blueprint.Customizations.Filesystem = common.ToPtr(append(common.DerefOrDefault(blueprint.Customizations.Filesystem), Filesystem{
+					Mountpoint: fsc.Mountpoint,
+					MinSize:    fsc.MinSize,
+				}))
+			}
+		}
+	}
+
+	if services := bp.Customizations.GetServices(); services != nil {
+		for _, e := range services.Enabled {
+			if blueprint.Customizations.Services == nil || blueprint.Customizations.Services.Enabled == nil || !slices.Contains(*blueprint.Customizations.Services.Enabled, e) {
+				lintErrors = append(lintErrors, fmt.Sprintf("service %s required as enabled by policy is not present", e))
+				if fixup {
+					blueprint.Customizations.Services = common.ToPtr(common.DerefOrDefault(blueprint.Customizations.Services))
+					blueprint.Customizations.Services.Enabled = common.ToPtr(append(common.DerefOrDefault(blueprint.Customizations.Services.Enabled), e))
+				}
+			}
+		}
+		for _, m := range services.Masked {
+			if blueprint.Customizations.Services == nil || blueprint.Customizations.Services.Masked == nil || !slices.Contains(*blueprint.Customizations.Services.Masked, m) {
+				lintErrors = append(lintErrors, fmt.Sprintf("service %s required as masked by policy is not present", m))
+				if fixup {
+					blueprint.Customizations.Services = common.ToPtr(common.DerefOrDefault(blueprint.Customizations.Services))
+					blueprint.Customizations.Services.Masked = common.ToPtr(append(common.DerefOrDefault(blueprint.Customizations.Services.Masked), m))
+				}
+			}
+		}
+		for _, d := range services.Disabled {
+			if blueprint.Customizations.Services == nil || blueprint.Customizations.Services.Disabled == nil || !slices.Contains(*blueprint.Customizations.Services.Disabled, d) {
+				lintErrors = append(lintErrors, fmt.Sprintf("service %s required as disabled by policy is not present", d))
+				if fixup {
+					blueprint.Customizations.Services = common.ToPtr(common.DerefOrDefault(blueprint.Customizations.Services))
+					blueprint.Customizations.Services.Disabled = common.ToPtr(append(common.DerefOrDefault(blueprint.Customizations.Services.Disabled), d))
+				}
+			}
+		}
+	}
+	if kernel := bp.Customizations.Kernel; kernel != nil {
+		if kernel.Name != "" && (blueprint.Customizations.Kernel == nil || *blueprint.Customizations.Kernel.Name != kernel.Name) {
+			lintErrors = append(lintErrors, fmt.Sprintf("kernel name %s required by policy not set", kernel.Name))
+			if fixup {
+				blueprint.Customizations.Kernel = common.ToPtr(common.DerefOrDefault(blueprint.Customizations.Kernel))
+				blueprint.Customizations.Kernel.Name = common.ToPtr(kernel.Name)
+			}
+		}
+		kernelcmd := strings.Split(kernel.Append, " ")
+		for _, kcmd := range kernelcmd {
+			if blueprint.Customizations.Kernel == nil || !strings.Contains(*blueprint.Customizations.Kernel.Append, kcmd) {
+				lintErrors = append(lintErrors, fmt.Sprintf("kernel command line parameter '%s' required by policy not set", kcmd))
+			}
+			if fixup {
+				blueprint.Customizations.Kernel = common.ToPtr(common.DerefOrDefault(blueprint.Customizations.Kernel))
+				blueprint.Customizations.Kernel.Append = common.ToPtr(fmt.Sprintf("%s %s", common.DerefOrDefault(blueprint.Customizations.Kernel.Append), kcmd))
+			}
+		}
+	}
+	return lintErrors, nil
 }
 
 func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) error {
@@ -652,4 +771,65 @@ func (h *Handlers) DeleteBlueprint(ctx echo.Context, blueprintId openapi_types.U
 		return err
 	}
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+func (h *Handlers) PostBlueprintsIdFixup(ctx echo.Context, id openapi_types.UUID) error {
+	userID, err := h.server.getIdentity(ctx)
+	if err != nil {
+		return err
+	}
+
+	ctx.Logger().Infof("Fetching blueprint %s", id)
+
+	blueprintEntry, err := h.server.db.GetBlueprint(ctx.Request().Context(), id, userID.OrgID(), nil)
+	if err != nil {
+		if errors.Is(err, db.ErrBlueprintNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return err
+	}
+
+	blueprint, err := BlueprintFromEntryWithRedactedPasswords(blueprintEntry)
+	if err != nil {
+		return err
+	}
+
+	_, err = h.lintBlueprint(ctx, &blueprint, true)
+	if err != nil {
+		return err
+	}
+
+	var md BlueprintMetadata
+	if len(blueprintEntry.Metadata) > 0 {
+		err = json.Unmarshal(blueprintEntry.Metadata, &md)
+		if err != nil {
+			return err
+		}
+	}
+
+	blueprintRequest := CreateBlueprintRequest{
+		Name:           blueprintEntry.Name,
+		Description:    &blueprintEntry.Description,
+		Metadata:       &md,
+		Distribution:   blueprint.Distribution,
+		ImageRequests:  blueprint.ImageRequests,
+		Customizations: blueprint.Customizations,
+	}
+
+	body, err := json.Marshal(blueprintRequest)
+	if err != nil {
+		return err
+	}
+	desc := common.DerefOrDefault(blueprintRequest.Description)
+
+	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), uuid.New(), blueprintEntry.Id, userID.OrgID(), blueprintRequest.Name, desc, body)
+	if err != nil {
+		ctx.Logger().Errorf("Error updating blueprint in db: %v", err)
+		if errors.Is(err, db.ErrBlueprintNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return err
+	}
+	ctx.Logger().Infof("Updated blueprint %s", blueprintEntry.Id)
+	return ctx.NoContent(http.StatusCreated)
 }
