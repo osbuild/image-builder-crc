@@ -250,6 +250,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPErrorList'
+  /blueprints/{id}/fixup:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        example: '123e4567-e89b-12d3-a456-426655440000'
+        required: true
+        description: UUID of a blueprint
+    post:
+      summary: apply linter fixes
+      description: |
+        apply fixes which should fix any lint errors in the blueprint
+      responses:
+        200:
+          description: successful update
+        404:
+          description: blueprint was not found
   /blueprints/{id}/export:
     parameters:
       - in: path
