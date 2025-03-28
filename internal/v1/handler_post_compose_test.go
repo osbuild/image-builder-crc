@@ -2720,6 +2720,110 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
+		// content template with 1 custom repository
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-8",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+						ContentTemplate: common.ToPtr(mocks.TemplateID),
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Customizations: &composer.Customizations{
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Baseurl:  &[]string{"http://snappy-url/template/snapshot1"},
+							Name:     common.ToPtr("payload"),
+							CheckGpg: common.ToPtr(true),
+							Enabled:  common.ToPtr(false),
+							Gpgkey:   &[]string{"some-gpg-key"},
+							Id:       mocks.RepoPLID,
+						},
+					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr("some-gpg-key"),
+							Rhsm:     common.ToPtr(false),
+						},
+					},
+				},
+				Distribution: "rhel-8.10",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// content template with 2 custom repositories
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-8",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+						ContentTemplate: common.ToPtr(mocks.TemplateID2),
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Customizations: &composer.Customizations{
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Baseurl:  &[]string{"http://snappy-url/template/snapshot1"},
+							Name:     common.ToPtr("payload"),
+							CheckGpg: common.ToPtr(true),
+							Enabled:  common.ToPtr(false),
+							Gpgkey:   &[]string{"some-gpg-key"},
+							Id:       mocks.RepoPLID,
+						},
+						{
+							Baseurl: &[]string{"http://snappy-url/template/snapshot2"},
+							Name:    common.ToPtr("payload2"),
+							Enabled: common.ToPtr(false),
+							Id:      mocks.RepoPLID2,
+						},
+					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr("some-gpg-key"),
+							Rhsm:     common.ToPtr(false),
+						},
+						{
+							Baseurl: common.ToPtr("https://content-sources.org/api/neat/template/snapshot2"),
+							Rhsm:    common.ToPtr(false),
+						},
+					},
+				},
+				Distribution: "rhel-8.10",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
 	}
 
 	for idx, payload := range payloads {
