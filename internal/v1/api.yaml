@@ -722,6 +722,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RecommendationsResponse"
+  /experimental/blueprints/{id}/fixup:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        example: '123e4567-e89b-12d3-a456-426655440000'
+        required: true
+        description: UUID of a blueprint
+    post:
+      summary: Apply linter fixes to blueprint
+      description: |
+        Apply fixes which should fix any lint errors in the blueprint.
+      responses:
+        200:
+          description: successful update
+        404:
+          description: blueprint was not found
+
 components:
   schemas:
     HTTPError:
