@@ -32,10 +32,22 @@ func GetResponseError(url string) (*http.Response, error) {
 	return client.Do(request)
 }
 
-func GetResponseBody(t *testing.T, url string, auth *string) (int, string) {
-	client := &http.Client{}
-	request, err := http.NewRequest("GET", url, nil)
-	require.NoError(t, err)
+func responseBody(t *testing.T, method, url string, auth *string, body interface{}) (int, string) {
+	client := http.Client{}
+	var request *http.Request
+	var err error
+
+	if body != nil {
+		buf, err := json.Marshal(body)
+		require.NoError(t, err)
+		request, err = http.NewRequest(method, url, bytes.NewReader(buf))
+		require.NoError(t, err)
+		request.Header.Add("Content-Type", "application/json")
+	} else {
+		request, err = http.NewRequest(method, url, nil)
+		require.NoError(t, err)
+	}
+
 	if auth != nil {
 		request.Header.Add("x-rh-identity", *auth)
 		request.Header.Add(fedora_identity.FedoraIDHeader, *auth)
@@ -47,75 +59,23 @@ func GetResponseBody(t *testing.T, url string, auth *string) (int, string) {
 		/* #nosec G307 */
 		defer response.Body.Close()
 	}
-
-	body, err := io.ReadAll(response.Body)
+	respBody, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
-
-	return response.StatusCode, string(body)
+	return response.StatusCode, string(respBody)
 }
 
-func PostResponseBody(t *testing.T, url string, compose interface{}) (int, string) {
-	buf, err := json.Marshal(compose)
-	require.NoError(t, err)
-
-	client := &http.Client{}
-	request, err := http.NewRequest("POST", url, bytes.NewReader(buf))
-	require.NoError(t, err)
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("x-rh-identity", AuthString0)
-
-	response, err := client.Do(request)
-	require.NoError(t, err)
-	if err != nil {
-		/* #nosec G307 */
-		defer response.Body.Close()
-	}
-
-	body, err := io.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	return response.StatusCode, string(body)
+func GetResponseBody(t *testing.T, url string, auth *string) (int, string) {
+	return responseBody(t, http.MethodGet, url, auth, nil)
 }
 
-func PutResponseBody(t *testing.T, url string, compose interface{}) (int, string) {
-	buf, err := json.Marshal(compose)
-	require.NoError(t, err)
+func PostResponseBody(t *testing.T, url string, body interface{}) (int, string) {
+	return responseBody(t, http.MethodPost, url, &AuthString0, body)
+}
 
-	client := &http.Client{}
-	request, err := http.NewRequest("PUT", url, bytes.NewReader(buf))
-	require.NoError(t, err)
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("x-rh-identity", AuthString0)
-
-	response, err := client.Do(request)
-	require.NoError(t, err)
-	if err != nil {
-		/* #nosec G307 */
-		defer response.Body.Close()
-	}
-
-	body, err := io.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	return response.StatusCode, string(body)
+func PutResponseBody(t *testing.T, url string, body interface{}) (int, string) {
+	return responseBody(t, http.MethodPut, url, &AuthString0, body)
 }
 
 func DeleteResponseBody(t *testing.T, url string) (int, string) {
-	client := &http.Client{}
-	request, err := http.NewRequest("DELETE", url, nil)
-	require.NoError(t, err)
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("x-rh-identity", AuthString0)
-
-	response, err := client.Do(request)
-	require.NoError(t, err)
-	if err != nil {
-		/* #nosec G307 */
-		defer response.Body.Close()
-	}
-
-	body, err := io.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	return response.StatusCode, string(body)
+	return responseBody(t, http.MethodDelete, url, &AuthString0, nil)
 }
