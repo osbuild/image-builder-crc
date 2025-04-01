@@ -54,8 +54,6 @@ func (lt *LazyToken) acquireNewToken(ctx context.Context, forceRefresh bool) (st
 		lt.Expiration = time.Now().Add(time.Duration(tokenRes.ExpiresIn) * time.Second)
 
 		slog.DebugContext(ctx, "acquired new token", "expiration", lt.Expiration)
-	} else {
-		slog.DebugContext(ctx, "reusing token", "expiration", lt.Expiration)
 	}
 
 	return lt.AccessToken, nil

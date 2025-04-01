@@ -179,7 +179,6 @@ func main() {
 			strc.IgnorePathPrefix("/status"),
 			strc.IgnorePathPrefix("/ready"),
 		},
-		NoTraceContext: true,
 	})))
 	if conf.GlitchTipDSN != "" {
 		echoServer.Use(sentryecho.New(sentryecho.Options{}))
