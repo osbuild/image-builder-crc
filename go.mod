@@ -1,6 +1,7 @@
 module github.com/osbuild/image-builder-crc
 
 go 1.22.9
+toolchain go1.24.1
 
 require (
 	github.com/BurntSushi/toml v1.5.0
@@ -15,7 +16,7 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20240208125334-43c3aac2bb9c
-	github.com/osbuild/images v0.125.0
+	github.com/osbuild/images v0.129.0
 	github.com/osbuild/logging v0.0.4
 	github.com/prometheus/client_golang v1.21.1
 	github.com/redhatinsights/app-common-go v1.6.8
