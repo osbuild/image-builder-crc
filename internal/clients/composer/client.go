@@ -90,7 +90,7 @@ func (cc *ComposerClient) request(ctx context.Context, method, url string, heade
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
-	resp, err := cc.client.Do(req)
+	resp, err := strc.NewTracingDoer(cc.client).Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +108,9 @@ func (cc *ComposerClient) request(ctx context.Context, method, url string, heade
 			}
 		}
 		resp, err = strc.NewTracingDoer(cc.client).Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return resp, err
