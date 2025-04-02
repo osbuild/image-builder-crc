@@ -124,6 +124,9 @@ func (rc *RecommendationsClient) request(ctx context.Context, method, url string
 			return nil, err
 		}
 		resp, err = strc.NewTracingDoer(rc.client).Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, err
 }
