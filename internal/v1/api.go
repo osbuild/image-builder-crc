@@ -927,13 +927,16 @@ type Readiness struct {
 
 // RecommendPackageRequest defines model for RecommendPackageRequest.
 type RecommendPackageRequest struct {
-	Packages            []string `json:"packages"`
-	RecommendedPackages int32    `json:"recommendedPackages"`
+	Distribution        DistributionItem `json:"distribution"`
+	Packages            []string         `json:"packages"`
+	RecommendedPackages int32            `json:"recommendedPackages"`
 }
 
 // RecommendationsResponse defines model for RecommendationsResponse.
 type RecommendationsResponse struct {
-	Packages []string `json:"packages"`
+	// ModelVersion Version of the recommendation model used
+	ModelVersion string   `json:"modelVersion"`
+	Packages     []string `json:"packages"`
 }
 
 // Repository defines model for Repository.

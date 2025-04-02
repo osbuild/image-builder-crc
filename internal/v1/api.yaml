@@ -1493,6 +1493,7 @@ components:
       required:
         - packages
         - recommendedPackages
+        - distribution
       type: object
       properties:
         packages:
@@ -1503,15 +1504,21 @@ components:
           type: integer
           format: int32
           default: 3
+        distribution:
+          $ref: '#/components/schemas/DistributionItem'
     RecommendationsResponse:
       required:
         - packages
+        - modelVersion
       type: object
       properties:
         packages:
           type: array
           items:
             type: string
+        modelVersion:
+          type: string
+          description: Version of the recommendation model used
     ClonesResponse:
       required:
         - meta
