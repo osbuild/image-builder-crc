@@ -134,7 +134,7 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	}))
 
 	dummyTokener := &oauth2.DummyToken{}
-	compClient, err := composer.NewClient(composer.ComposerClientConfig{
+	compClient, err := composer.NewClientFromConfig(composer.ComposerClientConfig{
 		URL:     tscc.ComposerURL,
 		Tokener: dummyTokener,
 	})

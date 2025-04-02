@@ -152,7 +152,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		},
 	}
 
-	resp, err := h.server.cClient.Compose(ctx.Request().Context(), cloudCR)
+	resp, err := h.server.cClient.PostCompose(ctx.Request().Context(), cloudCR)
 	if err != nil {
 		return ComposeResponse{}, err
 	}
