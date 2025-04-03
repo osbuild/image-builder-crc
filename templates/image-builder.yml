@@ -201,6 +201,8 @@ objects:
           c.request->'customizations'->'openscap' as openscap,
           c.request->'customizations'->'files' as files,
           c.request->'customizations'->'services' as services,
+          c.request->'customizations'->'locale' as locale,
+          c.request->'customizations'->'timezone' as timezone,
           jsonb_array_length(c.request->'customizations'->'users') as num_users
         from
           composes c
