@@ -723,6 +723,7 @@ func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
 		result, err := v1.BlueprintFromEntryWithRedactedPasswords(be)
 		require.NoError(t, err)
 		require.NotEqual(t, common.ToPtr("foo"), (*result.Customizations.Users)[0].Password)
+		require.True(t, *(*result.Customizations.Users)[0].HasPassword)
 	})
 	t.Run("already hashed password", func(t *testing.T) {
 		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"users": [{"name": "user", "password": "$6$foo"}]}, "distribution": "centos-9"}`)
@@ -733,6 +734,7 @@ func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Nil(t, (*result.Customizations.Users)[0].Password)
+		require.True(t, *(*result.Customizations.Users)[0].HasPassword)
 	})
 }
 

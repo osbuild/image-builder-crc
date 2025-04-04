@@ -2017,6 +2017,10 @@ components:
             Plaintext passwords are also supported, they will be hashed and stored using the SHA-512 algorithm.
             The password is never returned in the response.
             Empty string can be used to remove the password during update but only with ssh_key set.
+        hasPassword:
+          type: boolean
+          description: |
+            Indicates whether the user has a password set.
     Filesystem:
       type: object
       required:

@@ -1028,7 +1028,10 @@ type User struct {
 	// Groups List of groups to add the user to. The 'wheel' group should be added explicitly, as the
 	// default value is empty.
 	Groups *[]string `json:"groups,omitempty"`
-	Name   string    `json:"name"`
+
+	// HasPassword Indicates whether the user has a password set.
+	HasPassword *bool  `json:"hasPassword,omitempty"`
+	Name        string `json:"name"`
 
 	// Password Plaintext passwords are also supported, they will be hashed and stored using the SHA-512 algorithm.
 	// The password is never returned in the response.
