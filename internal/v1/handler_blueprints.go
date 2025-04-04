@@ -54,6 +54,11 @@ func (u *User) CryptPassword() error {
 
 // Set password to nil if it is not nil
 func (u *User) RedactPassword() {
+	if u.Password != nil {
+		u.HasPassword = common.ToPtr(true)
+	} else {
+		u.HasPassword = common.ToPtr(false)
+	}
 	u.Password = nil
 }
 
