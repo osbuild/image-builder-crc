@@ -129,6 +129,9 @@ func (rc *RecommendationsClient) request(ctx context.Context, method, url string
 }
 
 func (rc *RecommendationsClient) RecommendationsPackages(ctx context.Context, recommendationsPackages RecommendPackageRequest) (*http.Response, error) {
+	if recommendationsPackages.Distribution.Name == "" {
+		return nil, fmt.Errorf("distribution name is required")
+	}
 	buf, err := json.Marshal(recommendationsPackages)
 	if err != nil {
 		return nil, err
