@@ -293,7 +293,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 }
 
 func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
-	var lintErrors []BlueprintLintItem
+	lintErrors := []BlueprintLintItem{}
 	if blueprint.Customizations.Openscap != nil {
 		errs, err := h.lintOpenscap(ctx, blueprint, fixup)
 		if err != nil {
