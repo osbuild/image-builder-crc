@@ -25,7 +25,8 @@
     ],
     "users": [
       {
-        "name": "user"
+        "name": "user",
+        "hasPassword": true
       }
     ]
   },
