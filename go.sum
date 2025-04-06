@@ -310,10 +310,10 @@ github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
 github.com/samber/lo v1.47.0 h1:z7RynLwP5nbyRscyvcD043DWYoOcYRv3mV8lBeqOCLc=
 github.com/samber/lo v1.47.0/go.mod h1:RmDH9Ct32Qy3gduHQuKJ3gW1fMHAnE/fAzQuf6He5cU=
-github.com/samber/slog-common v0.18.0 h1:zPeXHM+WhMl2zSx76Rg3EE0jwXdkut9s45K+pwhcO1c=
-github.com/samber/slog-common v0.18.0/go.mod h1:6Krf+hemckfEiRDqy3J/sTpKTJQvmOoFLj9Riz3IkRU=
-github.com/samber/slog-sentry/v2 v2.9.2 h1:JW3mQvza3YX+QN1EZ1ZL0ERGgS2uS/3RTZt5zp3hkfk=
-github.com/samber/slog-sentry/v2 v2.9.2/go.mod h1:kPT5LvrwBwS0PqbsUcMzJHVeQrJLJd/xJMpYAzI409A=
+github.com/samber/slog-common v0.18.1 h1:c0EipD/nVY9HG5shgm/XAs67mgpWDMF+MmtptdJNCkQ=
+github.com/samber/slog-common v0.18.1/go.mod h1:QNZiNGKakvrfbJ2YglQXLCZauzkI9xZBjOhWFKS3IKk=
+github.com/samber/slog-sentry/v2 v2.9.3 h1:2/PZa78BFe0FuW/wm6Q3kBcd1phb1dBFHsCWZ4wX8Ko=
+github.com/samber/slog-sentry/v2 v2.9.3/go.mod h1:HGQRgN11HkZqSw/X493Zr65yIRx9ZpjZ2T5v2Dx/REc=
 github.com/secure-systems-lab/go-securesystemslib v0.9.0 h1:rf1HIbL64nUpEIZnjLZ3mcNEL9NBPB0iuVjyxvq3LZc=
 github.com/secure-systems-lab/go-securesystemslib v0.9.0/go.mod h1:DVHKMcZ+V4/woA/peqr+L0joiRXbPpQ042GgJckkFgw=
 github.com/sigstore/fulcio v1.6.4 h1:d86obfxUAG3Y6CYwOx1pdwCZwKmROB6w6927pKOVIRY=

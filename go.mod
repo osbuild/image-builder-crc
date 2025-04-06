@@ -65,8 +65,8 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/samber/lo v1.47.0 // indirect
-	github.com/samber/slog-common v0.18.0 // indirect
-	github.com/samber/slog-sentry/v2 v2.9.2 // indirect
+	github.com/samber/slog-common v0.18.1 // indirect
+	github.com/samber/slog-sentry/v2 v2.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/systemd/slog-journal v0.1.0 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
