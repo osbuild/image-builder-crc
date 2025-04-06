@@ -275,8 +275,8 @@ github.com/osbuild/blueprint v1.0.0 h1:h0VrNt95y/yxv/ayWL1qVH4UsRoQ8F/S5fqZFDR13
 github.com/osbuild/blueprint v1.0.0/go.mod h1:Nf6cZhSb+yL165qe9r8NwtWWRDyfzqI+DVFbLuDqHD0=
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32 h1:cxe72asGz4BAhAIhovew6VtrmIepSQH94siCLMkcCKs=
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32/go.mod h1:CecYUdLQNeKEkEC0DOejBTaVxs8Xbr30tRtgOIpbuKo=
-github.com/osbuild/images v0.129.0 h1:wh9A8BVqPUKZsocEELDnwJzc0bItDKa9MHAoOu4rnC0=
-github.com/osbuild/images v0.129.0/go.mod h1:Ag87vmyxooiPQBJEDILbypG8/SRIear75YA78NwLix0=
+github.com/osbuild/images v0.131.0 h1:UbAS2OtJa4iKJYIBE+TRhODGsA4N5hxZLHnevnImLmQ=
+github.com/osbuild/images v0.131.0/go.mod h1:Ag87vmyxooiPQBJEDILbypG8/SRIear75YA78NwLix0=
 github.com/osbuild/logging v0.0.4 h1:2JDj+HbHHZkfAp54yLTwgUw4YLRlzMiU/tQ9EanreSg=
 github.com/osbuild/logging v0.0.4/go.mod h1:5RZjBXGIGgRtbGxettQvAbe5vmisOrd35WMA/QjeBR8=
 github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f h1:/UDgs8FGMqwnHagNDPGOlts35QkhAZ8by3DR7nMih7M=
