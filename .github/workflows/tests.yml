@@ -16,7 +16,7 @@ jobs:
     steps:
 
       - name: Set up bootstrap Go 1.22
-        uses: actions/setup-go@v5.3.0
+        uses: actions/setup-go@v5.4.0
         with:
           go-version: '1.22.9' # also update tools/prepare-source.sh
           cache: false
@@ -112,7 +112,7 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-go@v5.3.0
+      - uses: actions/setup-go@v5.4.0
         with:
           go-version: '1.22'
       - env:
