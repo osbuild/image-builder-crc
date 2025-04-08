@@ -3,13 +3,18 @@ package v1
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/osbuild/image-builder-crc/internal/common"
 )
 
 func OscapProfiles(distribution Distributions) (DistributionProfileResponse, error) {
@@ -139,4 +144,117 @@ func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distrib
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	return ctx.JSON(http.StatusOK, customizations)
+}
+
+func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string) ([]BlueprintLintItem, error) {
+	var lintErrors []BlueprintLintItem
+	var err error
+
+	d, err := h.server.getDistro(ctx, distro)
+	if err != nil {
+		return nil, err
+	}
+	major, minor, err := d.RHELMajorMinor()
+	if err != nil {
+		return nil, err
+	}
+	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, policy)
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args
+	for _, pkg := range bp.GetPackagesEx(false) {
+		if cust.Packages == nil || !slices.Contains(*cust.Packages, pkg) {
+			lintErrors = append(lintErrors, BlueprintLintItem{
+				Name:        "Compliance",
+				Description: fmt.Sprintf("package %s required by policy is not present", pkg),
+			})
+			if fixup {
+				cust.Packages = common.ToPtr(append(common.FromPtr(cust.Packages), pkg))
+			}
+		}
+	}
+
+	for _, fsc := range bp.Customizations.GetFilesystems() {
+		if cust.Filesystem == nil || !slices.ContainsFunc(*cust.Filesystem, func(fs Filesystem) bool {
+			return fs.Mountpoint == fsc.Mountpoint
+		}) {
+			lintErrors = append(lintErrors, BlueprintLintItem{
+				Name:        "Compliance",
+				Description: fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint),
+			})
+			if fixup {
+				cust.Filesystem = common.ToPtr(append(common.FromPtr(cust.Filesystem), Filesystem{
+					Mountpoint: fsc.Mountpoint,
+					MinSize:    fsc.MinSize,
+				}))
+			}
+		}
+	}
+
+	if services := bp.Customizations.GetServices(); services != nil {
+		for _, e := range services.Enabled {
+			if cust.Services == nil || cust.Services.Enabled == nil || !slices.Contains(*cust.Services.Enabled, e) {
+				lintErrors = append(lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("service %s required as enabled by policy is not present", e),
+				})
+				if fixup {
+					cust.Services = common.ToPtr(common.FromPtr(cust.Services))
+					cust.Services.Enabled = common.ToPtr(append(common.FromPtr(cust.Services.Enabled), e))
+				}
+			}
+		}
+		for _, m := range services.Masked {
+			if cust.Services == nil || cust.Services.Masked == nil || !slices.Contains(*cust.Services.Masked, m) {
+				lintErrors = append(lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("service %s required as masked by policy is not present", m),
+				})
+				if fixup {
+					cust.Services = common.ToPtr(common.FromPtr(cust.Services))
+					cust.Services.Masked = common.ToPtr(append(common.FromPtr(cust.Services.Masked), m))
+				}
+			}
+		}
+		for _, d := range services.Disabled {
+			if cust.Services == nil || cust.Services.Disabled == nil || !slices.Contains(*cust.Services.Disabled, d) {
+				lintErrors = append(lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("service %s required as disabled by policy is not present", d),
+				})
+				if fixup {
+					cust.Services = common.ToPtr(common.FromPtr(cust.Services))
+					cust.Services.Disabled = common.ToPtr(append(common.FromPtr(cust.Services.Disabled), d))
+				}
+			}
+		}
+	}
+	if kernel := bp.Customizations.Kernel; kernel != nil {
+		if kernel.Name != "" && (cust.Kernel == nil || *cust.Kernel.Name != kernel.Name) {
+			lintErrors = append(lintErrors, BlueprintLintItem{
+				Name:        "Compliance",
+				Description: fmt.Sprintf("kernel name %s required by policy not set", kernel.Name),
+			})
+			if fixup {
+				cust.Kernel = common.ToPtr(common.FromPtr(cust.Kernel))
+				cust.Kernel.Name = common.ToPtr(kernel.Name)
+			}
+		}
+		kernelcmd := strings.Split(kernel.Append, " ")
+		for _, kcmd := range kernelcmd {
+			if cust.Kernel == nil || !strings.Contains(*cust.Kernel.Append, kcmd) {
+				lintErrors = append(lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("kernel command line parameter '%s' required by policy not set", kcmd),
+				})
+			}
+			if fixup {
+				cust.Kernel = common.ToPtr(common.FromPtr(cust.Kernel))
+				cust.Kernel.Append = common.ToPtr(fmt.Sprintf("%s %s", common.FromPtr(cust.Kernel.Append), kcmd))
+			}
+		}
+	}
+	return lintErrors, nil
 }
