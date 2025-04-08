@@ -207,8 +207,8 @@ github.com/labstack/gommon v0.4.2 h1:F8qTUNXgG1+6WQmqoUWnz8WiEU60mXVVw0P4ht1WRA0
 github.com/labstack/gommon v0.4.2/go.mod h1:QlUFxVM+SNXhDL/Z7YhocGIBYOiwB0mXm1+1bAPHPyU=
 github.com/letsencrypt/boulder v0.0.0-20240620165639-de9c06129bec h1:2tTW6cDth2TSgRbAhD7yjZzTQmcN25sDRPEeinR51yQ=
 github.com/letsencrypt/boulder v0.0.0-20240620165639-de9c06129bec/go.mod h1:TmwEoGCwIti7BCeJ9hescZgRtatxRE+A72pCoPfmcfk=
-github.com/lzap/cloudwatchwriter2 v1.4.1 h1:2CqzIl94h8z/nqOVYs9aNRe4f4idpy+yh+ffW95TVg4=
-github.com/lzap/cloudwatchwriter2 v1.4.1/go.mod h1:/6POlaGi8jO8R12iSmXzcxDdOyR6puJPJWIsN0dW/k0=
+github.com/lzap/cloudwatchwriter2 v1.4.2 h1:kOYTBeCXW5+eIrUv7Vv9SefDMWf2ipUX2iF4lRltFIk=
+github.com/lzap/cloudwatchwriter2 v1.4.2/go.mod h1:/6POlaGi8jO8R12iSmXzcxDdOyR6puJPJWIsN0dW/k0=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
 github.com/mailru/easyjson v0.7.7/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
