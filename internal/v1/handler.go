@@ -844,19 +844,3 @@ func closeBody(ctx echo.Context, body io.Closer) {
 		ctx.Logger().Errorf("closing response body failed: %v", err)
 	}
 }
-
-func (h *Handlers) GetOscapProfiles(ctx echo.Context, distribution Distributions) error {
-	profiles, err := OscapProfiles(distribution)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-	return ctx.JSON(http.StatusOK, profiles)
-}
-
-func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distributions, profile DistributionProfileItem) error {
-	customizations, err := loadOscapCustomizations(h.server.distributionsDir, distribution, profile)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-	return ctx.JSON(http.StatusOK, customizations)
-}
