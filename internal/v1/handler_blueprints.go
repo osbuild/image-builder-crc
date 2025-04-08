@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
@@ -300,127 +299,14 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
 	lintErrors := []BlueprintLintItem{}
 	if blueprint.Customizations.Openscap != nil {
-		errs, err := h.lintOpenscap(ctx, blueprint, fixup)
-		if err != nil {
-			return nil, err
-		}
-		lintErrors = append(lintErrors, errs...)
-	}
-	return lintErrors, nil
-}
-
-func (h *Handlers) lintOpenscap(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
-	var lintErrors []BlueprintLintItem
-	var compl OpenSCAPCompliance
-	var err error
-	if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err != nil || compl.PolicyId == uuid.Nil {
-		return lintErrors, nil
-	}
-
-	d, err := h.server.getDistro(ctx, blueprint.Distribution)
-	if err != nil {
-		return nil, err
-	}
-	major, minor, err := d.RHELMajorMinor()
-	if err != nil {
-		return nil, err
-	}
-	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
-	if err != nil {
-		return nil, err
-	}
-
-	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args
-	for _, pkg := range bp.GetPackagesEx(false) {
-		if blueprint.Customizations.Packages == nil || !slices.Contains(*blueprint.Customizations.Packages, pkg) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("package %s required by policy is not present", pkg),
-			})
-			if fixup {
-				blueprint.Customizations.Packages = common.ToPtr(append(common.FromPtr(blueprint.Customizations.Packages), pkg))
+		var compl OpenSCAPCompliance
+		var err error
+		if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err == nil && compl.PolicyId != uuid.Nil {
+			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String())
+			if err != nil {
+				return nil, err
 			}
-		}
-	}
-
-	for _, fsc := range bp.Customizations.GetFilesystems() {
-		if blueprint.Customizations.Filesystem == nil || !slices.ContainsFunc(*blueprint.Customizations.Filesystem, func(fs Filesystem) bool {
-			return fs.Mountpoint == fsc.Mountpoint
-		}) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint),
-			})
-			if fixup {
-				blueprint.Customizations.Filesystem = common.ToPtr(append(common.FromPtr(blueprint.Customizations.Filesystem), Filesystem{
-					Mountpoint: fsc.Mountpoint,
-					MinSize:    fsc.MinSize,
-				}))
-			}
-		}
-	}
-
-	if services := bp.Customizations.GetServices(); services != nil {
-		for _, e := range services.Enabled {
-			if blueprint.Customizations.Services == nil || blueprint.Customizations.Services.Enabled == nil || !slices.Contains(*blueprint.Customizations.Services.Enabled, e) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("service %s required as enabled by policy is not present", e),
-				})
-				if fixup {
-					blueprint.Customizations.Services = common.ToPtr(common.FromPtr(blueprint.Customizations.Services))
-					blueprint.Customizations.Services.Enabled = common.ToPtr(append(common.FromPtr(blueprint.Customizations.Services.Enabled), e))
-				}
-			}
-		}
-		for _, m := range services.Masked {
-			if blueprint.Customizations.Services == nil || blueprint.Customizations.Services.Masked == nil || !slices.Contains(*blueprint.Customizations.Services.Masked, m) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("service %s required as masked by policy is not present", m),
-				})
-				if fixup {
-					blueprint.Customizations.Services = common.ToPtr(common.FromPtr(blueprint.Customizations.Services))
-					blueprint.Customizations.Services.Masked = common.ToPtr(append(common.FromPtr(blueprint.Customizations.Services.Masked), m))
-				}
-			}
-		}
-		for _, d := range services.Disabled {
-			if blueprint.Customizations.Services == nil || blueprint.Customizations.Services.Disabled == nil || !slices.Contains(*blueprint.Customizations.Services.Disabled, d) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("service %s required as disabled by policy is not present", d),
-				})
-				if fixup {
-					blueprint.Customizations.Services = common.ToPtr(common.FromPtr(blueprint.Customizations.Services))
-					blueprint.Customizations.Services.Disabled = common.ToPtr(append(common.FromPtr(blueprint.Customizations.Services.Disabled), d))
-				}
-			}
-		}
-	}
-	if kernel := bp.Customizations.Kernel; kernel != nil {
-		if kernel.Name != "" && (blueprint.Customizations.Kernel == nil || *blueprint.Customizations.Kernel.Name != kernel.Name) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("kernel name %s required by policy not set", kernel.Name),
-			})
-			if fixup {
-				blueprint.Customizations.Kernel = common.ToPtr(common.FromPtr(blueprint.Customizations.Kernel))
-				blueprint.Customizations.Kernel.Name = common.ToPtr(kernel.Name)
-			}
-		}
-		kernelcmd := strings.Split(kernel.Append, " ")
-		for _, kcmd := range kernelcmd {
-			if blueprint.Customizations.Kernel == nil || !strings.Contains(*blueprint.Customizations.Kernel.Append, kcmd) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("kernel command line parameter '%s' required by policy not set", kcmd),
-				})
-			}
-			if fixup {
-				blueprint.Customizations.Kernel = common.ToPtr(common.FromPtr(blueprint.Customizations.Kernel))
-				blueprint.Customizations.Kernel.Append = common.ToPtr(fmt.Sprintf("%s %s", common.FromPtr(blueprint.Customizations.Kernel.Append), kcmd))
-			}
+			lintErrors = append(lintErrors, errs...)
 		}
 	}
 	return lintErrors, nil
