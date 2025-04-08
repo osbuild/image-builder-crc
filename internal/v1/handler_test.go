@@ -23,6 +23,7 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
+	"github.com/osbuild/image-builder-crc/internal/v1/mocks"
 )
 
 func TestWithoutOsbuildComposerBackend(t *testing.T) {
@@ -1058,5 +1059,61 @@ func TestGetCustomizations(t *testing.T) {
 					fmt.Sprintf("/api/image-builder/v1/oscap/%s/%s/customizations", dist, "badprofile"), &tutils.AuthString0)
 			require.Equal(t, http.StatusBadRequest, respStatusCode)
 		}
+	})
+
+	t.Run("Get customizations for policy matches", func(t *testing.T) {
+		code, body := tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/oscap/%s/%s/policy_customizations", srv.URL, mocks.PolicyID, v1.Rhel810), &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, code)
+
+		var result v1.Customizations
+		err := json.Unmarshal([]byte(body), &result)
+		require.NoError(t, err)
+		require.Equal(t, v1.Customizations{
+			Packages: common.ToPtr([]string{
+				"required-by-compliance",
+			}),
+			Services: &v1.Services{
+				Enabled: common.ToPtr([]string{
+					"enabled-required-by-compliance",
+				}),
+				Masked: common.ToPtr([]string{
+					"masked-required-by-compliance",
+				}),
+			},
+		}, result)
+		code, body = tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/oscap/%s/%s/policy_customizations", srv.URL, mocks.PolicyID2, v1.Rhel810), &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, code)
+
+		var result2 v1.Customizations
+		err = json.Unmarshal([]byte(body), &result2)
+		require.NoError(t, err)
+		require.Equal(t, v1.Customizations{
+			Kernel: &v1.Kernel{
+				Append: common.ToPtr(" -compliance"),
+			},
+			Filesystem: common.ToPtr([]v1.Filesystem{
+				{
+					Mountpoint: "/tmp",
+					MinSize:    20,
+				},
+				{
+					Mountpoint: "/var",
+					MinSize:    400,
+				},
+			}),
+		}, result2)
+	})
+	t.Run("Get customizations for policy errors", func(t *testing.T) {
+		// doesn't work for fedora
+		code, _ := tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/oscap/%s/%s/policy_customizations", srv.URL, mocks.PolicyID, v1.Centos9), &tutils.AuthString0)
+		require.Equal(t, http.StatusBadRequest, code)
+
+		// non-existent policy
+		code, _ = tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/oscap/%s/%s/policy_customizations", srv.URL, uuid.New(), v1.Rhel8), &tutils.AuthString0)
+		require.Equal(t, http.StatusNotFound, code)
+
+		// policy doesn't support major version
+		code, _ = tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/oscap/%s/%s/policy_customizations", srv.URL, mocks.PolicyID, v1.Rhel9), &tutils.AuthString0)
+		require.Equal(t, http.StatusNotFound, code)
 	})
 }
