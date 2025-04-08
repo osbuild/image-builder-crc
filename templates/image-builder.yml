@@ -200,9 +200,13 @@ objects:
           c.request->'customizations'->'payload_repositories' as payload_repositories,
           c.request->'customizations'->'openscap' as openscap,
           c.request->'customizations'->'files' as files,
-          c.request->'customizations'->'services' as services,
-          c.request->'customizations'->'locale' as locale,
-          c.request->'customizations'->'timezone' as timezone,
+          -- parquet doesn't deal well with empty objects
+          case when c.request->'customizations'->'services'='{}' then 'null'
+               else c.request->'customizations'->'services' end as services,
+          case when c.request->'customizations'->'locale'='{}' then 'null'
+               else c.request->'customizations'->'locale' end as locale,
+          case when c.request->'customizations'->'timezone'='{}' then 'null'
+               else c.request->'customizations'->'timezone' end as timezone,
           jsonb_array_length(c.request->'customizations'->'users') as num_users
         from
           composes c
