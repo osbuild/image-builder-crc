@@ -1984,6 +1984,9 @@ type ServerInterface interface {
 	// get the customizations for a given distribution and profile. This is a temporary endpoint meant to be removed soon.
 	// (GET /oscap/{distribution}/{profile}/customizations)
 	GetOscapCustomizations(ctx echo.Context, distribution Distributions, profile DistributionProfileItem) error
+	// get the customizations for a compliance policy
+	// (GET /oscap/{policy}/{distribution}/policy_customizations)
+	GetOscapCustomizationsForPolicy(ctx echo.Context, policy openapi_types.UUID, distribution Distributions) error
 
 	// (GET /packages)
 	GetPackages(ctx echo.Context, params GetPackagesParams) error
@@ -2426,6 +2429,30 @@ func (w *ServerInterfaceWrapper) GetOscapCustomizations(ctx echo.Context) error 
 	return err
 }
 
+// GetOscapCustomizationsForPolicy converts echo context to params.
+func (w *ServerInterfaceWrapper) GetOscapCustomizationsForPolicy(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "policy" -------------
+	var policy openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "policy", ctx.Param("policy"), &policy, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter policy: %s", err))
+	}
+
+	// ------------- Path parameter "distribution" -------------
+	var distribution Distributions
+
+	err = runtime.BindStyledParameterWithOptions("simple", "distribution", ctx.Param("distribution"), &distribution, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter distribution: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetOscapCustomizationsForPolicy(ctx, policy, distribution)
+	return err
+}
+
 // GetPackages converts echo context to params.
 func (w *ServerInterfaceWrapper) GetPackages(ctx echo.Context) error {
 	var err error
@@ -2540,6 +2567,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/experimental/recommendations", wrapper.RecommendPackage)
 	router.GET(baseURL+"/oscap/:distribution/profiles", wrapper.GetOscapProfiles)
 	router.GET(baseURL+"/oscap/:distribution/:profile/customizations", wrapper.GetOscapCustomizations)
+	router.GET(baseURL+"/oscap/:policy/:distribution/policy_customizations", wrapper.GetOscapCustomizationsForPolicy)
 	router.GET(baseURL+"/packages", wrapper.GetPackages)
 	router.GET(baseURL+"/ready", wrapper.GetReadiness)
 	router.GET(baseURL+"/version", wrapper.GetVersion)

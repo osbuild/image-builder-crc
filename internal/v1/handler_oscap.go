@@ -12,9 +12,12 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/common"
+	"github.com/osbuild/image-builder-crc/internal/distribution"
 )
 
 func OscapProfiles(distribution Distributions) (DistributionProfileResponse, error) {
@@ -144,6 +147,20 @@ func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distrib
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	return ctx.JSON(http.StatusOK, customizations)
+}
+
+func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid.UUID, distro Distributions) error {
+	var cust Customizations
+	_, err := h.lintOpenscap(ctx, &cust, true, distro, policy.String())
+	if err == distribution.ErrMajorMinor {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	} else if err == compliance.ErrorTailoringNotFound {
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	} else if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, cust)
 }
 
 func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string) ([]BlueprintLintItem, error) {
