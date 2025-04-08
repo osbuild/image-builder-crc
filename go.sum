@@ -271,12 +271,12 @@ github.com/opencontainers/runtime-spec v1.2.0 h1:z97+pHb3uELt/yiAWD691HNHQIF07bE
 github.com/opencontainers/runtime-spec v1.2.0/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.11.1 h1:nHFvthhM0qY8/m+vfhJylliSshm8G1jJ2jDMcgULaH8=
 github.com/opencontainers/selinux v1.11.1/go.mod h1:E5dMC3VPuVvVHDYmi78qvhJp8+M586T4DlDRYpFkyec=
-github.com/osbuild/blueprint v1.0.0 h1:h0VrNt95y/yxv/ayWL1qVH4UsRoQ8F/S5fqZFDR13BA=
-github.com/osbuild/blueprint v1.0.0/go.mod h1:Nf6cZhSb+yL165qe9r8NwtWWRDyfzqI+DVFbLuDqHD0=
+github.com/osbuild/blueprint v1.4.0 h1:LbTDwDYvVluTsvT8Vx1mbAj9IqML+H5+4ia+xR2Cp+k=
+github.com/osbuild/blueprint v1.4.0/go.mod h1:Nf6cZhSb+yL165qe9r8NwtWWRDyfzqI+DVFbLuDqHD0=
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32 h1:cxe72asGz4BAhAIhovew6VtrmIepSQH94siCLMkcCKs=
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32/go.mod h1:CecYUdLQNeKEkEC0DOejBTaVxs8Xbr30tRtgOIpbuKo=
-github.com/osbuild/images v0.129.0 h1:wh9A8BVqPUKZsocEELDnwJzc0bItDKa9MHAoOu4rnC0=
-github.com/osbuild/images v0.129.0/go.mod h1:Ag87vmyxooiPQBJEDILbypG8/SRIear75YA78NwLix0=
+github.com/osbuild/images v0.132.0 h1:0QlLw+hymhlao8f3V2Y/Mb15dK4vKBfja0dxxT8zwqA=
+github.com/osbuild/images v0.132.0/go.mod h1:Ag87vmyxooiPQBJEDILbypG8/SRIear75YA78NwLix0=
 github.com/osbuild/logging v0.0.4 h1:2JDj+HbHHZkfAp54yLTwgUw4YLRlzMiU/tQ9EanreSg=
 github.com/osbuild/logging v0.0.4/go.mod h1:5RZjBXGIGgRtbGxettQvAbe5vmisOrd35WMA/QjeBR8=
 github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f h1:/UDgs8FGMqwnHagNDPGOlts35QkhAZ8by3DR7nMih7M=
