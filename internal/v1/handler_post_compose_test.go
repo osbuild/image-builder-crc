@@ -2723,7 +2723,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// content template with 1 custom repository
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-8",
+				Distribution: "rhel-95",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2757,20 +2757,34 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "rhel-8.10",
+				Distribution: "rhel-9.5",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
 					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
 						Region: "",
 					}),
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("http://snappy-url/snappy/baseos"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("http://snappy-url/snappy/appstream"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
 				},
 			},
 		},
 		// content template with 2 custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-8",
+				Distribution: "rhel-95",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2814,13 +2828,27 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "rhel-8.10",
+				Distribution: "rhel-9.5",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
 					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
 						Region: "",
 					}),
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("http://snappy-url/snappy/baseos"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("http://snappy-url/snappy/appstream"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
 				},
 			},
 		},

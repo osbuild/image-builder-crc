@@ -483,8 +483,6 @@ func (h *Handlers) buildCustomRepositories(ctx echo.Context, custRepos []CustomR
 func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string) ([]composer.Repository, []composer.CustomRepository, []composer.Repository, error) {
 	var customRepoIDs []string
 	var rhRepoIDs []string
-	rhRepoMap := content_sources.RepositoryByID{}
-	customRepoMap := content_sources.RepositoryByID{}
 
 	template, err := h.server.csClient.GetTemplateByID(ctx.Request().Context(), templateID)
 	if err != nil {
@@ -495,18 +493,20 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 		return nil, nil, nil, fmt.Errorf("Template %v has no repositories", templateID)
 	}
 
-	for _, id := range *template.RepositoryUuids {
-		// Check if repo is Red Hat
-		rhRepoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, []string{id}, false)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
-		}
-		// Separate Red Hat repos from custom
-		if len(rhRepoMap) > 0 {
-			rhRepoIDs = append(rhRepoIDs, id)
-		} else {
-			customRepoIDs = append(customRepoIDs, id)
-		}
+	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, false)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
+	}
+	for repoID := range rhRepoMap {
+		rhRepoIDs = append(rhRepoIDs, repoID)
+	}
+
+	customRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, true)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Unable to retrieve custom repositories: %v", err)
+	}
+	for repoID := range customRepoMap {
+		customRepoIDs = append(customRepoIDs, repoID)
 	}
 
 	slog.DebugContext(ctx.Request().Context(), "found RH repositories from template", "repo_id", rhRepoIDs)
@@ -515,13 +515,6 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 	var payloadRepositories []composer.Repository
 	var customRepositories []composer.CustomRepository
 	var rhRepositories []composer.Repository
-
-	if len(customRepoIDs) > 0 {
-		customRepoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, customRepoIDs, true)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("Unable to retrieve external repositories: %v", err)
-		}
-	}
 
 	// We should never hit this condition, but checking just in case
 	if template.Snapshots == nil {
@@ -568,17 +561,20 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 			composerRepo.ModuleHotfixes = repo.ModuleHotfixes
 			composerRepo.CheckRepoGpg = repo.MetadataVerification
 			payloadRepositories = append(payloadRepositories, composerRepo)
+		} else if slices.Contains(rhRepoIDs, *snap.RepositoryUuid) {
+			// Set the Red Hat repositories from the template
+			repo, ok := rhRepoMap[*snap.RepositoryUuid]
+			if !ok {
+				return payloadRepositories, customRepositories, rhRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+			}
+			rhRepo := composer.Repository{
+				Baseurl:  snap.Url,
+				Rhsm:     common.ToPtr(true),
+				Gpgkey:   repo.GpgKey,
+				CheckGpg: common.ToPtr(true),
+			}
+			rhRepositories = append(rhRepositories, rhRepo)
 		}
-	}
-
-	// Set Red Hat repositories from the template
-	for _, repo := range rhRepoMap {
-		rhRepositories = append(rhRepositories, composer.Repository{
-			Baseurl:  repo.Url,
-			Rhsm:     common.ToPtr(true),
-			Gpgkey:   repo.GpgKey,
-			CheckGpg: common.ToPtr(true),
-		})
 	}
 
 	return payloadRepositories, customRepositories, rhRepositories, nil

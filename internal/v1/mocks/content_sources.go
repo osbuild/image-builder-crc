@@ -18,16 +18,18 @@ const (
 )
 
 const (
-	RepoBaseID   = "2531793b-c607-4e1c-80b2-fbbaf9d12790"
-	RepoAppstrID = "dbd21dfc-1733-4877-b1c8-8fb5a98beeb4"
-	RepoPLID     = "a7ec8864-0e3c-4af2-8c06-567891280af5"
-	RepoPLID2    = "c01c2d9c-4624-4558-9ca9-8abcc5eb4437"
-	RepoPLID3    = "d064585d-5d25-4e10-88d0-9ab4d192b21d"
-	RepoUplID    = "7fa07d5a-3df4-4c83-bfe3-79633a0ad27d"
-	TemplateID   = "267232b1-d5af-467f-b6c0-2b502fa02d3d"
-	TemplateID2  = "f3203472-e8ed-4d52-8a98-0e9905e91953"
-	SnapshotID   = "6161fd44-ade8-4300-882b-ede6d65ee56e"
-	SnapshotID2  = "470f9dfa-10dd-4d70-aacb-96ba9a3d9f06"
+	RepoBaseID       = "2531793b-c607-4e1c-80b2-fbbaf9d12790"
+	RepoAppstrID     = "dbd21dfc-1733-4877-b1c8-8fb5a98beeb4"
+	RepoPLID         = "a7ec8864-0e3c-4af2-8c06-567891280af5"
+	RepoPLID2        = "c01c2d9c-4624-4558-9ca9-8abcc5eb4437"
+	RepoPLID3        = "d064585d-5d25-4e10-88d0-9ab4d192b21d"
+	RepoUplID        = "7fa07d5a-3df4-4c83-bfe3-79633a0ad27d"
+	TemplateID       = "267232b1-d5af-467f-b6c0-2b502fa02d3d"
+	TemplateID2      = "f3203472-e8ed-4d52-8a98-0e9905e91953"
+	SnapshotID       = "6161fd44-ade8-4300-882b-ede6d65ee56e"
+	SnapshotID2      = "470f9dfa-10dd-4d70-aacb-96ba9a3d9f06"
+	SnapshotBaseID   = "fb1551cc-706d-4fb5-bd14-4a29e7aeef3a"
+	SnapshotAppstrID = "f00957e0-0d1d-4777-81a6-9ff072452fb1"
 )
 
 func rhRepos(ids []string, urls []string) (res []content_sources.ApiRepositoryResponse) {
@@ -222,6 +224,18 @@ func templateByID(uuid string) (res content_sources.ApiTemplateResponse) {
 					RepositoryPath: common.ToPtr("/template/snapshot1"),
 					Url:            common.ToPtr("http://snappy-url/template/snapshot1"),
 				},
+				{
+					Uuid:           common.ToPtr(SnapshotBaseID),
+					RepositoryUuid: common.ToPtr(RepoBaseID),
+					RepositoryPath: common.ToPtr("/template/snapshot1/base"),
+					Url:            common.ToPtr("http://snappy-url/snappy/baseos"),
+				},
+				{
+					Uuid:           common.ToPtr(SnapshotAppstrID),
+					RepositoryUuid: common.ToPtr(RepoAppstrID),
+					RepositoryPath: common.ToPtr("/template/snapshot1/appstream"),
+					Url:            common.ToPtr("http://snappy-url/snappy/appstream"),
+				},
 			},
 		}
 	} else if uuid == TemplateID2 {
@@ -242,6 +256,18 @@ func templateByID(uuid string) (res content_sources.ApiTemplateResponse) {
 					RepositoryUuid: common.ToPtr(RepoPLID2),
 					RepositoryPath: common.ToPtr("/template/snapshot2"),
 					Url:            common.ToPtr("http://snappy-url/template/snapshot2"),
+				},
+				{
+					Uuid:           common.ToPtr(SnapshotBaseID),
+					RepositoryUuid: common.ToPtr(RepoBaseID),
+					RepositoryPath: common.ToPtr("/template/snapshot2/base"),
+					Url:            common.ToPtr("http://snappy-url/snappy/baseos"),
+				},
+				{
+					Uuid:           common.ToPtr(SnapshotAppstrID),
+					RepositoryUuid: common.ToPtr(RepoAppstrID),
+					RepositoryPath: common.ToPtr("/template/snapshot2/appstream"),
+					Url:            common.ToPtr("http://snappy-url/snappy/appstream"),
 				},
 			},
 		}
