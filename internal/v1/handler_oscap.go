@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/labstack/echo/v4"
 )
 
 func OscapProfiles(distribution Distributions) (DistributionProfileResponse, error) {
@@ -120,4 +123,20 @@ func loadOscapCustomizations(distributionDir string, distribution Distributions,
 	}
 
 	return &customizations, nil
+}
+
+func (h *Handlers) GetOscapProfiles(ctx echo.Context, distribution Distributions) error {
+	profiles, err := OscapProfiles(distribution)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	return ctx.JSON(http.StatusOK, profiles)
+}
+
+func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distributions, profile DistributionProfileItem) error {
+	customizations, err := loadOscapCustomizations(h.server.distributionsDir, distribution, profile)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	return ctx.JSON(http.StatusOK, customizations)
 }
