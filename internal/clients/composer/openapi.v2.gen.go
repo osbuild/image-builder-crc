@@ -4,7 +4,14 @@
 package composer
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -2420,4 +2427,2371 @@ func (t UploadStatus_Options) MarshalJSON() ([]byte, error) {
 func (t *UploadStatus_Options) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
+}
+
+// RequestEditorFn  is the function signature for the RequestEditor callback function
+type RequestEditorFn func(ctx context.Context, req *http.Request) error
+
+// Doer performs HTTP requests.
+//
+// The standard http.Client implements this interface.
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Client which conforms to the OpenAPI3 specification for this service.
+type Client struct {
+	// The endpoint of the server conforming to this interface, with scheme,
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
+	Server string
+
+	// Doer for performing requests, typically a *http.Client with any
+	// customized settings, such as certificate chains.
+	Client HttpRequestDoer
+
+	// A list of callbacks for modifying requests which are generated before sending over
+	// the network.
+	RequestEditors []RequestEditorFn
+}
+
+// ClientOption allows setting custom parameters during construction
+type ClientOption func(*Client) error
+
+// Creates a new Client, with reasonable defaults
+func NewClient(server string, opts ...ClientOption) (*Client, error) {
+	// create a client with sane default values
+	client := Client{
+		Server: server,
+	}
+	// mutate client and add all optional params
+	for _, o := range opts {
+		if err := o(&client); err != nil {
+			return nil, err
+		}
+	}
+	// ensure the server URL always has a trailing slash
+	if !strings.HasSuffix(client.Server, "/") {
+		client.Server += "/"
+	}
+	// create httpClient, if not already present
+	if client.Client == nil {
+		client.Client = &http.Client{}
+	}
+	return &client, nil
+}
+
+// WithHTTPClient allows overriding the default Doer, which is
+// automatically created using http.Client. This is useful for tests.
+func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+	return func(c *Client) error {
+		c.Client = doer
+		return nil
+	}
+}
+
+// WithRequestEditorFn allows setting up a callback function, which will be
+// called right before sending the request. This can be used to mutate the request.
+func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+	return func(c *Client) error {
+		c.RequestEditors = append(c.RequestEditors, fn)
+		return nil
+	}
+}
+
+// The interface specification for the client above.
+type ClientInterface interface {
+	// GetCloneStatus request
+	GetCloneStatus(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostComposeWithBody request with any body
+	PostComposeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostCompose(ctx context.Context, body PostComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeList request
+	GetComposeList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeStatus request
+	GetComposeStatus(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostCloneComposeWithBody request with any body
+	PostCloneComposeWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostCloneCompose(ctx context.Context, id openapi_types.UUID, body PostCloneComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeDownload request
+	GetComposeDownload(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeLogs request
+	GetComposeLogs(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeManifests request
+	GetComposeManifests(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeMetadata request
+	GetComposeMetadata(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComposeSBOMs request
+	GetComposeSBOMs(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostDepsolveBlueprintWithBody request with any body
+	PostDepsolveBlueprintWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostDepsolveBlueprint(ctx context.Context, body PostDepsolveBlueprintJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDistributionList request
+	GetDistributionList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetErrorList request
+	GetErrorList(ctx context.Context, params *GetErrorListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetError request
+	GetError(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetOpenapi request
+	GetOpenapi(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostSearchPackagesWithBody request with any body
+	PostSearchPackagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostSearchPackages(ctx context.Context, body PostSearchPackagesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetCloneStatus(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCloneStatusRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostComposeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostComposeRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostCompose(ctx context.Context, body PostComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostComposeRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeStatus(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeStatusRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostCloneComposeWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostCloneComposeRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostCloneCompose(ctx context.Context, id openapi_types.UUID, body PostCloneComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostCloneComposeRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeDownload(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeDownloadRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeLogs(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeLogsRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeManifests(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeManifestsRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeMetadata(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeMetadataRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComposeSBOMs(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComposeSBOMsRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostDepsolveBlueprintWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostDepsolveBlueprintRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostDepsolveBlueprint(ctx context.Context, body PostDepsolveBlueprintJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostDepsolveBlueprintRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetDistributionList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDistributionListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetErrorList(ctx context.Context, params *GetErrorListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetErrorListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetError(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetErrorRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetOpenapi(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOpenapiRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSearchPackagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSearchPackagesRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSearchPackages(ctx context.Context, body PostSearchPackagesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSearchPackagesRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewGetCloneStatusRequest generates requests for GetCloneStatus
+func NewGetCloneStatusRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clones/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostComposeRequest calls the generic PostCompose builder with application/json body
+func NewPostComposeRequest(server string, body PostComposeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostComposeRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostComposeRequestWithBody generates requests for PostCompose with any type of body
+func NewPostComposeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/compose")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetComposeListRequest generates requests for GetComposeList
+func NewGetComposeListRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetComposeStatusRequest generates requests for GetComposeStatus
+func NewGetComposeStatusRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostCloneComposeRequest calls the generic PostCloneCompose builder with application/json body
+func NewPostCloneComposeRequest(server string, id openapi_types.UUID, body PostCloneComposeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostCloneComposeRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPostCloneComposeRequestWithBody generates requests for PostCloneCompose with any type of body
+func NewPostCloneComposeRequestWithBody(server string, id openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s/clone", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetComposeDownloadRequest generates requests for GetComposeDownload
+func NewGetComposeDownloadRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s/download", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetComposeLogsRequest generates requests for GetComposeLogs
+func NewGetComposeLogsRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s/logs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetComposeManifestsRequest generates requests for GetComposeManifests
+func NewGetComposeManifestsRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s/manifests", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetComposeMetadataRequest generates requests for GetComposeMetadata
+func NewGetComposeMetadataRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s/metadata", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetComposeSBOMsRequest generates requests for GetComposeSBOMs
+func NewGetComposeSBOMsRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/composes/%s/sboms", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostDepsolveBlueprintRequest calls the generic PostDepsolveBlueprint builder with application/json body
+func NewPostDepsolveBlueprintRequest(server string, body PostDepsolveBlueprintJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostDepsolveBlueprintRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostDepsolveBlueprintRequestWithBody generates requests for PostDepsolveBlueprint with any type of body
+func NewPostDepsolveBlueprintRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/depsolve/blueprint")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetDistributionListRequest generates requests for GetDistributionList
+func NewGetDistributionListRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/distributions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetErrorListRequest generates requests for GetErrorList
+func NewGetErrorListRequest(server string, params *GetErrorListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/errors")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Size != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "size", runtime.ParamLocationQuery, *params.Size); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetErrorRequest generates requests for GetError
+func NewGetErrorRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/errors/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetOpenapiRequest generates requests for GetOpenapi
+func NewGetOpenapiRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/openapi")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostSearchPackagesRequest calls the generic PostSearchPackages builder with application/json body
+func NewPostSearchPackagesRequest(server string, body PostSearchPackagesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostSearchPackagesRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostSearchPackagesRequestWithBody generates requests for PostSearchPackages with any type of body
+func NewPostSearchPackagesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/search/packages")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+	for _, r := range c.RequestEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, r := range additionalEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ClientWithResponses builds on ClientInterface to offer response payloads
+type ClientWithResponses struct {
+	ClientInterface
+}
+
+// NewClientWithResponses creates a new ClientWithResponses, which wraps
+// Client with return type handling
+func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
+	client, err := NewClient(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientWithResponses{client}, nil
+}
+
+// WithBaseURL overrides the baseURL.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) error {
+		newBaseURL, err := url.Parse(baseURL)
+		if err != nil {
+			return err
+		}
+		c.Server = newBaseURL.String()
+		return nil
+	}
+}
+
+// ClientWithResponsesInterface is the interface specification for the client with responses above.
+type ClientWithResponsesInterface interface {
+	// GetCloneStatusWithResponse request
+	GetCloneStatusWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetCloneStatusResponse, error)
+
+	// PostComposeWithBodyWithResponse request with any body
+	PostComposeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostComposeResponse, error)
+
+	PostComposeWithResponse(ctx context.Context, body PostComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostComposeResponse, error)
+
+	// GetComposeListWithResponse request
+	GetComposeListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetComposeListResponse, error)
+
+	// GetComposeStatusWithResponse request
+	GetComposeStatusWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeStatusResponse, error)
+
+	// PostCloneComposeWithBodyWithResponse request with any body
+	PostCloneComposeWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostCloneComposeResponse, error)
+
+	PostCloneComposeWithResponse(ctx context.Context, id openapi_types.UUID, body PostCloneComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostCloneComposeResponse, error)
+
+	// GetComposeDownloadWithResponse request
+	GetComposeDownloadWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeDownloadResponse, error)
+
+	// GetComposeLogsWithResponse request
+	GetComposeLogsWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeLogsResponse, error)
+
+	// GetComposeManifestsWithResponse request
+	GetComposeManifestsWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeManifestsResponse, error)
+
+	// GetComposeMetadataWithResponse request
+	GetComposeMetadataWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeMetadataResponse, error)
+
+	// GetComposeSBOMsWithResponse request
+	GetComposeSBOMsWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeSBOMsResponse, error)
+
+	// PostDepsolveBlueprintWithBodyWithResponse request with any body
+	PostDepsolveBlueprintWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDepsolveBlueprintResponse, error)
+
+	PostDepsolveBlueprintWithResponse(ctx context.Context, body PostDepsolveBlueprintJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDepsolveBlueprintResponse, error)
+
+	// GetDistributionListWithResponse request
+	GetDistributionListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDistributionListResponse, error)
+
+	// GetErrorListWithResponse request
+	GetErrorListWithResponse(ctx context.Context, params *GetErrorListParams, reqEditors ...RequestEditorFn) (*GetErrorListResponse, error)
+
+	// GetErrorWithResponse request
+	GetErrorWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetErrorResponse, error)
+
+	// GetOpenapiWithResponse request
+	GetOpenapiWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOpenapiResponse, error)
+
+	// PostSearchPackagesWithBodyWithResponse request with any body
+	PostSearchPackagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSearchPackagesResponse, error)
+
+	PostSearchPackagesWithResponse(ctx context.Context, body PostSearchPackagesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSearchPackagesResponse, error)
+}
+
+type GetCloneStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloneStatus
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCloneStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCloneStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostComposeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ComposeId
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostComposeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostComposeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ComposeList
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ComposeStatus
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostCloneComposeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *CloneComposeResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostCloneComposeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostCloneComposeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeDownloadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeDownloadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeDownloadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeLogsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ComposeLogs
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeLogsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeLogsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeManifestsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ComposeManifests
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeManifestsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeManifestsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeMetadataResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ComposeMetadata
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeMetadataResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeMetadataResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComposeSBOMsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ComposeSBOMs
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComposeSBOMsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComposeSBOMsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostDepsolveBlueprintResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DepsolveResponse
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostDepsolveBlueprintResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostDepsolveBlueprintResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetDistributionListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DistributionList
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDistributionListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDistributionListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetErrorListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ErrorList
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetErrorListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetErrorListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetErrorResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON404      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetErrorResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetErrorResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetOpenapiResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetOpenapiResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetOpenapiResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostSearchPackagesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SearchPackagesResponse
+	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSearchPackagesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSearchPackagesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// GetCloneStatusWithResponse request returning *GetCloneStatusResponse
+func (c *ClientWithResponses) GetCloneStatusWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetCloneStatusResponse, error) {
+	rsp, err := c.GetCloneStatus(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCloneStatusResponse(rsp)
+}
+
+// PostComposeWithBodyWithResponse request with arbitrary body returning *PostComposeResponse
+func (c *ClientWithResponses) PostComposeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostComposeResponse, error) {
+	rsp, err := c.PostComposeWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostComposeResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostComposeWithResponse(ctx context.Context, body PostComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostComposeResponse, error) {
+	rsp, err := c.PostCompose(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostComposeResponse(rsp)
+}
+
+// GetComposeListWithResponse request returning *GetComposeListResponse
+func (c *ClientWithResponses) GetComposeListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetComposeListResponse, error) {
+	rsp, err := c.GetComposeList(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeListResponse(rsp)
+}
+
+// GetComposeStatusWithResponse request returning *GetComposeStatusResponse
+func (c *ClientWithResponses) GetComposeStatusWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeStatusResponse, error) {
+	rsp, err := c.GetComposeStatus(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeStatusResponse(rsp)
+}
+
+// PostCloneComposeWithBodyWithResponse request with arbitrary body returning *PostCloneComposeResponse
+func (c *ClientWithResponses) PostCloneComposeWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostCloneComposeResponse, error) {
+	rsp, err := c.PostCloneComposeWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostCloneComposeResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostCloneComposeWithResponse(ctx context.Context, id openapi_types.UUID, body PostCloneComposeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostCloneComposeResponse, error) {
+	rsp, err := c.PostCloneCompose(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostCloneComposeResponse(rsp)
+}
+
+// GetComposeDownloadWithResponse request returning *GetComposeDownloadResponse
+func (c *ClientWithResponses) GetComposeDownloadWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeDownloadResponse, error) {
+	rsp, err := c.GetComposeDownload(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeDownloadResponse(rsp)
+}
+
+// GetComposeLogsWithResponse request returning *GetComposeLogsResponse
+func (c *ClientWithResponses) GetComposeLogsWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeLogsResponse, error) {
+	rsp, err := c.GetComposeLogs(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeLogsResponse(rsp)
+}
+
+// GetComposeManifestsWithResponse request returning *GetComposeManifestsResponse
+func (c *ClientWithResponses) GetComposeManifestsWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeManifestsResponse, error) {
+	rsp, err := c.GetComposeManifests(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeManifestsResponse(rsp)
+}
+
+// GetComposeMetadataWithResponse request returning *GetComposeMetadataResponse
+func (c *ClientWithResponses) GetComposeMetadataWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeMetadataResponse, error) {
+	rsp, err := c.GetComposeMetadata(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeMetadataResponse(rsp)
+}
+
+// GetComposeSBOMsWithResponse request returning *GetComposeSBOMsResponse
+func (c *ClientWithResponses) GetComposeSBOMsWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComposeSBOMsResponse, error) {
+	rsp, err := c.GetComposeSBOMs(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComposeSBOMsResponse(rsp)
+}
+
+// PostDepsolveBlueprintWithBodyWithResponse request with arbitrary body returning *PostDepsolveBlueprintResponse
+func (c *ClientWithResponses) PostDepsolveBlueprintWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostDepsolveBlueprintResponse, error) {
+	rsp, err := c.PostDepsolveBlueprintWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostDepsolveBlueprintResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostDepsolveBlueprintWithResponse(ctx context.Context, body PostDepsolveBlueprintJSONRequestBody, reqEditors ...RequestEditorFn) (*PostDepsolveBlueprintResponse, error) {
+	rsp, err := c.PostDepsolveBlueprint(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostDepsolveBlueprintResponse(rsp)
+}
+
+// GetDistributionListWithResponse request returning *GetDistributionListResponse
+func (c *ClientWithResponses) GetDistributionListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDistributionListResponse, error) {
+	rsp, err := c.GetDistributionList(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDistributionListResponse(rsp)
+}
+
+// GetErrorListWithResponse request returning *GetErrorListResponse
+func (c *ClientWithResponses) GetErrorListWithResponse(ctx context.Context, params *GetErrorListParams, reqEditors ...RequestEditorFn) (*GetErrorListResponse, error) {
+	rsp, err := c.GetErrorList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetErrorListResponse(rsp)
+}
+
+// GetErrorWithResponse request returning *GetErrorResponse
+func (c *ClientWithResponses) GetErrorWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetErrorResponse, error) {
+	rsp, err := c.GetError(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetErrorResponse(rsp)
+}
+
+// GetOpenapiWithResponse request returning *GetOpenapiResponse
+func (c *ClientWithResponses) GetOpenapiWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOpenapiResponse, error) {
+	rsp, err := c.GetOpenapi(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOpenapiResponse(rsp)
+}
+
+// PostSearchPackagesWithBodyWithResponse request with arbitrary body returning *PostSearchPackagesResponse
+func (c *ClientWithResponses) PostSearchPackagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSearchPackagesResponse, error) {
+	rsp, err := c.PostSearchPackagesWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSearchPackagesResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostSearchPackagesWithResponse(ctx context.Context, body PostSearchPackagesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSearchPackagesResponse, error) {
+	rsp, err := c.PostSearchPackages(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSearchPackagesResponse(rsp)
+}
+
+// ParseGetCloneStatusResponse parses an HTTP response from a GetCloneStatusWithResponse call
+func ParseGetCloneStatusResponse(rsp *http.Response) (*GetCloneStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCloneStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloneStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostComposeResponse parses an HTTP response from a PostComposeWithResponse call
+func ParsePostComposeResponse(rsp *http.Response) (*PostComposeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostComposeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ComposeId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeListResponse parses an HTTP response from a GetComposeListWithResponse call
+func ParseGetComposeListResponse(rsp *http.Response) (*GetComposeListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComposeList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeStatusResponse parses an HTTP response from a GetComposeStatusWithResponse call
+func ParseGetComposeStatusResponse(rsp *http.Response) (*GetComposeStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComposeStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostCloneComposeResponse parses an HTTP response from a PostCloneComposeWithResponse call
+func ParsePostCloneComposeResponse(rsp *http.Response) (*PostCloneComposeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostCloneComposeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CloneComposeResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeDownloadResponse parses an HTTP response from a GetComposeDownloadWithResponse call
+func ParseGetComposeDownloadResponse(rsp *http.Response) (*GetComposeDownloadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeDownloadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeLogsResponse parses an HTTP response from a GetComposeLogsWithResponse call
+func ParseGetComposeLogsResponse(rsp *http.Response) (*GetComposeLogsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeLogsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComposeLogs
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeManifestsResponse parses an HTTP response from a GetComposeManifestsWithResponse call
+func ParseGetComposeManifestsResponse(rsp *http.Response) (*GetComposeManifestsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeManifestsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComposeManifests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeMetadataResponse parses an HTTP response from a GetComposeMetadataWithResponse call
+func ParseGetComposeMetadataResponse(rsp *http.Response) (*GetComposeMetadataResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeMetadataResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComposeMetadata
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComposeSBOMsResponse parses an HTTP response from a GetComposeSBOMsWithResponse call
+func ParseGetComposeSBOMsResponse(rsp *http.Response) (*GetComposeSBOMsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComposeSBOMsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ComposeSBOMs
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostDepsolveBlueprintResponse parses an HTTP response from a PostDepsolveBlueprintWithResponse call
+func ParsePostDepsolveBlueprintResponse(rsp *http.Response) (*PostDepsolveBlueprintResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostDepsolveBlueprintResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DepsolveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetDistributionListResponse parses an HTTP response from a GetDistributionListWithResponse call
+func ParseGetDistributionListResponse(rsp *http.Response) (*GetDistributionListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDistributionListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DistributionList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetErrorListResponse parses an HTTP response from a GetErrorListWithResponse call
+func ParseGetErrorListResponse(rsp *http.Response) (*GetErrorListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetErrorListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ErrorList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetErrorResponse parses an HTTP response from a GetErrorWithResponse call
+func ParseGetErrorResponse(rsp *http.Response) (*GetErrorResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetErrorResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetOpenapiResponse parses an HTTP response from a GetOpenapiWithResponse call
+func ParseGetOpenapiResponse(rsp *http.Response) (*GetOpenapiResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetOpenapiResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostSearchPackagesResponse parses an HTTP response from a PostSearchPackagesWithResponse call
+func ParsePostSearchPackagesResponse(rsp *http.Response) (*PostSearchPackagesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSearchPackagesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SearchPackagesResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
 }
