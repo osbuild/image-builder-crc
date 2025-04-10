@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +33,7 @@ import (
 var dbc *tutils.PSQLContainer
 
 func TestMain(m *testing.M) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	slog.SetDefault(logger)
 
 	code := runTests(m)
@@ -173,6 +174,7 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	require.NoError(t, err)
 
 	echoServer := echo.New()
+	echoServer.Logger.SetOutput(io.Discard)
 	echoServer.HideBanner = true
 	serverConfig := conf
 	if serverConfig == nil {
