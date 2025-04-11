@@ -29,6 +29,10 @@ func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, uploadPackage
 	cloudRP := recommendations.RecommendPackageRequest{
 		Packages:            uploadPackageRequest.Packages,
 		RecommendedPackages: uploadPackageRequest.RecommendedPackages,
+		Distribution: recommendations.DistributionItem{
+			Name:        uploadPackageRequest.Distribution.Name,
+			Description: uploadPackageRequest.Distribution.Description,
+		},
 	}
 
 	resp, err := h.server.rClient.RecommendationsPackages(ctx.Request().Context(), cloudRP)
