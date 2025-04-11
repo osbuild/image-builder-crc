@@ -702,6 +702,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Customizations'
+  /oscap/{policy}/{distribution}/policy_customizations:
+    parameters:
+      - in: path
+        name: policy
+        schema:
+          type: string
+          format: uuid
+        example: '123e4567-e89b-12d3-a456-426655440000'
+        required: true
+      - in: path
+        name: distribution
+        schema:
+          $ref: '#/components/schemas/Distributions'
+        required: true
+    get:
+      summary: get the customizations for a compliance policy
+      operationId: getOscapCustomizationsForPolicy
+      tags:
+        - oscap
+      responses:
+        '200':
+          description: |
+            A customizations array updated with the needed elements.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customizations'
   /experimental/recommendations:
     post:
       summary: List recommended packages.
