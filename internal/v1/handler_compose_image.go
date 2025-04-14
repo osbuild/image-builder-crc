@@ -568,7 +568,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 				return payloadRepositories, customRepositories, rhRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
 			}
 			rhRepo := composer.Repository{
-				Baseurl:  snap.Url,
+				Baseurl:  common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.RepositoryPath).String()),
 				Rhsm:     common.ToPtr(true),
 				Gpgkey:   repo.GpgKey,
 				CheckGpg: common.ToPtr(true),
