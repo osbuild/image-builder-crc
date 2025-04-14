@@ -1,18 +1,21 @@
 #!/bin/sh
 set -eu
 
-GO_MAJOR_VER=1.22
-GO_VERSION=1.22.9 # also update .github/workflows/tests.yml
+# Go version must be consistent with image-builder which uses UBI
+# container that is typically few months behind
+GO_VERSION=1.22.9
+GO_BINARY=$(go env GOPATH)/bin/go$GO_VERSION
 
-# Pin Go and toolchain versions at a reasonable version
-go get go@$GO_VERSION toolchain@$GO_VERSION
+# see https://go.dev/doc/manage-install
+go install golang.org/dl/go$GO_VERSION@latest
+$GO_BINARY download
 
 # Generate source
-go generate -x ./cmd/... ./internal/...
+$GO_BINARY generate -x ./cmd/... ./internal/...
 
 # Reformat source
-go run golang.org/x/tools/cmd/goimports@latest -w ./internal ./cmd
-go fmt ./cmd/... ./internal/...
+$GO_BINARY run golang.org/x/tools/cmd/goimports@latest -w ./internal ./cmd
+$GO_BINARY fmt ./cmd/... ./internal/...
 
 # Update go.mod and go.sum (keep it as the last)
-go mod tidy
+$GO_BINARY mod tidy
