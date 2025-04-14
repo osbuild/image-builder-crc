@@ -2766,13 +2766,13 @@ func TestComposeCustomizations(t *testing.T) {
 					}),
 					Repositories: []composer.Repository{
 						{
-							Baseurl:  common.ToPtr("http://snappy-url/snappy/baseos"),
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1/base"),
 							Rhsm:     common.ToPtr(true),
 							Gpgkey:   common.ToPtr(mocks.RhelGPG),
 							CheckGpg: common.ToPtr(true),
 						},
 						{
-							Baseurl:  common.ToPtr("http://snappy-url/snappy/appstream"),
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1/appstream"),
 							Rhsm:     common.ToPtr(true),
 							Gpgkey:   common.ToPtr(mocks.RhelGPG),
 							CheckGpg: common.ToPtr(true),
@@ -2837,13 +2837,13 @@ func TestComposeCustomizations(t *testing.T) {
 					}),
 					Repositories: []composer.Repository{
 						{
-							Baseurl:  common.ToPtr("http://snappy-url/snappy/baseos"),
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot2/base"),
 							Rhsm:     common.ToPtr(true),
 							Gpgkey:   common.ToPtr(mocks.RhelGPG),
 							CheckGpg: common.ToPtr(true),
 						},
 						{
-							Baseurl:  common.ToPtr("http://snappy-url/snappy/appstream"),
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot2/appstream"),
 							Rhsm:     common.ToPtr(true),
 							Gpgkey:   common.ToPtr(mocks.RhelGPG),
 							CheckGpg: common.ToPtr(true),
