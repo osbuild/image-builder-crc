@@ -2,7 +2,11 @@
   "extends": [
     "github>konflux-ci/mintmaker//config/renovate/renovate.json",
     "group:allNonMajor",
-    "schedule:earlyMondays"
+    "schedule:earlyMondays",
+    ":gomod"
   ],
-  "prConcurrentLimit": 3
+  "prConcurrentLimit": 3,
+  "constraints": {
+    "go": "1.22"
+  }
 }
