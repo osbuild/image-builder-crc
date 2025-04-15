@@ -1,12 +1,22 @@
 {
   "extends": [
     "github>konflux-ci/mintmaker//config/renovate/renovate.json",
-    "group:allNonMajor",
-    "schedule:daily",
-    ":gomod"
+    "schedule:earlyMondays"
   ],
   "prConcurrentLimit": 3,
-  "constraints": {
-    "go": "1.22"
-  }
+  "packageRules": [
+    {
+      "groupName": "go dependencies patch updates",
+      "groupSlug": "go-deps-patch",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ]
+    }
+  ]
 }
