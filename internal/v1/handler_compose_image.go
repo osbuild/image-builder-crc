@@ -569,7 +569,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 			}
 			rhRepo := composer.Repository{
 				Baseurl:  common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.RepositoryPath).String()),
-				Rhsm:     common.ToPtr(true),
+				Rhsm:     common.ToPtr(false),
 				Gpgkey:   repo.GpgKey,
 				CheckGpg: common.ToPtr(true),
 			}
