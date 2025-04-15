@@ -1,6 +1,7 @@
 module github.com/osbuild/image-builder-crc
 
 go 1.22.9
+toolchain go1.24.1
 
 require (
 	github.com/BurntSushi/toml v1.5.0
@@ -72,7 +73,7 @@ require (
 	github.com/twmb/murmur3 v1.1.8 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
