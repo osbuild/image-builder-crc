@@ -49,6 +49,7 @@ type ImageBuilderConfig struct {
 	DeploymentChannel        string `env:"CHANNEL"`
 	UnleashURL               string `env:"UNLEASH_URL"`
 	UnleashToken             string `env:"UNLEASH_TOKEN"`
+	InsightsClientProxy      string `env:"INSIGHTS_CLIENT_PROXY"`
 }
 
 func (ibc *ImageBuilderConfig) IsDebug() bool {

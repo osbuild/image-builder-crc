@@ -134,6 +134,8 @@ objects:
                 optional: true
           - name: CHANNEL
             value: ${CHANNEL}
+          - name: INSIGHTS_CLIENT_PROXY
+            value: ${INSIGHTS_CLIENT_PROXY}
         volumeMounts:
           - name: config-volume
             mountPath: /app/config
@@ -340,4 +342,6 @@ parameters:
       Channel where this pod is deployed.
       This is appended to the logs. Usually something like
       "local", "staging" or "production".
+  - name: INSIGHTS_CLIENT_PROXY
+    value: ""
 
