@@ -57,6 +57,8 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Exactly one upload request should be included")
 	}
 
+	composeRequest.BuildDefaults()
+
 	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate != nil {
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Either a snapshot date or content template can be specified, but not both")
 	}
@@ -580,7 +582,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 	return payloadRepositories, customRepositories, rhRepositories, nil
 }
 
-func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it ImageTypes) (composer.UploadOptions, composer.ImageTypes, error) {
+func (h *Handlers) buildUploadOptions(ctx echo.Context, ur *UploadRequest, it ImageTypes) (composer.UploadOptions, composer.ImageTypes, error) {
 	var uploadOptions composer.UploadOptions
 	switch ur.Type {
 	case UploadTypesAws:

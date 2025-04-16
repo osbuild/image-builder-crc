@@ -1215,18 +1215,22 @@ components:
       required:
         - architecture
         - image_type
-        - upload_request
       properties:
         architecture:
           type: string
           enum:
             - x86_64
             - aarch64
+          default: x86_64
           description: |
             CPU architecture of the image, x86_64 and aarch64 are currently supported.
         image_type:
           $ref: '#/components/schemas/ImageTypes'
         upload_request:
+          description: |
+            Upload request is optional. If not specified, the image will be
+            uploaded to the image builder S3 bucket and kept for several days for download.
+          nullable: true
           $ref: '#/components/schemas/UploadRequest'
         ostree:
           $ref: '#/components/schemas/OSTree'

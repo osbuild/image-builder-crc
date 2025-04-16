@@ -75,9 +75,7 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 		"distribution": "centos-9",
 		"image_requests": []map[string]interface{}{
 			{
-				"architecture":     "x86_64",
 				"image_type":       "aws",
-				"upload_request":   map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
 				"content_template": mocks.TemplateID,
 			},
 		},
@@ -121,6 +119,10 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	blueprintResp, err := v1.BlueprintFromEntry(be)
 	require.NoError(t, err)
 	require.Equal(t, *blueprintResp.ImageRequests[0].ContentTemplate, mocks.TemplateID)
+
+	// Test the default values
+	require.Equal(t, v1.ImageRequestArchitectureX8664, blueprintResp.ImageRequests[0].Architecture)
+	require.Equal(t, v1.UploadTypesAwsS3, blueprintResp.ImageRequests[0].UploadRequest.Type)
 }
 
 func TestUser_MergeForUpdate(t *testing.T) {
@@ -572,7 +574,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uploadOptions,
 				},
@@ -580,7 +582,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureAarch64,
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uploadOptions,
 				},
@@ -588,7 +590,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureAarch64,
 				ImageType:    v1.ImageTypesGuestImage,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAwsS3,
 					Options: uploadOptions,
 				},
@@ -768,7 +770,7 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uploadOptions,
 				},
@@ -776,7 +778,7 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureAarch64,
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uploadOptions,
 				},
@@ -955,7 +957,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uploadOptions,
 				},
@@ -964,7 +966,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 			{
 				Architecture: v1.ImageRequestArchitectureAarch64,
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uploadOptions,
 				},
