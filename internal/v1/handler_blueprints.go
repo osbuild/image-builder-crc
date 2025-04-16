@@ -91,13 +91,12 @@ func (u *User) MergeExisting(other User) {
 	}
 }
 
+var ErrMissingUserName = errors.New("missing user name")
+
 // User must have name and non-empty password or ssh key
 func (u *User) Valid() error {
-	validName := customizationUserNameRegex.MatchString(u.Name)
-	validPassword := u.Password != nil && len(*u.Password) > 0
-	validSshKey := u.SshKey != nil && len(*u.SshKey) > 0
-	if !validName || !(validPassword || validSshKey) {
-		return fmt.Errorf("user ('%s') must have a name and either a password or an SSH key set", u.Name)
+	if !customizationUserNameRegex.MatchString(u.Name) {
+		return ErrMissingUserName
 	}
 	return nil
 }
