@@ -1866,7 +1866,8 @@ func TestComposeCustomizations(t *testing.T) {
 				Customizations: &v1.Customizations{
 					Packages: &[]string{"pkg"},
 					Subscription: &v1.Subscription{
-						Organization: 000,
+						Organization:        000,
+						InsightsClientProxy: common.ToPtr(""),
 					},
 					Fdo: &v1.FDO{
 						DiunPubKeyHash: common.ToPtr("hash"),
@@ -1903,12 +1904,13 @@ func TestComposeCustomizations(t *testing.T) {
 						"pkg",
 					},
 					Subscription: &composer.Subscription{
-						ActivationKey: "",
-						BaseUrl:       "",
-						Insights:      false,
-						Rhc:           common.ToPtr(false),
-						Organization:  "0",
-						ServerUrl:     "",
+						ActivationKey:       "",
+						BaseUrl:             "",
+						Insights:            false,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						ServerUrl:           "",
+						InsightsClientProxy: common.ToPtr(""),
 					},
 					Fdo: &composer.FDO{
 						DiunPubKeyHash: common.ToPtr("hash"),
@@ -2532,7 +2534,8 @@ func TestComposeCustomizations(t *testing.T) {
 			imageBuilderRequest: v1.ComposeRequest{
 				Customizations: &v1.Customizations{
 					Subscription: &v1.Subscription{
-						Insights: true,
+						Insights:            true,
+						InsightsClientProxy: common.ToPtr(""),
 					},
 					Openscap: &openscap,
 					Services: &v1.Services{
@@ -2556,12 +2559,13 @@ func TestComposeCustomizations(t *testing.T) {
 				Distribution: "rhel-8.10",
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
-						ActivationKey: "",
-						BaseUrl:       "",
-						Insights:      true,
-						Rhc:           common.ToPtr(false),
-						Organization:  "0",
-						ServerUrl:     "",
+						ActivationKey:       "",
+						BaseUrl:             "",
+						Insights:            true,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						ServerUrl:           "",
+						InsightsClientProxy: common.ToPtr(""),
 					},
 					Openscap: &composer.OpenSCAP{
 						ProfileId: "test-profile",
@@ -2619,12 +2623,13 @@ func TestComposeCustomizations(t *testing.T) {
 				Distribution: "rhel-8.10",
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
-						ActivationKey: "",
-						BaseUrl:       "",
-						Insights:      true,
-						Rhc:           common.ToPtr(false),
-						Organization:  "0",
-						ServerUrl:     "",
+						ActivationKey:       "",
+						BaseUrl:             "",
+						Insights:            true,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						ServerUrl:           "",
+						InsightsClientProxy: common.ToPtr(""),
 					},
 					Openscap: &composer.OpenSCAP{
 						ProfileId: "test-profile",

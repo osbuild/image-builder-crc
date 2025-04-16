@@ -976,7 +976,10 @@ type Subscription struct {
 	ActivationKey string `json:"activation-key"`
 	BaseUrl       string `json:"base-url"`
 	Insights      bool   `json:"insights"`
-	Organization  int    `json:"organization"`
+
+	// InsightsClientProxy Optional value to set proxy option when registering the system to Insights.
+	InsightsClientProxy *string `json:"insights_client_proxy,omitempty"`
+	Organization        int     `json:"organization"`
 
 	// Rhc Optional flag to use rhc to register the system, which also always enables Insights.
 	Rhc       *bool  `json:"rhc,omitempty"`

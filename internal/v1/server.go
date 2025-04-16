@@ -30,43 +30,45 @@ import (
 )
 
 type Server struct {
-	echo             *echo.Echo
-	cClient          *composer.ComposerClient
-	pClient          *provisioning.ProvisioningClient
-	csClient         *content_sources.ContentSourcesClient
-	csReposURL       *url.URL
-	csReposPrefix    string
-	rClient          *recommendations.RecommendationsClient
-	complianceClient *compliance.ComplianceClient
-	spec             *openapi3.T
-	router           routers.Router
-	db               db.DB
-	aws              AWSConfig
-	gcp              GCPConfig
-	quotaFile        string
-	allowList        common.AllowList
-	allDistros       *distribution.AllDistroRegistry
-	distributionsDir string
-	fedoraAuth       bool
+	echo                *echo.Echo
+	cClient             *composer.ComposerClient
+	pClient             *provisioning.ProvisioningClient
+	csClient            *content_sources.ContentSourcesClient
+	csReposURL          *url.URL
+	csReposPrefix       string
+	rClient             *recommendations.RecommendationsClient
+	complianceClient    *compliance.ComplianceClient
+	spec                *openapi3.T
+	router              routers.Router
+	db                  db.DB
+	aws                 AWSConfig
+	gcp                 GCPConfig
+	quotaFile           string
+	allowList           common.AllowList
+	allDistros          *distribution.AllDistroRegistry
+	distributionsDir    string
+	fedoraAuth          bool
+	insightsClientProxy string
 }
 
 type ServerConfig struct {
-	EchoServer       *echo.Echo
-	CompClient       *composer.ComposerClient
-	ProvClient       *provisioning.ProvisioningClient
-	CSClient         *content_sources.ContentSourcesClient
-	CSReposURL       string
-	CSReposPrefix    string
-	RecommendClient  *recommendations.RecommendationsClient
-	ComplianceClient *compliance.ComplianceClient
-	DBase            db.DB
-	AwsConfig        AWSConfig
-	GcpConfig        GCPConfig
-	QuotaFile        string
-	AllowFile        string
-	AllDistros       *distribution.AllDistroRegistry
-	DistributionsDir string
-	FedoraAuth       bool
+	EchoServer          *echo.Echo
+	CompClient          *composer.ComposerClient
+	ProvClient          *provisioning.ProvisioningClient
+	CSClient            *content_sources.ContentSourcesClient
+	CSReposURL          string
+	CSReposPrefix       string
+	RecommendClient     *recommendations.RecommendationsClient
+	ComplianceClient    *compliance.ComplianceClient
+	DBase               db.DB
+	AwsConfig           AWSConfig
+	GcpConfig           GCPConfig
+	QuotaFile           string
+	AllowFile           string
+	AllDistros          *distribution.AllDistroRegistry
+	DistributionsDir    string
+	FedoraAuth          bool
+	InsightsClientProxy string
 }
 
 type AWSConfig struct {
@@ -124,6 +126,7 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		conf.AllDistros,
 		conf.DistributionsDir,
 		conf.FedoraAuth,
+		conf.InsightsClientProxy,
 	}
 	var h Handlers
 	h.server = &s

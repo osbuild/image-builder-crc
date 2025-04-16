@@ -208,11 +208,12 @@ func main() {
 			Region: conf.OsbuildGCPRegion,
 			Bucket: conf.OsbuildGCPBucket,
 		},
-		QuotaFile:        conf.QuotaFile,
-		AllowFile:        conf.AllowFile,
-		AllDistros:       adr,
-		DistributionsDir: conf.DistributionsDir,
-		FedoraAuth:       conf.FedoraAuth,
+		QuotaFile:           conf.QuotaFile,
+		AllowFile:           conf.AllowFile,
+		AllDistros:          adr,
+		DistributionsDir:    conf.DistributionsDir,
+		FedoraAuth:          conf.FedoraAuth,
+		InsightsClientProxy: conf.InsightsClientProxy,
 	}
 
 	_, err = v1.Attach(serverConfig)
