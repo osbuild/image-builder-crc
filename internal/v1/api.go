@@ -1029,7 +1029,7 @@ type User struct {
 	// default value is empty.
 	Groups *[]string `json:"groups,omitempty"`
 
-	// HasPassword Indicates whether the user has a password set.
+	// HasPassword Indicates whether the user has a password set. This flag is read-only.
 	HasPassword *bool  `json:"hasPassword,omitempty"`
 	Name        string `json:"name"`
 

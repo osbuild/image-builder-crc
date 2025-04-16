@@ -108,15 +108,6 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "Invalid blueprint name", jsonResp.Errors[0].Title)
 
-	// Test customization users, user without password and key is invalid
-	body["name"] = "Blueprint with invalid user"
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test"}}}
-	statusCode, resp = tutils.PostResponseBody(t, srvURL+"/api/image-builder/v1/blueprints", body)
-	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
-	err = json.Unmarshal([]byte(resp), &jsonResp)
-	require.NoError(t, err)
-	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
-
 	// Test the content template ID was saved to the blueprint
 	blueprintResp, err := v1.BlueprintFromEntry(be)
 	require.NoError(t, err)
@@ -223,7 +214,7 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "Both password and ssh_key are empty, invalid",
+			name: "Both password and ssh_key are empty, valid",
 			newUser: v1.User{
 				Name:     "test",
 				Password: common.ToPtr(""),
@@ -232,17 +223,17 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			existingUsers: []v1.User{},
 			wantPass:      nil,
 			wantSsh:       nil,
-			wantErr:       true,
+			wantErr:       false,
 		},
 		{
-			name: "Both password and ssh_key are nil, no existing user, invalid",
+			name: "Both password and ssh_key are nil, no existing user, valid",
 			newUser: v1.User{
 				Name: "test",
 			},
 			existingUsers: []v1.User{},
 			wantPass:      nil,
 			wantSsh:       nil,
-			wantErr:       true,
+			wantErr:       false,
 		},
 		{
 			name: "Both password and ssh_key are nil, existing user, keep old values",
@@ -261,7 +252,7 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "Empty password, existing user only with password, fail",
+			name: "Empty password, existing user only with password",
 			newUser: v1.User{
 				Name:     "test",
 				Password: common.ToPtr(""),
@@ -276,10 +267,10 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			},
 			wantPass: nil,
 			wantSsh:  nil,
-			wantErr:  true,
+			wantErr:  false,
 		},
 		{
-			name: "Empty ssh key, existing user only with ssh key, fail",
+			name: "Empty ssh key, existing user only with ssh key",
 			newUser: v1.User{
 				Name:     "test",
 				SshKey:   common.ToPtr(""),
@@ -294,10 +285,10 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			},
 			wantPass: nil,
 			wantSsh:  nil,
-			wantErr:  true,
+			wantErr:  false,
 		},
 		{
-			name: "Add new user to one already existing user, fail no password or ssh key",
+			name: "Add new user to one already existing user",
 			newUser: v1.User{
 				Name:     "test2",
 				SshKey:   nil,
@@ -312,7 +303,7 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			},
 			wantPass: nil,
 			wantSsh:  nil,
-			wantErr:  true,
+			wantErr:  false,
 		},
 		{
 			name: "Add new user to one already existing user",
@@ -352,7 +343,6 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
-	var jsonResp v1.HTTPErrorList
 	ctx := context.Background()
 	body := map[string]interface{}{
 		"name":        "Blueprint",
@@ -405,14 +395,10 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.NotNil(t, existingPassword)
 	require.Equal(t, userHashedPassword, *existingPassword)
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].SshKey)
-
-	// keep ssh key and remove password = FAIL (previous ssh key still empty)
+	// keep ssh key and remove password = SUCCESS
 	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": ""}}}
-	statusCode, responseBody = tutils.PutResponseBody(t, fmt.Sprintf("http://localhost:8086/api/image-builder/v1/blueprints/%s", result.Id), body)
-	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
-	err = json.Unmarshal([]byte(responseBody), &jsonResp)
-	require.NoError(t, err)
-	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
+	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("http://localhost:8086/api/image-builder/v1/blueprints/%s", result.Id), body)
+	require.Equal(t, http.StatusCreated, statusCode)
 
 	// add ssh key and remove password = SUCCESS
 	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": "", "ssh_key": "ssh key"}}}
@@ -433,24 +419,21 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Equal(t, "ssh key", *sshKey)
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].Password)
 
-	// add new user without password or ssh_key = FAIL
-	users := []map[string]interface{}{
-		{"name": "test"},  // keep old values
-		{"name": "test2"}, // FAIL
+	// add new user without password or ssh_key = SUCCESS
+	users := []map[string]any{
+		{"name": "test"},
+		{"name": "test2"},
 	}
-	body["customizations"] = map[string]interface{}{"users": users}
-	statusCode, responseBody = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
-	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
-	err = json.Unmarshal([]byte(responseBody), &jsonResp)
-	require.NoError(t, err)
-	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
+	body["customizations"] = map[string]any{"users": users}
+	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
+	require.Equal(t, http.StatusCreated, statusCode)
 
 	// add new user with password and ssh_key = SUCCESS
-	users = []map[string]interface{}{
+	users = []map[string]any{
 		{"name": "test"}, // keep old values
 		{"name": "test2", "password": "test", "ssh_key": "ssh key"},
 	}
-	body["customizations"] = map[string]interface{}{"users": users}
+	body["customizations"] = map[string]any{"users": users}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 

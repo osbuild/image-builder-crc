@@ -2048,7 +2048,7 @@ components:
         hasPassword:
           type: boolean
           description: |
-            Indicates whether the user has a password set.
+            Indicates whether the user has a password set. This flag is read-only.
     Filesystem:
       type: object
       required:
