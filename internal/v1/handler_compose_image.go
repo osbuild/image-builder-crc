@@ -828,12 +828,13 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 
 	if cust.Subscription != nil {
 		res.Subscription = &composer.Subscription{
-			ActivationKey: cust.Subscription.ActivationKey,
-			BaseUrl:       cust.Subscription.BaseUrl,
-			Insights:      cust.Subscription.Insights,
-			Rhc:           cust.Subscription.Rhc,
-			Organization:  fmt.Sprintf("%d", cust.Subscription.Organization),
-			ServerUrl:     cust.Subscription.ServerUrl,
+			ActivationKey:       cust.Subscription.ActivationKey,
+			BaseUrl:             cust.Subscription.BaseUrl,
+			Insights:            cust.Subscription.Insights,
+			Rhc:                 cust.Subscription.Rhc,
+			Organization:        fmt.Sprintf("%d", cust.Subscription.Organization),
+			ServerUrl:           cust.Subscription.ServerUrl,
+			InsightsClientProxy: &h.server.insightsClientProxy,
 		}
 	}
 
