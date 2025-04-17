@@ -682,7 +682,7 @@ func (h *Handlers) DeleteBlueprint(ctx echo.Context, blueprintId openapi_types.U
 	return ctx.NoContent(http.StatusNoContent)
 }
 
-func (h *Handlers) PostExperimentalBlueprintsIdFixup(ctx echo.Context, id openapi_types.UUID) error {
+func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error {
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
 		return err
