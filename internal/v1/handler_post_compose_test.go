@@ -49,7 +49,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture: "x86_64",
 					ImageType:    v1.ImageTypesAws,
-					UploadRequest: v1.UploadRequest{
+					UploadRequest: &v1.UploadRequest{
 						Type:    v1.UploadTypesAws,
 						Options: uo,
 					},
@@ -57,7 +57,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture: "x86_64",
 					ImageType:    v1.ImageTypesAmi,
-					UploadRequest: v1.UploadRequest{
+					UploadRequest: &v1.UploadRequest{
 						Type:    v1.UploadTypesAws,
 						Options: uo,
 					},
@@ -80,7 +80,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture: "x86_64",
 					ImageType:    v1.ImageTypesAws,
-					UploadRequest: v1.UploadRequest{
+					UploadRequest: &v1.UploadRequest{
 						Type:    v1.UploadTypesAws,
 						Options: uo,
 					},
@@ -115,7 +115,7 @@ func TestValidateComposeRequest(t *testing.T) {
 		azureRequest := v1.ImageRequest{
 			Architecture: "x86_64",
 			ImageType:    v1.ImageTypesAzure,
-			UploadRequest: v1.UploadRequest{
+			UploadRequest: &v1.UploadRequest{
 				Type:    v1.UploadTypesAzure,
 				Options: auo,
 			},
@@ -157,7 +157,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture:  "x86_64",
 					ImageType:     v1.ImageTypesAzure,
-					UploadRequest: v1.UploadRequest{},
+					UploadRequest: &v1.UploadRequest{},
 				},
 			},
 		}
@@ -182,7 +182,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture: "unsupported-arch",
 					ImageType:    v1.ImageTypesAws,
-					UploadRequest: v1.UploadRequest{
+					UploadRequest: &v1.UploadRequest{
 						Type:    v1.UploadTypesAws,
 						Options: uo,
 					},
@@ -207,7 +207,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture: "x86_64",
 					ImageType:    v1.ImageTypesAzure,
-					UploadRequest: v1.UploadRequest{
+					UploadRequest: &v1.UploadRequest{
 						Type:    "unknown",
 						Options: uo,
 					},
@@ -239,7 +239,7 @@ func TestValidateComposeRequest(t *testing.T) {
 				{
 					Architecture:  "x86_64",
 					ImageType:     v1.ImageTypesAmi,
-					UploadRequest: v1.UploadRequest{},
+					UploadRequest: &v1.UploadRequest{},
 				},
 			},
 		}
@@ -266,7 +266,7 @@ func TestValidateComposeRequest(t *testing.T) {
 		}
 		for _, it := range []v1.ImageTypes{v1.ImageTypesAmi, v1.ImageTypesAws} {
 			payload.ImageRequests[0].ImageType = it
-			payload.ImageRequests[0].UploadRequest = awsUr
+			payload.ImageRequests[0].UploadRequest = &awsUr
 			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
 			require.Equal(t, http.StatusBadRequest, respStatusCode)
 			require.Contains(t, body, fmt.Sprintf("Total AWS image size cannot exceed %d bytes", v1.FSMaxSize))
@@ -274,7 +274,7 @@ func TestValidateComposeRequest(t *testing.T) {
 
 		for _, it := range []v1.ImageTypes{v1.ImageTypesAzure, v1.ImageTypesVhd} {
 			payload.ImageRequests[0].ImageType = it
-			payload.ImageRequests[0].UploadRequest = azureUr
+			payload.ImageRequests[0].UploadRequest = &azureUr
 			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
 			require.Equal(t, http.StatusBadRequest, respStatusCode)
 			require.Contains(t, body, fmt.Sprintf("Total Azure image size cannot exceed %d bytes", v1.FSMaxSize))
@@ -290,7 +290,7 @@ func TestValidateComposeRequest(t *testing.T) {
 						Architecture:  "x86_64",
 						ImageType:     imgType,
 						Size:          imgSize,
-						UploadRequest: v1.UploadRequest{},
+						UploadRequest: &v1.UploadRequest{},
 					},
 				},
 			}
@@ -446,7 +446,7 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 			{
 				Architecture: "x86_64",
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uo,
 				},
@@ -496,7 +496,7 @@ func TestComposeImageErrorResolvingOSTree(t *testing.T) {
 				Ostree: &v1.OSTree{
 					Ref: common.ToPtr("edge/ref"),
 				},
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAwsS3,
 					Options: uo,
 				},
@@ -537,7 +537,7 @@ func TestComposeImageErrorsWhenCannotParseResponse(t *testing.T) {
 			{
 				Architecture: "x86_64",
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uo,
 				},
@@ -566,7 +566,7 @@ func TestComposeImageErrorsWhenDistributionNotExists(t *testing.T) {
 			{
 				Architecture: "x86_64",
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uo,
 				},
@@ -609,7 +609,7 @@ func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
 			{
 				Architecture: "x86_64",
 				ImageType:    v1.ImageTypesAws,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAws,
 					Options: uo,
 				},
@@ -659,7 +659,7 @@ func TestComposeImageAllowList(t *testing.T) {
 				{
 					Architecture: "x86_64",
 					ImageType:    v1.ImageTypesAws,
-					UploadRequest: v1.UploadRequest{
+					UploadRequest: &v1.UploadRequest{
 						Type:    v1.UploadTypesAws,
 						Options: uo,
 					},
@@ -747,7 +747,7 @@ func TestCompliancePolicyErrors(t *testing.T) {
 			{
 				Architecture: "x86_64",
 				ImageType:    v1.ImageTypesGuestImage,
-				UploadRequest: v1.UploadRequest{
+				UploadRequest: &v1.UploadRequest{
 					Type:    v1.UploadTypesAwsS3,
 					Options: uo,
 				},
@@ -823,7 +823,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
 						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -872,7 +872,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
 						SnapshotDate: common.ToPtr("1999-01-30"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -921,7 +921,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
 						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1020,7 +1020,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
 						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1116,7 +1116,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
 						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1213,7 +1213,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGcp,
 						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesGcp,
 							Options: uoGCP,
 						},
@@ -1323,7 +1323,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
 						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1605,7 +1605,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesRhelEdgeInstaller,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1768,7 +1768,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1889,7 +1889,7 @@ func TestComposeCustomizations(t *testing.T) {
 							Parent:     common.ToPtr("test/edge/ref2"),
 							Rhsm:       common.ToPtr(true),
 						},
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -1971,7 +1971,7 @@ func TestComposeCustomizations(t *testing.T) {
 							Url:    common.ToPtr("https://ostree.srv/"),
 							Parent: common.ToPtr("test/edge/ref2"),
 						},
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAzure,
 							Options: auo,
 						},
@@ -2035,7 +2035,7 @@ func TestComposeCustomizations(t *testing.T) {
 							Url:    common.ToPtr("https://ostree.srv/"),
 							Parent: common.ToPtr("test/edge/ref2"),
 						},
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAzure,
 							Options: auo2,
 						},
@@ -2093,7 +2093,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesAws,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAws,
 							Options: ec2uo,
 						},
@@ -2144,7 +2144,7 @@ func TestComposeCustomizations(t *testing.T) {
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesAws,
 						Size:         common.ToPtr(uint64(13958643712)),
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAws,
 							Options: ec2uo,
 						},
@@ -2203,7 +2203,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2259,7 +2259,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesOci,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesOciObjectstorage,
 							Options: uo,
 						},
@@ -2314,7 +2314,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2388,7 +2388,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2474,7 +2474,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2545,7 +2545,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2608,7 +2608,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2667,7 +2667,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2728,7 +2728,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},
@@ -2789,7 +2789,7 @@ func TestComposeCustomizations(t *testing.T) {
 					{
 						Architecture: "x86_64",
 						ImageType:    v1.ImageTypesGuestImage,
-						UploadRequest: v1.UploadRequest{
+						UploadRequest: &v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
 						},

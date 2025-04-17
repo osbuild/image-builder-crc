@@ -783,8 +783,8 @@ type ImageRequest struct {
 	// be used. If no snapshots made before the specified date can be found, the snapshot
 	// closest to, but after the specified date will be used. If no snapshots can be found at
 	// all, the request will fail. The format must be YYYY-MM-DD (ISO 8601 extended).
-	SnapshotDate  *string       `json:"snapshot_date,omitempty"`
-	UploadRequest UploadRequest `json:"upload_request"`
+	SnapshotDate  *string        `json:"snapshot_date,omitempty"`
+	UploadRequest *UploadRequest `json:"upload_request,omitempty"`
 }
 
 // ImageRequestArchitecture CPU architecture of the image, x86_64 and aarch64 are currently supported.
