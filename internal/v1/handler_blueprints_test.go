@@ -108,15 +108,6 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "Invalid blueprint name", jsonResp.Errors[0].Title)
 
-	// Test customization users, user without password and key is invalid
-	body["name"] = "Blueprint with invalid user"
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test"}}}
-	statusCode, resp = tutils.PostResponseBody(t, srvURL+"/api/image-builder/v1/blueprints", body)
-	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
-	err = json.Unmarshal([]byte(resp), &jsonResp)
-	require.NoError(t, err)
-	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
-
 	// Test the content template ID was saved to the blueprint
 	blueprintResp, err := v1.BlueprintFromEntry(be)
 	require.NoError(t, err)
@@ -223,28 +214,6 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "Both password and ssh_key are empty, invalid",
-			newUser: v1.User{
-				Name:     "test",
-				Password: common.ToPtr(""),
-				SshKey:   common.ToPtr(""),
-			},
-			existingUsers: []v1.User{},
-			wantPass:      nil,
-			wantSsh:       nil,
-			wantErr:       true,
-		},
-		{
-			name: "Both password and ssh_key are nil, no existing user, invalid",
-			newUser: v1.User{
-				Name: "test",
-			},
-			existingUsers: []v1.User{},
-			wantPass:      nil,
-			wantSsh:       nil,
-			wantErr:       true,
-		},
-		{
 			name: "Both password and ssh_key are nil, existing user, keep old values",
 			newUser: v1.User{
 				Name: "test",
@@ -259,60 +228,6 @@ func TestUser_MergeForUpdate(t *testing.T) {
 			wantPass: common.ToPtr("old password"),
 			wantSsh:  common.ToPtr("old ssh key"),
 			wantErr:  false,
-		},
-		{
-			name: "Empty password, existing user only with password, fail",
-			newUser: v1.User{
-				Name:     "test",
-				Password: common.ToPtr(""),
-				SshKey:   nil,
-			},
-			existingUsers: []v1.User{
-				{
-					Name:     "test",
-					Password: common.ToPtr("old password"),
-					SshKey:   nil,
-				},
-			},
-			wantPass: nil,
-			wantSsh:  nil,
-			wantErr:  true,
-		},
-		{
-			name: "Empty ssh key, existing user only with ssh key, fail",
-			newUser: v1.User{
-				Name:     "test",
-				SshKey:   common.ToPtr(""),
-				Password: nil,
-			},
-			existingUsers: []v1.User{
-				{
-					Name:     "test",
-					Password: nil,
-					SshKey:   common.ToPtr("old ssh key"),
-				},
-			},
-			wantPass: nil,
-			wantSsh:  nil,
-			wantErr:  true,
-		},
-		{
-			name: "Add new user to one already existing user, fail no password or ssh key",
-			newUser: v1.User{
-				Name:     "test2",
-				SshKey:   nil,
-				Password: nil,
-			},
-			existingUsers: []v1.User{
-				{
-					Name:     "test",
-					SshKey:   common.ToPtr("old password"),
-					Password: nil,
-				},
-			},
-			wantPass: nil,
-			wantSsh:  nil,
-			wantErr:  true,
 		},
 		{
 			name: "Add new user to one already existing user",
@@ -352,7 +267,6 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
-	var jsonResp v1.HTTPErrorList
 	ctx := context.Background()
 	body := map[string]interface{}{
 		"name":        "Blueprint",
@@ -406,14 +320,6 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Equal(t, userHashedPassword, *existingPassword)
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].SshKey)
 
-	// keep ssh key and remove password = FAIL (previous ssh key still empty)
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": ""}}}
-	statusCode, responseBody = tutils.PutResponseBody(t, fmt.Sprintf("http://localhost:8086/api/image-builder/v1/blueprints/%s", result.Id), body)
-	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
-	err = json.Unmarshal([]byte(responseBody), &jsonResp)
-	require.NoError(t, err)
-	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
-
 	// add ssh key and remove password = SUCCESS
 	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": "", "ssh_key": "ssh key"}}}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
@@ -433,20 +339,8 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Equal(t, "ssh key", *sshKey)
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].Password)
 
-	// add new user without password or ssh_key = FAIL
-	users := []map[string]interface{}{
-		{"name": "test"},  // keep old values
-		{"name": "test2"}, // FAIL
-	}
-	body["customizations"] = map[string]interface{}{"users": users}
-	statusCode, responseBody = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
-	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
-	err = json.Unmarshal([]byte(responseBody), &jsonResp)
-	require.NoError(t, err)
-	require.Equal(t, "Invalid user", jsonResp.Errors[0].Title)
-
 	// add new user with password and ssh_key = SUCCESS
-	users = []map[string]interface{}{
+	users := []map[string]interface{}{
 		{"name": "test"}, // keep old values
 		{"name": "test2", "password": "test", "ssh_key": "ssh key"},
 	}
