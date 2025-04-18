@@ -16,3 +16,4 @@ coverage*
 /tools/bin
 vendor/
 /*.log
+/.golangci.verified
