@@ -92,7 +92,8 @@
     "schemas": {
       "RecommendationsResponse": {
         "required": [
-          "packages"
+          "packages",
+          "modelVersion"
         ],
         "type": "object",
         "properties": {
@@ -101,13 +102,18 @@
             "items": {
               "type": "string"
             }
+          },
+          "modelVersion": {
+            "type": "string",
+            "description": "Version of the recommendation model used"
           }
         }
       },
       "RecommendPackageRequest": {
         "required": [
           "packages",
-          "recommendedPackages"
+          "recommendedPackages",
+          "distribution"
         ],
         "type": "object",
         "properties": {
@@ -120,6 +126,26 @@
           "recommendedPackages": {
             "type": "integer",
             "format": "int32"
+          },
+          "distribution": {
+            "$ref": "#/components/schemas/DistributionItem"
+          }
+        }
+      },
+      "DistributionItem": {
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "example": "Red Hat Enterprise Linux (RHEL) 8.4"
+          },
+          "name": {
+            "type": "string",
+            "example": "rhel-84"
           }
         }
       },
