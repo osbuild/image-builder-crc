@@ -1808,12 +1808,14 @@ components:
           oneOf:
             - type: string
             - type: integer
+              x-go-type: int64
           description: Owner of the directory as a user name or a uid
           example: 'root'
         group:
           oneOf:
             - type: string
             - type: integer
+              x-go-type: int64
           description: Group of the directory as a group name or a gid
           example: 'root'
         ensure_parents:
@@ -1839,12 +1841,14 @@ components:
           oneOf:
             - type: string
             - type: integer
+              x-go-type: int64
           description: Owner of the file as a uid or a user name
           example: 'root'
         group:
           oneOf:
             - type: string
             - type: integer
+              x-go-type: int64
           description: Group of the file as a gid or a group name
           example: 'root'
         data:
