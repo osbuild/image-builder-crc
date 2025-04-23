@@ -18,5 +18,8 @@
         "patch"
       ]
     }
+  ],
+  "postUpdateOptions": [
+    "gomodTidy"
   ]
 }
