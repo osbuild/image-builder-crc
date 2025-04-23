@@ -2738,16 +2738,7 @@ func TestComposeCustomizations(t *testing.T) {
 			},
 			composerRequest: composer.ComposeRequest{
 				Customizations: &composer.Customizations{
-					CustomRepositories: &[]composer.CustomRepository{
-						{
-							Baseurl:  &[]string{"http://snappy-url/template/snapshot1"},
-							Name:     common.ToPtr("payload"),
-							CheckGpg: common.ToPtr(true),
-							Enabled:  common.ToPtr(false),
-							Gpgkey:   &[]string{"some-gpg-key"},
-							Id:       mocks.RepoPLID,
-						},
-					},
+					CustomRepositories: nil,
 					PayloadRepositories: &[]composer.Repository{
 						{
 							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
@@ -2799,22 +2790,7 @@ func TestComposeCustomizations(t *testing.T) {
 			},
 			composerRequest: composer.ComposeRequest{
 				Customizations: &composer.Customizations{
-					CustomRepositories: &[]composer.CustomRepository{
-						{
-							Baseurl:  &[]string{"http://snappy-url/template/snapshot1"},
-							Name:     common.ToPtr("payload"),
-							CheckGpg: common.ToPtr(true),
-							Enabled:  common.ToPtr(false),
-							Gpgkey:   &[]string{"some-gpg-key"},
-							Id:       mocks.RepoPLID,
-						},
-						{
-							Baseurl: &[]string{"http://snappy-url/template/snapshot2"},
-							Name:    common.ToPtr("payload2"),
-							Enabled: common.ToPtr(false),
-							Id:      mocks.RepoPLID2,
-						},
-					},
+					CustomRepositories: nil,
 					PayloadRepositories: &[]composer.Repository{
 						{
 							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
@@ -2844,6 +2820,78 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 						{
 							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot2/appstream"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+				},
+			},
+		},
+		// content template with 1 custom repository in requested customizations
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-95",
+				Customizations: &v1.Customizations{
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Baseurl:      common.ToPtr("https://some-repo-base-url.org"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr("some-gpg-key"),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Baseurl:  &[]string{"https://some-repo-base-url.org"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{"some-gpg-key"},
+							Id:       mocks.RepoPLID,
+						},
+					},
+				},
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+						ContentTemplate: common.ToPtr(mocks.TemplateID),
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Customizations: &composer.Customizations{
+					CustomRepositories: nil,
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1"),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr("some-gpg-key"),
+							Rhsm:     common.ToPtr(false),
+						},
+					},
+				},
+				Distribution: "rhel-9.5",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1/base"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot1/appstream"),
 							Rhsm:     common.ToPtr(false),
 							Gpgkey:   common.ToPtr(mocks.RhelGPG),
 							CheckGpg: common.ToPtr(true),
