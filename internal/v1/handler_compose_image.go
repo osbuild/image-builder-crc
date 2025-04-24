@@ -513,7 +513,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 	slog.DebugContext(ctx.Request().Context(), "found custom repositories from template", "repo_id", customRepoIDs)
 
 	var payloadRepositories []composer.Repository
-	var customRepositories []composer.CustomRepository
+	customRepositories := []composer.CustomRepository{}
 	var rhRepositories []composer.Repository
 
 	// We should never hit this condition, but checking just in case
@@ -809,14 +809,16 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		if err != nil {
 			return nil, err
 		}
-		res.CustomRepositories = &templateCustomRepositories
+		if len(templateCustomRepositories) > 0 {
+			res.CustomRepositories = &templateCustomRepositories
+		}
 		res.PayloadRepositories = &templatePayloadRepositories
 	}
 
 	cust := cr.Customizations
 	if cust == nil {
 		// If no customizations requested, just return the repository snapshots resolved from the content template if one was specified
-		if res.CustomRepositories != nil && res.PayloadRepositories != nil {
+		if res.PayloadRepositories != nil {
 			return res, nil
 		}
 		return nil, nil
