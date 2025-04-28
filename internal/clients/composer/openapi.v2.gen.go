@@ -27,6 +27,11 @@ const (
 	BlueprintCustomizationsPartitioningModeRaw     BlueprintCustomizationsPartitioningMode = "raw"
 )
 
+// Defines values for BtrfsVolumeType.
+const (
+	Btrfs BtrfsVolumeType = "btrfs"
+)
+
 // Defines values for ComposeStatusValue.
 const (
 	ComposeStatusValueFailure ComposeStatusValue = "failure"
@@ -39,6 +44,24 @@ const (
 	CustomizationsPartitioningModeAutoLvm CustomizationsPartitioningMode = "auto-lvm"
 	CustomizationsPartitioningModeLvm     CustomizationsPartitioningMode = "lvm"
 	CustomizationsPartitioningModeRaw     CustomizationsPartitioningMode = "raw"
+)
+
+// Defines values for DiskType.
+const (
+	Dos DiskType = "dos"
+	Gpt DiskType = "gpt"
+)
+
+// Defines values for FilesystemTypedFsType.
+const (
+	FilesystemTypedFsTypeExt4 FilesystemTypedFsType = "ext4"
+	FilesystemTypedFsTypeVfat FilesystemTypedFsType = "vfat"
+	FilesystemTypedFsTypeXfs  FilesystemTypedFsType = "xfs"
+)
+
+// Defines values for FilesystemTypedType.
+const (
+	Plain FilesystemTypedType = "plain"
 )
 
 // Defines values for ImageSBOMPipelinePurpose.
@@ -93,6 +116,13 @@ const (
 	ImageTypesWsl                    ImageTypes = "wsl"
 )
 
+// Defines values for LogicalVolumeFsType.
+const (
+	LogicalVolumeFsTypeExt4 LogicalVolumeFsType = "ext4"
+	LogicalVolumeFsTypeVfat LogicalVolumeFsType = "vfat"
+	LogicalVolumeFsTypeXfs  LogicalVolumeFsType = "xfs"
+)
+
 // Defines values for UploadStatusValue.
 const (
 	Failure UploadStatusValue = "failure"
@@ -111,6 +141,11 @@ const (
 	UploadTypesLocal            UploadTypes = "local"
 	UploadTypesOciObjectstorage UploadTypes = "oci.objectstorage"
 	UploadTypesPulpOstree       UploadTypes = "pulp.ostree"
+)
+
+// Defines values for VolumeGroupType.
+const (
+	Lvm VolumeGroupType = "lvm"
 )
 
 // AWSEC2CloneCompose defines model for AWSEC2CloneCompose.
@@ -219,6 +254,7 @@ type BlueprintCustomizations struct {
 
 	// Directories Directories to create in the final artifact
 	Directories *[]Directory `json:"directories,omitempty"`
+	Disk        *Disk        `json:"disk,omitempty"`
 
 	// Fdo FIDO device onboard configuration
 	Fdo *FDO `json:"fdo,omitempty"`
@@ -304,7 +340,7 @@ type BlueprintFile struct {
 type BlueprintFileGroup0 = string
 
 // BlueprintFileGroup1 defines model for .
-type BlueprintFileGroup1 = int
+type BlueprintFileGroup1 = int64
 
 // BlueprintFile_Group Group of the file as a gid or a group name
 type BlueprintFile_Group struct {
@@ -315,7 +351,7 @@ type BlueprintFile_Group struct {
 type BlueprintFileUser0 = string
 
 // BlueprintFileUser1 defines model for .
-type BlueprintFileUser1 = int
+type BlueprintFileUser1 = int64
 
 // BlueprintFile_User Owner of the file as a uid or a user name
 type BlueprintFile_User struct {
@@ -324,9 +360,8 @@ type BlueprintFile_User struct {
 
 // BlueprintFilesystem defines model for BlueprintFilesystem.
 type BlueprintFilesystem struct {
-	// Minsize size of the filesystem in bytes
-	Minsize    uint64 `json:"minsize"`
-	Mountpoint string `json:"mountpoint"`
+	Minsize    Minsize `json:"minsize"`
+	Mountpoint string  `json:"mountpoint"`
 }
 
 // BlueprintFirewall Firewalld configuration
@@ -398,6 +433,28 @@ type BlueprintUser struct {
 	// Uid User id to use instead of the default
 	Uid *int `json:"uid,omitempty"`
 }
+
+// BtrfsSubvolume defines model for BtrfsSubvolume.
+type BtrfsSubvolume struct {
+	// Mountpoint Mountpoint for the subvolume
+	Mountpoint string `json:"mountpoint"`
+
+	// Name The name of the subvolume, which defines the location (path) on the root volume
+	Name string `json:"name"`
+}
+
+// BtrfsVolume defines model for BtrfsVolume.
+type BtrfsVolume struct {
+	Minsize *Minsize `json:"minsize,omitempty"`
+
+	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
+	PartType   *string          `json:"part_type,omitempty"`
+	Subvolumes []BtrfsSubvolume `json:"subvolumes"`
+	Type       *BtrfsVolumeType `json:"type,omitempty"`
+}
+
+// BtrfsVolumeType defines model for BtrfsVolume.Type.
+type BtrfsVolumeType string
 
 // CACertsCustomization defines model for CACertsCustomization.
 type CACertsCustomization struct {
@@ -577,6 +634,7 @@ type Customizations struct {
 	// on the image
 	CustomRepositories *[]CustomRepository `json:"custom_repositories,omitempty"`
 	Directories        *[]Directory        `json:"directories,omitempty"`
+	Disk               *Disk               `json:"disk,omitempty"`
 	EnabledModules     *[]Module           `json:"enabled_modules,omitempty"`
 
 	// Fdo FIDO device onboard configuration
@@ -678,7 +736,7 @@ type Directory struct {
 type DirectoryGroup0 = string
 
 // DirectoryGroup1 defines model for .
-type DirectoryGroup1 = int
+type DirectoryGroup1 = int64
 
 // Directory_Group Group of the directory as a group name or a gid
 type Directory_Group struct {
@@ -689,18 +747,27 @@ type Directory_Group struct {
 type DirectoryUser0 = string
 
 // DirectoryUser1 defines model for .
-type DirectoryUser1 = int
+type DirectoryUser1 = int64
 
 // Directory_User Owner of the directory as a user name or a uid
 type Directory_User struct {
 	union json.RawMessage
 }
 
-// DistributionList defines model for DistributionList.
-type DistributionList struct {
-	// Map Distribution name
-	Map *map[string]interface{} `json:"map,omitempty"`
+// Disk defines model for Disk.
+type Disk struct {
+	Minsize    *Minsize    `json:"minsize,omitempty"`
+	Partitions []Partition `json:"partitions"`
+
+	// Type Type of the partition table
+	Type *DiskType `json:"type,omitempty"`
 }
+
+// DiskType Type of the partition table
+type DiskType string
+
+// DistributionList Map of distributions to their architecture.
+type DistributionList map[string]map[string][]BlueprintRepository
 
 // Error defines model for Error.
 type Error struct {
@@ -762,7 +829,7 @@ type File struct {
 type FileGroup0 = string
 
 // FileGroup1 defines model for .
-type FileGroup1 = int
+type FileGroup1 = int64
 
 // File_Group Group of the file as a gid or a group name
 type File_Group struct {
@@ -773,7 +840,7 @@ type File_Group struct {
 type FileUser0 = string
 
 // FileUser1 defines model for .
-type FileUser1 = int
+type FileUser1 = int64
 
 // File_User Owner of the file as a uid or a user name
 type File_User struct {
@@ -786,6 +853,25 @@ type Filesystem struct {
 	MinSize    uint64 `json:"min_size"`
 	Mountpoint string `json:"mountpoint"`
 }
+
+// FilesystemTyped defines model for FilesystemTyped.
+type FilesystemTyped struct {
+	// FsType The filesystem type
+	FsType     *FilesystemTypedFsType `json:"fs_type,omitempty"`
+	Label      *string                `json:"label,omitempty"`
+	Minsize    *Minsize               `json:"minsize,omitempty"`
+	Mountpoint string                 `json:"mountpoint"`
+
+	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
+	PartType *string              `json:"part_type,omitempty"`
+	Type     *FilesystemTypedType `json:"type,omitempty"`
+}
+
+// FilesystemTypedFsType The filesystem type
+type FilesystemTypedFsType string
+
+// FilesystemTypedType defines model for FilesystemTyped.Type.
+type FilesystemTypedType string
 
 // FirewallCustomization Firewalld configuration
 type FirewallCustomization struct {
@@ -1015,6 +1101,21 @@ type Locale struct {
 	Languages *[]string `json:"languages,omitempty"`
 }
 
+// LogicalVolume defines model for LogicalVolume.
+type LogicalVolume struct {
+	// FsType The filesystem type for the logical volume
+	FsType  *LogicalVolumeFsType `json:"fs_type,omitempty"`
+	Label   *string              `json:"label,omitempty"`
+	Minsize *Minsize             `json:"minsize,omitempty"`
+
+	// Mountpoint Mountpoint for the logical volume
+	Mountpoint string  `json:"mountpoint"`
+	Name       *string `json:"name,omitempty"`
+}
+
+// LogicalVolumeFsType The filesystem type for the logical volume
+type LogicalVolumeFsType string
+
 // Module defines model for Module.
 type Module struct {
 	// Name Name of the module to enable.
@@ -1138,6 +1239,11 @@ type PackageMetadataCommon struct {
 	Signature *string `json:"signature,omitempty"`
 	Type      string  `json:"type"`
 	Version   string  `json:"version"`
+}
+
+// Partition defines model for Partition.
+type Partition struct {
+	union json.RawMessage
 }
 
 // PulpOSTreeUploadOptions defines model for PulpOSTreeUploadOptions.
@@ -1264,7 +1370,10 @@ type Subscription struct {
 	ActivationKey string `json:"activation_key"`
 	BaseUrl       string `json:"base_url"`
 	Insights      bool   `json:"insights"`
-	Organization  string `json:"organization"`
+
+	// InsightsClientProxy Optional value to set proxy option when registering the system to Insights
+	InsightsClientProxy *string `json:"insights_client_proxy,omitempty"`
+	Organization        string  `json:"organization"`
 
 	// Rhc Optional flag to use rhc to register the system, which also always enables Insights.
 	Rhc       *bool  `json:"rhc,omitempty"`
@@ -1332,6 +1441,33 @@ type User struct {
 	// password.
 	Password *string `json:"password,omitempty"`
 }
+
+// VolumeGroup defines model for VolumeGroup.
+type VolumeGroup struct {
+	LogicalVolumes []LogicalVolume `json:"logical_volumes"`
+	Minsize        *Minsize        `json:"minsize,omitempty"`
+
+	// Name Volume group name (will be automatically generated if omitted)
+	Name *string `json:"name,omitempty"`
+
+	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
+	PartType *string          `json:"part_type,omitempty"`
+	Type     *VolumeGroupType `json:"type,omitempty"`
+}
+
+// VolumeGroupType defines model for VolumeGroup.Type.
+type VolumeGroupType string
+
+// Minsize defines model for minsize.
+type Minsize struct {
+	union json.RawMessage
+}
+
+// Minsize0 size in bytes
+type Minsize0 = uint64
+
+// Minsize1 size with data units
+type Minsize1 = string
 
 // Page defines model for page.
 type Page = string
@@ -1986,6 +2122,94 @@ func (t *File_User) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsFilesystemTyped returns the union data inside the Partition as a FilesystemTyped
+func (t Partition) AsFilesystemTyped() (FilesystemTyped, error) {
+	var body FilesystemTyped
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFilesystemTyped overwrites any union data inside the Partition as the provided FilesystemTyped
+func (t *Partition) FromFilesystemTyped(v FilesystemTyped) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFilesystemTyped performs a merge with any union data inside the Partition, using the provided FilesystemTyped
+func (t *Partition) MergeFilesystemTyped(v FilesystemTyped) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBtrfsVolume returns the union data inside the Partition as a BtrfsVolume
+func (t Partition) AsBtrfsVolume() (BtrfsVolume, error) {
+	var body BtrfsVolume
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBtrfsVolume overwrites any union data inside the Partition as the provided BtrfsVolume
+func (t *Partition) FromBtrfsVolume(v BtrfsVolume) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBtrfsVolume performs a merge with any union data inside the Partition, using the provided BtrfsVolume
+func (t *Partition) MergeBtrfsVolume(v BtrfsVolume) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVolumeGroup returns the union data inside the Partition as a VolumeGroup
+func (t Partition) AsVolumeGroup() (VolumeGroup, error) {
+	var body VolumeGroup
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVolumeGroup overwrites any union data inside the Partition as the provided VolumeGroup
+func (t *Partition) FromVolumeGroup(v VolumeGroup) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeVolumeGroup performs a merge with any union data inside the Partition, using the provided VolumeGroup
+func (t *Partition) MergeVolumeGroup(v VolumeGroup) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t Partition) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *Partition) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsAWSEC2UploadOptions returns the union data inside the UploadOptions as a AWSEC2UploadOptions
 func (t UploadOptions) AsAWSEC2UploadOptions() (AWSEC2UploadOptions, error) {
 	var body AWSEC2UploadOptions
@@ -2418,6 +2642,68 @@ func (t UploadStatus_Options) MarshalJSON() ([]byte, error) {
 }
 
 func (t *UploadStatus_Options) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMinsize0 returns the union data inside the Minsize as a Minsize0
+func (t Minsize) AsMinsize0() (Minsize0, error) {
+	var body Minsize0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMinsize0 overwrites any union data inside the Minsize as the provided Minsize0
+func (t *Minsize) FromMinsize0(v Minsize0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMinsize0 performs a merge with any union data inside the Minsize, using the provided Minsize0
+func (t *Minsize) MergeMinsize0(v Minsize0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMinsize1 returns the union data inside the Minsize as a Minsize1
+func (t Minsize) AsMinsize1() (Minsize1, error) {
+	var body Minsize1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMinsize1 overwrites any union data inside the Minsize as the provided Minsize1
+func (t *Minsize) FromMinsize1(v Minsize1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMinsize1 performs a merge with any union data inside the Minsize, using the provided Minsize1
+func (t *Minsize) MergeMinsize1(v Minsize1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t Minsize) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *Minsize) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
