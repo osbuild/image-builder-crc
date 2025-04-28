@@ -579,7 +579,7 @@ type Directory struct {
 type DirectoryGroup0 = string
 
 // DirectoryGroup1 defines model for .
-type DirectoryGroup1 = int
+type DirectoryGroup1 = int64
 
 // Directory_Group Group of the directory as a group name or a gid
 type Directory_Group struct {
@@ -590,7 +590,7 @@ type Directory_Group struct {
 type DirectoryUser0 = string
 
 // DirectoryUser1 defines model for .
-type DirectoryUser1 = int
+type DirectoryUser1 = int64
 
 // Directory_User Owner of the directory as a user name or a uid
 type Directory_User struct {
@@ -663,7 +663,7 @@ type FileDataEncoding string
 type FileGroup0 = string
 
 // FileGroup1 defines model for .
-type FileGroup1 = int
+type FileGroup1 = int64
 
 // File_Group Group of the file as a gid or a group name
 type File_Group struct {
@@ -674,7 +674,7 @@ type File_Group struct {
 type FileUser0 = string
 
 // FileUser1 defines model for .
-type FileUser1 = int
+type FileUser1 = int64
 
 // File_User Owner of the file as a uid or a user name
 type File_User struct {
