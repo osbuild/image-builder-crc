@@ -2720,7 +2720,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
-		// content template with 1 custom repository
+		// content template with 1 custom repository and 2 Red Hat repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
 				Distribution: "rhel-95",
@@ -2772,7 +2772,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
-		// content template with 2 custom repositories
+		// content template with 2 custom repositories and 2 Red Hat repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
 				Distribution: "rhel-95",
@@ -2804,6 +2804,47 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
+				Distribution: "rhel-9.5",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot2/base"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/template/snapshot2/appstream"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+				},
+			},
+		},
+		// content template with 0 custom repositories, only Red Hat repos
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-95",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+						ContentTemplate: common.ToPtr(mocks.TemplateID3),
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
 				Distribution: "rhel-9.5",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",

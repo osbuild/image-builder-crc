@@ -512,7 +512,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 	slog.DebugContext(ctx.Request().Context(), "found RH repositories from template", "repo_id", rhRepoIDs)
 	slog.DebugContext(ctx.Request().Context(), "found custom repositories from template", "repo_id", customRepoIDs)
 
-	var payloadRepositories []composer.Repository
+	payloadRepositories := []composer.Repository{}
 	customRepositories := []composer.CustomRepository{}
 	var rhRepositories []composer.Repository
 
@@ -530,7 +530,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 			if !ok {
 				return payloadRepositories, customRepositories, rhRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
 			}
-			// We don't want custom repositories, so here we only set the payload repositories from the template
+			// We don't want to set custom repositories when using a template, so here we only set the payload repositories
 			composerRepo := composer.Repository{
 				Baseurl: common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.RepositoryPath).String()),
 				Rhsm:    common.ToPtr(false),
@@ -812,12 +812,14 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		if len(templateCustomRepositories) > 0 {
 			res.CustomRepositories = &templateCustomRepositories
 		}
-		res.PayloadRepositories = &templatePayloadRepositories
+		if len(templatePayloadRepositories) > 0 {
+			res.PayloadRepositories = &templatePayloadRepositories
+		}
 	}
 
 	cust := cr.Customizations
 	if cust == nil {
-		// If no customizations requested, just return the repository snapshots resolved from the content template if one was specified
+		// If no customizations requested, just return the payload repository snapshots resolved from the content template if one was specified
 		if res.PayloadRepositories != nil {
 			return res, nil
 		}
