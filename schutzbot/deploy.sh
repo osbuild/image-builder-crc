@@ -1,19 +1,6 @@
 #!/bin/bash
 set -euxo pipefail
 
-echo "Enabling fastestmirror to speed up dnf 🏎️"
-echo -e "fastestmirror=1" | sudo tee -a /etc/dnf/dnf.conf
-
-# Install any packages required during the test
-sudo dnf install -y podman \
-     libvirt-client \
-     libvirt-daemon-kvm \
-     virt-install \
-     wget \
-     qemu-img \
-     qemu-kvm \
-     jq
-
 sudo podman pull docker://quay.io/osbuild/postgres:13-alpine
 
 # Start Postgres container
