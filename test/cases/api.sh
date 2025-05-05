@@ -41,73 +41,12 @@ function cleanupAWS() {
   fi
 }
 
-function cleanupGCP() {
-  # since this function can be called at any time, ensure that we don't expand unbound variables
-  GCP_CMD="${GCP_CMD:-}"
-  GCP_IMAGE_NAME="${GCP_IMAGE_NAME:-}"
-  GCP_INSTANCE_NAME="${GCP_INSTANCE_NAME:-}"
-
-  if [ -n "$GCP_CMD" ]; then
-    set +e
-    $GCP_CMD compute instances delete --zone="$GCP_ZONE" "$GCP_INSTANCE_NAME"
-    set -e
-  fi
-}
-
-function cleanupAzure() {
-  # since this function can be called at any time, ensure that we don't expand unbound variables
-  AZURE_CMD="${AZURE_CMD:-}"
-  AZURE_IMAGE_NAME="${AZURE_IMAGE_NAME:-}"
-  AZURE_INSTANCE_NAME="${AZURE_INSTANCE_NAME:-}"
-
-  set +e
-  # do not run clean-up if the image name is not yet defined
-  if [[ -n "$AZURE_CMD" && -n "$AZURE_IMAGE_NAME" ]]; then
-    # Re-get the vm_details in case the VM creation is failed.
-    [ -f "$WORKDIR/vm_details.json" ] || $AZURE_CMD vm show --name "$AZURE_INSTANCE_NAME" --resource-group "$AZURE_RESOURCE_GROUP" --show-details > "$WORKDIR/vm_details.json"
-    # Get all the resources ids
-    VM_ID=$(jq -r '.id' "$WORKDIR"/vm_details.json)
-    OSDISK_ID=$(jq -r '.storageProfile.osDisk.managedDisk.id' "$WORKDIR"/vm_details.json)
-    NIC_ID=$(jq -r '.networkProfile.networkInterfaces[0].id' "$WORKDIR"/vm_details.json)
-    $AZURE_CMD network nic show --ids "$NIC_ID" > "$WORKDIR"/nic_details.json
-    NSG_ID=$(jq -r '.networkSecurityGroup.id' "$WORKDIR"/nic_details.json)
-    PUBLICIP_ID=$(jq -r '.ipConfigurations[0].publicIpAddress.id' "$WORKDIR"/nic_details.json)
-
-    # Delete resources. Some resources must be removed in order:
-    # - Delete VM prior to any other resources
-    # - Delete NIC prior to NSG, public-ip
-    # Left Virtual Network and Storage Account there because other tests in the same resource group will reuse them
-    for id in "$VM_ID" "$OSDISK_ID" "$NIC_ID" "$NSG_ID" "$PUBLICIP_ID"; do
-      echo "Deleting $id..."
-      $AZURE_CMD resource delete --ids "$id"
-    done
-
-    # Delete image after VM deleting.
-    $AZURE_CMD image delete --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_IMAGE_NAME"
-    # find a storage account by its tag
-    AZURE_STORAGE_ACCOUNT=$($AZURE_CMD resource list --tag imageBuilderStorageAccount=location="$AZURE_LOCATION" | jq -r .[0].name)
-    AZURE_CONNECTION_STRING=$($AZURE_CMD storage account show-connection-string --name "$AZURE_STORAGE_ACCOUNT" | jq -r .connectionString)
-    $AZURE_CMD storage blob delete --container-name imagebuilder --name "$AZURE_IMAGE_NAME".vhd --account-name "$AZURE_STORAGE_ACCOUNT" --connection-string "$AZURE_CONNECTION_STRING"
-    set -e
-  fi
-}
-
 # Create a temporary directory and ensure it gets deleted when this script
 # terminates in any way.
 WORKDIR=$(mktemp -d)
 KILL_PIDS=()
 function cleanup() {
-  case $CLOUD_PROVIDER in
-    "$CLOUD_PROVIDER_AWS")
-      cleanupAWS
-      ;;
-    "$CLOUD_PROVIDER_GCP")
-      cleanupGCP
-      ;;
-    "$CLOUD_PROVIDER_AZURE")
-      cleanupAzure
-      ;;
-  esac
+  cleanupAWS
 
   for P in "${KILL_PIDS[@]}"; do
       sudo kill "$P"
@@ -144,11 +83,6 @@ ACCOUNT1_ORG1='{"entitlements":{"rhel":{"is_entitled":true},"insights":{"is_enti
 ACCOUNT0_ORG0=$(echo "$ACCOUNT0_ORG0" | base64 -w 0)
 ACCOUNT1_ORG1=$(echo "$ACCOUNT1_ORG1" | base64 -w 0)
 
-CLOUD_PROVIDER_AWS="aws"
-CLOUD_PROVIDER_GCP="gcp"
-CLOUD_PROVIDER_AZURE="azure"
-CLOUD_PROVIDER=${1:-$CLOUD_PROVIDER_AWS}
-
 PORT="8086"
 CURLCMD='curl -w %{http_code}'
 HEADER="x-rh-identity: $ACCOUNT0_ORG0"
@@ -160,7 +94,7 @@ REQUEST_FILE="${WORKDIR}/request.json"
 ARCH=$(uname -m)
 
 DISTRO="rhel-8"
-SSH_USER="cloud-user"
+SSH_USER="ec2-user"
 
 if [[ "$ARCH" == "x86_64" ]]; then
     INSTANCE_TYPE="t2.micro"
@@ -169,11 +103,6 @@ elif [[ "$ARCH" == "aarch64" ]]; then
 else
   echo "Architecture not supported: $ARCH"
   exit 1
-fi
-
-
-if [[ "$CLOUD_PROVIDER" == "$CLOUD_PROVIDER_AWS" ]]; then
-    SSH_USER="ec2-user"
 fi
 
 # Wait until service is ready
@@ -328,188 +257,7 @@ function createReqFileAWS() {
 EOF
 }
 
-############### GCP-specific functions ################
-
-function checkEnvGCP() {
-  printenv GOOGLE_APPLICATION_CREDENTIALS GCP_BUCKET GCP_REGION GCP_API_TEST_SHARE_ACCOUNT > /dev/null
-}
-
-function installClientGCP() {
-  if ! hash gcloud; then
-    echo "Using 'gcloud' from a container"
-    sudo ${CONTAINER_RUNTIME} pull ${CONTAINER_IMAGE_CLOUD_TOOLS}
-
-    # directory mounted to the container, in which gcloud stores the credentials after logging in
-    GCP_CMD_CREDS_DIR="${WORKDIR}/gcloud_credentials"
-    mkdir "${GCP_CMD_CREDS_DIR}"
-
-    GCP_CMD="sudo ${CONTAINER_RUNTIME} run --rm \
-      -v ${GCP_CMD_CREDS_DIR}:/root/.config/gcloud:Z \
-      -v ${GOOGLE_APPLICATION_CREDENTIALS}:${GOOGLE_APPLICATION_CREDENTIALS}:Z \
-      -v ${WORKDIR}:${WORKDIR}:Z \
-      ${CONTAINER_IMAGE_CLOUD_TOOLS} gcloud --format=json"
-  else
-    echo "Using pre-installed 'gcloud' from the system"
-    GCP_CMD="gcloud --format=json --quiet"
-  fi
-  $GCP_CMD --version
-}
-
-function createReqFileGCP() {
-  cat > "$REQUEST_FILE" << EOF
-{
-  "distribution": "$DISTRO",
-  "client_id": "api",
-  "image_requests": [
-    {
-      "architecture": "$ARCH",
-      "image_type": "gcp",
-      "upload_request": {
-        "type": "gcp",
-        "options": {
-          "share_with_accounts": ["${GCP_API_TEST_SHARE_ACCOUNT}"]
-        }
-      }
-    }
-  ],
-  "customizations": {
-    "custom_repositories": [
-      {
-        "baseurl": [
-          "http://nginx.org/packages/rhel/8/x86_64/"
-        ],
-        "check_gpg": false,
-        "id": "076119fc-2dbc-49d7-bbd7-b39ca2bc3086",
-        "name": "nginx",
-        "module_hotfixes": true
-      }
-    ],
-    "packages": [
-      "postgresql",
-      "ansible-core",
-      "nginx",
-      "nginx-module-njs"
-    ],
-    "payload_repositories": [
-      {
-        "baseurl": "http://nginx.org/packages/rhel/8/x86_64/",
-        "check_gpg": false,
-        "check_repo_gpg": false,
-        "rhsm": false,
-        "module_hotfixes": true
-      }
-    ],
-    "subscription": {
-      "organization": ${API_TEST_SUBSCRIPTION_ORG_ID:-},
-      "activation-key": "${API_TEST_SUBSCRIPTION_ACTIVATION_KEY_V2:-}",
-      "base-url": "https://cdn.redhat.com/",
-      "server-url": "subscription.rhsm.redhat.com",
-      "insights": true,
-      "rhc": false
-    }
-  }
-}
-EOF
-}
-
-############### Azure-specific functions ################
-
-function checkEnvAzure() {
-  printenv AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_LOCATION V2_AZURE_CLIENT_ID V2_AZURE_CLIENT_SECRET > /dev/null
-}
-
-function installClientAzure() {
-  if ! hash az; then
-    echo "Using 'azure-cli' from a container"
-    sudo ${CONTAINER_RUNTIME} pull ${CONTAINER_IMAGE_CLOUD_TOOLS}
-
-    # directory mounted to the container, in which azure-cli stores the credentials after logging in
-    AZURE_CMD_CREDS_DIR="${WORKDIR}/azure-cli_credentials"
-    mkdir "${AZURE_CMD_CREDS_DIR}"
-
-    AZURE_CMD="sudo ${CONTAINER_RUNTIME} run --rm \
-      -v ${AZURE_CMD_CREDS_DIR}:/root/.azure:Z \
-      -v ${WORKDIR}:${WORKDIR}:Z \
-      ${CONTAINER_IMAGE_CLOUD_TOOLS} az"
-  else
-    echo "Using pre-installed 'azure-cli' from the system"
-    AZURE_CMD="az"
-  fi
-  $AZURE_CMD version
-}
-
 source /etc/os-release
-
-CI="${CI:-false}"
-if [[ "$CI" == true ]]; then
-  DISTRO_CODE="${DISTRO_CODE:-${ID}-${VERSION_ID//./}}"
-  TEST_ID="$DISTRO_CODE-$ARCH-$CI_COMMIT_BRANCH-$CI_JOB_ID"
-else
-  # if not running in Jenkins, generate ID not relying on specific env variables
-  TEST_ID=$(uuidgen);
-fi
-
-function createReqFileAzure() {
-  AZURE_IMAGE_NAME="image-$TEST_ID"
-
-  cat > "$REQUEST_FILE" << EOF
-{
-  "distribution": "$DISTRO",
-  "client_id": "api",
-  "image_requests": [
-    {
-      "architecture": "$ARCH",
-      "image_type": "vhd",
-      "upload_request": {
-        "type": "azure",
-        "options": {
-          "tenant_id": "${AZURE_TENANT_ID}",
-          "subscription_id": "${AZURE_SUBSCRIPTION_ID}",
-          "resource_group": "${AZURE_RESOURCE_GROUP}",
-	  "image-name": "${AZURE_IMAGE_NAME}"
-        }
-      }
-    }
-  ],
-  "customizations": {
-    "custom_repositories": [
-      {
-        "baseurl": [
-          "http://nginx.org/packages/rhel/8/x86_64/"
-        ],
-        "check_gpg": false,
-        "id": "076119fc-2dbc-49d7-bbd7-b39ca2bc3086",
-        "name": "nginx",
-        "module_hotfixes": true
-      }
-    ],
-    "packages": [
-      "postgresql",
-      "ansible-core",
-      "nginx",
-      "nginx-module-njs"
-    ],
-    "payload_repositories": [
-      {
-        "baseurl": "http://nginx.org/packages/rhel/8/x86_64/",
-        "check_gpg": false,
-        "check_repo_gpg": false,
-        "rhsm": false,
-        "module_hotfixes": true
-      }
-    ],
-    "subscription": {
-      "organization": ${API_TEST_SUBSCRIPTION_ORG_ID:-},
-      "activation-key": "${API_TEST_SUBSCRIPTION_ACTIVATION_KEY_V2:-}",
-      "base-url": "https://cdn.redhat.com/",
-      "server-url": "subscription.rhsm.redhat.com",
-      "insights": true,
-      "rhc": false
-    }
-  }
-}
-EOF
-}
 
 ############### Test cases definitions ################
 
@@ -630,119 +378,6 @@ function Test_verifyComposeResultAWS() {
   instanceCheck "$_ssh" "1"
 }
 
-### Case: verify the result (image) of a finished compose in GCP
-function Test_verifyComposeResultGCP() {
-  UPLOAD_OPTIONS="$1"
-
-  GCP_PROJECT=$(jq -r '.project_id' "$GOOGLE_APPLICATION_CREDENTIALS")
-
-  GCP_IMAGE_NAME=$(echo "$UPLOAD_OPTIONS" | jq -r '.image_name')
-  [[ -n "$GCP_IMAGE_NAME" ]]
-
-  # Authenticate
-  $GCP_CMD auth activate-service-account --key-file "$GOOGLE_APPLICATION_CREDENTIALS"
-  # Set the default project to be used for commands
-  $GCP_CMD config set project "$GCP_PROJECT"
-
-  # Verify that the image boots and have customizations applied
-  # Create SSH keys to use
-  GCP_SSH_KEY="$WORKDIR/id_google_compute_engine"
-  ssh-keygen -t rsa -f "$GCP_SSH_KEY" -C "$SSH_USER" -N ""
-
-  # create the instance
-  # resource ID can have max 62 characters, the $GCP_TEST_ID_HASH contains 56 characters
-  GCP_INSTANCE_NAME="vm-$(uuidgen)"
-
-  GCP_ZONE=$($GCP_CMD compute zones list --filter="region=$GCP_REGION" | jq -r ' .[] | select(.status == "UP") | .name' | shuf -n1)
-
-  $GCP_CMD compute instances create "$GCP_INSTANCE_NAME" \
-    --zone="$GCP_ZONE" \
-    --image-project="$GCP_IMAGE_BUILDER_PROJECT" \
-    --image="$GCP_IMAGE_NAME" \
-    --labels=gitlab-ci-test=true
-
-  HOST=$($GCP_CMD compute instances describe "$GCP_INSTANCE_NAME" --zone="$GCP_ZONE" --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-
-  echo "⏱ Waiting for GCP instance to respond to ssh"
-  instanceWaitSSH "$HOST"
-
-  # Verify image
-  _ssh="$GCP_CMD compute ssh --strict-host-key-checking=no --ssh-key-file=$GCP_SSH_KEY --zone=$GCP_ZONE --quiet $SSH_USER@$GCP_INSTANCE_NAME --"
-  instanceCheck "$_ssh"
-}
-
-### Case: verify the result (image) of a finished compose in Azure
-function Test_verifyComposeResultAzure() {
-  UPLOAD_OPTIONS="$1"
-
-  AZURE_IMAGE_NAME=$(echo "$UPLOAD_OPTIONS" | jq -r '.image_name')
-  [[ -n "$AZURE_IMAGE_NAME" ]]
-
-  set +x
-  $AZURE_CMD login --service-principal --username "${V2_AZURE_CLIENT_ID}" --password "${V2_AZURE_CLIENT_SECRET}" --tenant "${AZURE_TENANT_ID}"
-  set -x
-
-  # verify that the image exists and tag it
-  $AZURE_CMD image show --resource-group "${AZURE_RESOURCE_GROUP}" --name "${AZURE_IMAGE_NAME}"
-  $AZURE_CMD image update --resource-group "${AZURE_RESOURCE_GROUP}" --name "${AZURE_IMAGE_NAME}" --tags gitlab-ci-test=true
-
-
-  # Verify that the image boots and have customizations applied
-  # Create SSH keys to use
-  AZURE_SSH_KEY="$WORKDIR/id_azure"
-  ssh-keygen -t rsa -f "$AZURE_SSH_KEY" -C "$SSH_USER" -N ""
-
-  # Create network resources with predictable names
-  $AZURE_CMD network nsg create --resource-group "$AZURE_RESOURCE_GROUP" --name "nsg-$TEST_ID" --location "$AZURE_LOCATION" --tags gitlab-ci-test=true
-  $AZURE_CMD network nsg rule create --resource-group "$AZURE_RESOURCE_GROUP" \
-      --nsg-name "nsg-$TEST_ID" \
-      --name SSH \
-      --priority 1001 \
-      --access Allow \
-      --protocol Tcp \
-      --destination-address-prefixes '*' \
-      --destination-port-ranges 22 \
-      --source-port-ranges '*' \
-      --source-address-prefixes '*'
-  $AZURE_CMD network vnet create --resource-group "$AZURE_RESOURCE_GROUP" \
-    --name "vnet-$TEST_ID" \
-    --subnet-name "snet-$TEST_ID" \
-    --location "$AZURE_LOCATION" \
-    --tags gitlab-ci-test=true
-  $AZURE_CMD network public-ip create --resource-group "$AZURE_RESOURCE_GROUP" --name "ip-$TEST_ID" --location "$AZURE_LOCATION" --tags gitlab-ci-test=true
-  $AZURE_CMD network nic create --resource-group "$AZURE_RESOURCE_GROUP" \
-      --name "iface-$TEST_ID" \
-      --subnet "snet-$TEST_ID" \
-      --vnet-name "vnet-$TEST_ID" \
-      --network-security-group "nsg-$TEST_ID" \
-      --public-ip-address "ip-$TEST_ID" \
-      --location "$AZURE_LOCATION" \
-      --tags gitlab-ci-test=true
-
-  # create the instance
-  AZURE_INSTANCE_NAME="vm-$TEST_ID"
-  $AZURE_CMD vm create --name "$AZURE_INSTANCE_NAME" \
-    --resource-group "$AZURE_RESOURCE_GROUP" \
-    --image "$AZURE_IMAGE_NAME" \
-    --size "Standard_B1s" \
-    --admin-username "$SSH_USER" \
-    --ssh-key-values "$AZURE_SSH_KEY.pub" \
-    --authentication-type "ssh" \
-    --location "$AZURE_LOCATION" \
-    --nics "iface-$TEST_ID" \
-    --os-disk-name "disk-$TEST_ID" \
-    --tags gitlab-ci-test=true
-  $AZURE_CMD vm show --name "$AZURE_INSTANCE_NAME" --resource-group "$AZURE_RESOURCE_GROUP" --show-details > "$WORKDIR/vm_details.json"
-  HOST=$(jq -r '.publicIps' "$WORKDIR/vm_details.json")
-
-  echo "⏱ Waiting for Azure instance to respond to ssh"
-  instanceWaitSSH "$HOST"
-
-  # Verify image
-  _ssh="ssh -oStrictHostKeyChecking=no -i $AZURE_SSH_KEY $SSH_USER@$HOST"
-  instanceCheck "$_ssh"
-}
-
 ### Case: verify the result (image) of a finished compose
 function Test_verifyComposeResult() {
   RESULT=$($CURLCMD -H "$HEADER" --request GET "$BASEURL/composes/$COMPOSE_ID")
@@ -750,22 +385,11 @@ function Test_verifyComposeResult() {
   [[ $EXIT_CODE == 200 ]]
 
   UPLOAD_TYPE=$(getResponse "$RESULT" | jq -r '.image_status.upload_status.type')
-  [[ "$UPLOAD_TYPE" = "$CLOUD_PROVIDER" ]]
+  [[ "$UPLOAD_TYPE" = "aws" ]]
 
   UPLOAD_OPTIONS=$(getResponse "$RESULT" | jq -r '.image_status.upload_status.options')
 
-  # verify upload options specific to cloud provider
-  case $CLOUD_PROVIDER in
-    "$CLOUD_PROVIDER_AWS")
-      Test_verifyComposeResultAWS "$UPLOAD_OPTIONS"
-      ;;
-    "$CLOUD_PROVIDER_GCP")
-      Test_verifyComposeResultGCP "$UPLOAD_OPTIONS"
-      ;;
-    "$CLOUD_PROVIDER_AZURE")
-      Test_verifyComposeResultAzure "$UPLOAD_OPTIONS"
-      ;;
-  esac
+  Test_verifyComposeResultAWS "$UPLOAD_OPTIONS"
 }
 
 ### Case: verify package list of a finished compose
@@ -792,31 +416,9 @@ function Test_getComposes() {
   diff <(echo "$RESPONSE" | jq -Sr '.request') <(jq -Sr '.' "$REQUEST_FILE")
 }
 
-#
-# Which cloud provider are we testing?
-#
-
-case $CLOUD_PROVIDER in
-  "$CLOUD_PROVIDER_AWS")
-    checkEnvAWS
-    installClientAWS
-    createReqFileAWS
-    ;;
-  "$CLOUD_PROVIDER_GCP")
-    checkEnvGCP
-    installClientGCP
-    createReqFileGCP
-    ;;
-  "$CLOUD_PROVIDER_AZURE")
-    checkEnvAzure
-    installClientAzure
-    createReqFileAzure
-    ;;
-  *)
-    echo "Not supported platform: ${CLOUD_PROVIDER}"
-    exit 1
-    ;;
-esac
+checkEnvAWS
+installClientAWS
+createReqFileAWS
 
 ############### Test begin ################
 Test_getVersion "$BASEURL"
