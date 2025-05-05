@@ -1,6 +1,5 @@
 stages:
   - start
-  - build
   - test
   - finish
 
@@ -25,22 +24,6 @@ start:
     - shell
   script:
     - schutzbot/update_github_status.sh start
-
-build:
-  stage: build
-  extends: .terraform
-  rules:
-    - if: '$CI_PIPELINE_SOURCE != "schedule"'
-  script:
-    - schutzbot/build.sh
-  artifacts:
-    paths:
-      - repo/image-builder/${CI_PIPELINE_ID}
-    expire_in: 3 days
-  parallel:
-    matrix:
-      - RUNNER:
-          - aws/rhel-8.8-ga-x86_64
 
 test:
   stage: test
