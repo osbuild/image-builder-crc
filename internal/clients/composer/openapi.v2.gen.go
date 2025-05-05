@@ -360,6 +360,7 @@ type BlueprintFile_User struct {
 
 // BlueprintFilesystem defines model for BlueprintFilesystem.
 type BlueprintFilesystem struct {
+	// Minsize size with data units
 	Minsize    Minsize `json:"minsize"`
 	Mountpoint string  `json:"mountpoint"`
 }
@@ -445,6 +446,7 @@ type BtrfsSubvolume struct {
 
 // BtrfsVolume defines model for BtrfsVolume.
 type BtrfsVolume struct {
+	// Minsize size with data units
 	Minsize *Minsize `json:"minsize,omitempty"`
 
 	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
@@ -756,6 +758,7 @@ type Directory_User struct {
 
 // Disk defines model for Disk.
 type Disk struct {
+	// Minsize size with data units
 	Minsize    *Minsize    `json:"minsize,omitempty"`
 	Partitions []Partition `json:"partitions"`
 
@@ -857,10 +860,12 @@ type Filesystem struct {
 // FilesystemTyped defines model for FilesystemTyped.
 type FilesystemTyped struct {
 	// FsType The filesystem type
-	FsType     *FilesystemTypedFsType `json:"fs_type,omitempty"`
-	Label      *string                `json:"label,omitempty"`
-	Minsize    *Minsize               `json:"minsize,omitempty"`
-	Mountpoint string                 `json:"mountpoint"`
+	FsType *FilesystemTypedFsType `json:"fs_type,omitempty"`
+	Label  *string                `json:"label,omitempty"`
+
+	// Minsize size with data units
+	Minsize    *Minsize `json:"minsize,omitempty"`
+	Mountpoint string   `json:"mountpoint"`
 
 	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
 	PartType *string              `json:"part_type,omitempty"`
@@ -1104,9 +1109,11 @@ type Locale struct {
 // LogicalVolume defines model for LogicalVolume.
 type LogicalVolume struct {
 	// FsType The filesystem type for the logical volume
-	FsType  *LogicalVolumeFsType `json:"fs_type,omitempty"`
-	Label   *string              `json:"label,omitempty"`
-	Minsize *Minsize             `json:"minsize,omitempty"`
+	FsType *LogicalVolumeFsType `json:"fs_type,omitempty"`
+	Label  *string              `json:"label,omitempty"`
+
+	// Minsize size with data units
+	Minsize *Minsize `json:"minsize,omitempty"`
 
 	// Mountpoint Mountpoint for the logical volume
 	Mountpoint string  `json:"mountpoint"`
@@ -1362,7 +1369,8 @@ type SubManRHSMCertdConfig struct {
 
 // SubManRHSMConfig defines model for SubManRHSMConfig.
 type SubManRHSMConfig struct {
-	ManageRepos *bool `json:"manage_repos,omitempty"`
+	AutoEnableYumPlugins *bool `json:"auto_enable_yum_plugins,omitempty"`
+	ManageRepos          *bool `json:"manage_repos,omitempty"`
 }
 
 // Subscription defines model for Subscription.
@@ -1445,7 +1453,9 @@ type User struct {
 // VolumeGroup defines model for VolumeGroup.
 type VolumeGroup struct {
 	LogicalVolumes []LogicalVolume `json:"logical_volumes"`
-	Minsize        *Minsize        `json:"minsize,omitempty"`
+
+	// Minsize size with data units
+	Minsize *Minsize `json:"minsize,omitempty"`
 
 	// Name Volume group name (will be automatically generated if omitted)
 	Name *string `json:"name,omitempty"`
@@ -1458,16 +1468,8 @@ type VolumeGroup struct {
 // VolumeGroupType defines model for VolumeGroup.Type.
 type VolumeGroupType string
 
-// Minsize defines model for minsize.
-type Minsize struct {
-	union json.RawMessage
-}
-
-// Minsize0 size in bytes
-type Minsize0 = uint64
-
-// Minsize1 size with data units
-type Minsize1 = string
+// Minsize size with data units
+type Minsize = string
 
 // Page defines model for page.
 type Page = string
@@ -2642,68 +2644,6 @@ func (t UploadStatus_Options) MarshalJSON() ([]byte, error) {
 }
 
 func (t *UploadStatus_Options) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsMinsize0 returns the union data inside the Minsize as a Minsize0
-func (t Minsize) AsMinsize0() (Minsize0, error) {
-	var body Minsize0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromMinsize0 overwrites any union data inside the Minsize as the provided Minsize0
-func (t *Minsize) FromMinsize0(v Minsize0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeMinsize0 performs a merge with any union data inside the Minsize, using the provided Minsize0
-func (t *Minsize) MergeMinsize0(v Minsize0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsMinsize1 returns the union data inside the Minsize as a Minsize1
-func (t Minsize) AsMinsize1() (Minsize1, error) {
-	var body Minsize1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromMinsize1 overwrites any union data inside the Minsize as the provided Minsize1
-func (t *Minsize) FromMinsize1(v Minsize1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeMinsize1 performs a merge with any union data inside the Minsize, using the provided Minsize1
-func (t *Minsize) MergeMinsize1(v Minsize1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t Minsize) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *Minsize) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
