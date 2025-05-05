@@ -531,7 +531,6 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 	}
 	blueprint, err := BlueprintFromEntry(
 		blueprintEntry,
-		WithRedactedPasswords(),
 	)
 	if err != nil {
 		return err
