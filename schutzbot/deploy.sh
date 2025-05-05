@@ -1,9 +1,17 @@
 #!/bin/bash
 set -euxo pipefail
 
+function greenprint {
+    echo -e "\033[1;32m[$(date -Isecond)] ${1}\033[0m"
+}
+
+greenprint "Building test container"
+sudo podman build --label="quay.expires-after=1w" --security-opt "label=disable" -t image-builder-"${QUAY_REPO_TAG}" -f distribution/Dockerfile-ubi .
+
+greenprint "Pulling osbuld/postgres:13-alpine"
 sudo podman pull docker://quay.io/osbuild/postgres:13-alpine
 
-# Start Postgres container
+greenprint "Starting image-builder-db"
 sudo podman run -p 5432:5432 --name image-builder-db \
       --health-cmd "pg_isready -U postgres -d imagebuilder" --health-interval 2s \
       --health-timeout 2s --health-retries 10 \
@@ -20,13 +28,7 @@ for RETRY in {1..10}; do
     sleep 2
 done
 
-# Pull image-builder image
-ARCH=$(uname -m)
-QUAY_REPO_URL="quay.io/osbuild/image-builder-test"
-QUAY_REPO_TAG="${CI_PIPELINE_ID}-$ARCH"
-sudo podman pull --creds "${V2_QUAY_USERNAME}":"${V2_QUAY_PASSWORD}" "${QUAY_REPO_URL}":"${QUAY_REPO_TAG}"
-
-# Migrate
+greenprint "Migrate image-builder-db"
 sudo podman run --pull=never --security-opt "label=disable" --net=host \
      -e PGHOST=localhost -e PGPORT=5432 -e PGDATABASE=imagebuilder \
      -e PGUSER=postgres -e PGPASSWORD=foobar \
@@ -34,8 +36,8 @@ sudo podman run --pull=never --security-opt "label=disable" --net=host \
      image-builder-test:"${QUAY_REPO_TAG}" /app/image-builder-migrate-db-tern
 sudo podman logs image-builder-migrate
 
+greenprint "Run image-builder-crc container"
 echo "{\"000000\":{\"quota\":5,\"slidingWindow\":1209600000000000},\"000001\":{\"quota\":0,\"slidingWindow\":1209600000000000}}" > /tmp/quotas
-# Start Image Builder container
 sudo podman run -d --pull=never --security-opt "label=disable" --net=host \
      -e COMPOSER_URL=https://api.stage.openshift.com: \
      -e COMPOSER_TOKEN_URL="https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token" \
