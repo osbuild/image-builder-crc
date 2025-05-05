@@ -6,9 +6,9 @@ function greenprint {
 }
 
 greenprint "Building test container"
-sudo podman build --label="quay.expires-after=1w" --security-opt "label=disable" -t image-builder-"${QUAY_REPO_TAG}" -f distribution/Dockerfile-ubi .
+sudo podman build --label="quay.expires-after=1w" --security-opt "label=disable" -t image-builder-crc -f distribution/Dockerfile-ubi .
 
-greenprint "Pulling osbuld/postgres:13-alpine"
+greenprint "Pulling osbuild/postgres:13-alpine"
 sudo podman pull docker://quay.io/osbuild/postgres:13-alpine
 
 greenprint "Starting image-builder-db"
@@ -33,7 +33,8 @@ sudo podman run --pull=never --security-opt "label=disable" --net=host \
      -e PGHOST=localhost -e PGPORT=5432 -e PGDATABASE=imagebuilder \
      -e PGUSER=postgres -e PGPASSWORD=foobar \
      --name image-builder-migrate \
-     image-builder-test:"${QUAY_REPO_TAG}" /app/image-builder-migrate-db-tern
+     --entrypoint /app/image-builder-migrate-db-tern \
+     image-builder-crc
 sudo podman logs image-builder-migrate
 
 greenprint "Run image-builder-crc container"
@@ -54,4 +55,4 @@ sudo podman run -d --pull=never --security-opt "label=disable" --net=host \
      -e QUOTA_FILE="/app/accounts_quotas.json" \
      -v /tmp/quotas:/app/accounts_quotas.json \
      --name image-builder \
-     image-builder-test:"${QUAY_REPO_TAG}"
+     image-builder-crc
