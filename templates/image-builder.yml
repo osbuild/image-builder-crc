@@ -209,6 +209,12 @@ objects:
                else c.request->'customizations'->'locale' end as locale,
           case when c.request->'customizations'->'timezone'='{}' then 'null'
                else c.request->'customizations'->'timezone' end as timezone,
+          case when c.request->'customizations'->'hostname'='{}' then 'null'
+               else c.request->'customizations'->'hostname' end as hostname,
+          case when c.request->'customizations'->'kernel'='{}' then 'null'
+               else c.request->'customizations'->'kernel' end as kernel,
+          case when c.request->'customizations'->'firewall'='{}' then 'null'
+               else c.request->'customizations'->'firewall' end as firewall,
           jsonb_array_length(c.request->'customizations'->'users') as num_users
         from
           composes c
