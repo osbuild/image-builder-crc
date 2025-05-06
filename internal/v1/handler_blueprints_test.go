@@ -505,6 +505,7 @@ func TestHandlers_UpdateBlueprint(t *testing.T) {
 func TestHandlers_ComposeBlueprint(t *testing.T) {
 	ctx := context.Background()
 
+	composeRequests := []composer.ComposeRequest{}
 	ids := []uuid.UUID{}
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		newId := uuid.New()
@@ -513,8 +514,15 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			return
 		}
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
+
+		var creq composer.ComposeRequest
+		err := json.NewDecoder(r.Body).Decode(&creq)
+		require.NoError(t, err)
+		composeRequests = append(composeRequests, creq)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
+
 		result := composer.ComposeId{
 			Id: newId,
 		}
@@ -524,9 +532,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 	}))
 	defer apiSrv.Close()
 
-	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
-		DistributionsDir: "../../distributions",
-	})
+	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
 	defer srv.Shutdown(t)
 
 	id := uuid.New()
@@ -581,34 +587,153 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			},
 		},
 	}
+
 	var message []byte
 	message, err = json.Marshal(blueprint)
 	require.NoError(t, err)
 	err = srv.DB.InsertBlueprint(ctx, id, versionId, "000000", "000000", name, description, message, nil)
 	require.NoError(t, err)
 
-	tests := map[string]struct {
-		payload any
-		expect  int
-	}{
-		"empty targets":    {payload: strings.NewReader(""), expect: 3},
-		"multiple targets": {payload: v1.ComposeBlueprintJSONBody{ImageTypes: &[]v1.ImageTypes{"aws", "guest-image", "gcp"}}, expect: 3},
-		"one target":       {payload: v1.ComposeBlueprintJSONBody{ImageTypes: &[]v1.ImageTypes{"aws"}}, expect: 2},
+	repos := []composer.Repository{
+		{
+			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
+			CheckGpg: common.ToPtr(true),
+			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBAgAhBQJczFsZAhsDBgsJCAcDAgYVCAIJCgsDFgIB\nAh4BAheAAAoJEAW1VbOEg8ZdjOsP/2ygSxH9jqffOU9SKyJDlraL2gIutqZ3B8pl\nGy/Qnb9QD1EJVb4ZxOEhcY2W9VJfIpnf3yBuAto7zvKe/G1nxH4Bt6WTJQCkUjcs\nN3qPWsx1VslsAEz7bXGiHym6Ay4xF28bQ9XYIokIQXd0T2rD3/lNGxNtORZ2bKjD\nvOzYzvh2idUIY1DgGWJ11gtHFIA9CvHcW+SMPEhkcKZJAO51ayFBqTSSpiorVwTq\na0cB+cgmCQOI4/MY+kIvzoexfG7xhkUqe0wxmph9RQQxlTbNQDCdaxSgwbF2T+gw\nbyaDvkS4xtR6Soj7BKjKAmcnf5fn4C5Or0KLUqMzBtDMbfQQihn62iZJN6ZZ/4dg\nq4HTqyVpyuzMXsFpJ9L/FqH2DJ4exGGpBv00ba/Zauy7GsqOc5PnNBsYaHCply0X\n407DRx51t9YwYI/ttValuehq9+gRJpOTTKp6AjZn/a5Yt3h6jDgpNfM/EyLFIY9z\nV6CXqQQ/8JRvaik/JsGCf+eeLZOw4koIjZGEAg04iuyNTjhx0e/QHEVcYAqNLhXG\nrCTTbCn3NSUO9qxEXC+K/1m1kaXoCGA0UWlVGZ1JSifbbMx0yxq/brpEZPUYm+32\no8XfbocBWljFUJ+6aljTvZ3LQLKTSPW7TFO+GXycAOmCGhlXh2tlc6iTc41PACqy\nyy+mHmSv\n=kkH7\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Rhsm:     common.ToPtr(false),
+		},
+		{
+			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/"),
+			CheckGpg: common.ToPtr(true),
+			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBAgAhBQJczFsZAhsDBgsJCAcDAgYVCAIJCgsDFgIB\nAh4BAheAAAoJEAW1VbOEg8ZdjOsP/2ygSxH9jqffOU9SKyJDlraL2gIutqZ3B8pl\nGy/Qnb9QD1EJVb4ZxOEhcY2W9VJfIpnf3yBuAto7zvKe/G1nxH4Bt6WTJQCkUjcs\nN3qPWsx1VslsAEz7bXGiHym6Ay4xF28bQ9XYIokIQXd0T2rD3/lNGxNtORZ2bKjD\nvOzYzvh2idUIY1DgGWJ11gtHFIA9CvHcW+SMPEhkcKZJAO51ayFBqTSSpiorVwTq\na0cB+cgmCQOI4/MY+kIvzoexfG7xhkUqe0wxmph9RQQxlTbNQDCdaxSgwbF2T+gw\nbyaDvkS4xtR6Soj7BKjKAmcnf5fn4C5Or0KLUqMzBtDMbfQQihn62iZJN6ZZ/4dg\nq4HTqyVpyuzMXsFpJ9L/FqH2DJ4exGGpBv00ba/Zauy7GsqOc5PnNBsYaHCply0X\n407DRx51t9YwYI/ttValuehq9+gRJpOTTKp6AjZn/a5Yt3h6jDgpNfM/EyLFIY9z\nV6CXqQQ/8JRvaik/JsGCf+eeLZOw4koIjZGEAg04iuyNTjhx0e/QHEVcYAqNLhXG\nrCTTbCn3NSUO9qxEXC+K/1m1kaXoCGA0UWlVGZ1JSifbbMx0yxq/brpEZPUYm+32\no8XfbocBWljFUJ+6aljTvZ3LQLKTSPW7TFO+GXycAOmCGhlXh2tlc6iTc41PACqy\nyy+mHmSv\n=kkH7\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Rhsm:     common.ToPtr(false),
+		},
 	}
+	reposAarch := []composer.Repository{
+		{
+			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/aarch64/os/"),
+			CheckGpg: common.ToPtr(true),
+			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBAgAhBQJczFsZAhsDBgsJCAcDAgYVCAIJCgsDFgIB\nAh4BAheAAAoJEAW1VbOEg8ZdjOsP/2ygSxH9jqffOU9SKyJDlraL2gIutqZ3B8pl\nGy/Qnb9QD1EJVb4ZxOEhcY2W9VJfIpnf3yBuAto7zvKe/G1nxH4Bt6WTJQCkUjcs\nN3qPWsx1VslsAEz7bXGiHym6Ay4xF28bQ9XYIokIQXd0T2rD3/lNGxNtORZ2bKjD\nvOzYzvh2idUIY1DgGWJ11gtHFIA9CvHcW+SMPEhkcKZJAO51ayFBqTSSpiorVwTq\na0cB+cgmCQOI4/MY+kIvzoexfG7xhkUqe0wxmph9RQQxlTbNQDCdaxSgwbF2T+gw\nbyaDvkS4xtR6Soj7BKjKAmcnf5fn4C5Or0KLUqMzBtDMbfQQihn62iZJN6ZZ/4dg\nq4HTqyVpyuzMXsFpJ9L/FqH2DJ4exGGpBv00ba/Zauy7GsqOc5PnNBsYaHCply0X\n407DRx51t9YwYI/ttValuehq9+gRJpOTTKp6AjZn/a5Yt3h6jDgpNfM/EyLFIY9z\nV6CXqQQ/8JRvaik/JsGCf+eeLZOw4koIjZGEAg04iuyNTjhx0e/QHEVcYAqNLhXG\nrCTTbCn3NSUO9qxEXC+K/1m1kaXoCGA0UWlVGZ1JSifbbMx0yxq/brpEZPUYm+32\no8XfbocBWljFUJ+6aljTvZ3LQLKTSPW7TFO+GXycAOmCGhlXh2tlc6iTc41PACqy\nyy+mHmSv\n=kkH7\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Rhsm:     common.ToPtr(false),
+		},
+		{
+			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/"),
+			CheckGpg: common.ToPtr(true),
+			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBAgAhBQJczFsZAhsDBgsJCAcDAgYVCAIJCgsDFgIB\nAh4BAheAAAoJEAW1VbOEg8ZdjOsP/2ygSxH9jqffOU9SKyJDlraL2gIutqZ3B8pl\nGy/Qnb9QD1EJVb4ZxOEhcY2W9VJfIpnf3yBuAto7zvKe/G1nxH4Bt6WTJQCkUjcs\nN3qPWsx1VslsAEz7bXGiHym6Ay4xF28bQ9XYIokIQXd0T2rD3/lNGxNtORZ2bKjD\nvOzYzvh2idUIY1DgGWJ11gtHFIA9CvHcW+SMPEhkcKZJAO51ayFBqTSSpiorVwTq\na0cB+cgmCQOI4/MY+kIvzoexfG7xhkUqe0wxmph9RQQxlTbNQDCdaxSgwbF2T+gw\nbyaDvkS4xtR6Soj7BKjKAmcnf5fn4C5Or0KLUqMzBtDMbfQQihn62iZJN6ZZ/4dg\nq4HTqyVpyuzMXsFpJ9L/FqH2DJ4exGGpBv00ba/Zauy7GsqOc5PnNBsYaHCply0X\n407DRx51t9YwYI/ttValuehq9+gRJpOTTKp6AjZn/a5Yt3h6jDgpNfM/EyLFIY9z\nV6CXqQQ/8JRvaik/JsGCf+eeLZOw4koIjZGEAg04iuyNTjhx0e/QHEVcYAqNLhXG\nrCTTbCn3NSUO9qxEXC+K/1m1kaXoCGA0UWlVGZ1JSifbbMx0yxq/brpEZPUYm+32\no8XfbocBWljFUJ+6aljTvZ3LQLKTSPW7TFO+GXycAOmCGhlXh2tlc6iTc41PACqy\nyy+mHmSv\n=kkH7\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Rhsm:     common.ToPtr(false),
+		},
+	}
+
+	creq1 := composer.ComposeRequest{
+		Customizations: &composer.Customizations{
+			Packages: common.ToPtr([]string{"nginx"}),
+			Users: common.ToPtr([]composer.User{
+				{
+					Name:     "user1",
+					Password: common.ToPtr("$6$password123"),
+				},
+				{
+					Name: "user2",
+					Key:  common.ToPtr("ssh-rsa AAAAB3NzaC1"),
+				},
+			}),
+		},
+		Distribution: "centos-9",
+		ImageRequest: &composer.ImageRequest{
+			Architecture: "x86_64",
+			ImageType:    composer.ImageTypesAws,
+			Repositories: repos,
+			UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
+				ShareWithAccounts: []string{"test-account"},
+			}),
+		},
+	}
+	creq2 := composer.ComposeRequest{
+		Customizations: &composer.Customizations{
+			Packages: common.ToPtr([]string{"nginx"}),
+			Users: common.ToPtr([]composer.User{
+				{
+					Name:     "user1",
+					Password: common.ToPtr("$6$password123"),
+				},
+				{
+					Name: "user2",
+					Key:  common.ToPtr("ssh-rsa AAAAB3NzaC1"),
+				},
+			}),
+		},
+		Distribution: "centos-9",
+		ImageRequest: &composer.ImageRequest{
+			Architecture: "aarch64",
+			ImageType:    composer.ImageTypesAws,
+			Repositories: reposAarch,
+			UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
+				ShareWithAccounts: []string{"test-account"},
+			}),
+		},
+	}
+	creq3 := composer.ComposeRequest{
+		Customizations: &composer.Customizations{
+			Packages: common.ToPtr([]string{"nginx"}),
+			Users: common.ToPtr([]composer.User{
+				{
+					Name:     "user1",
+					Password: common.ToPtr("$6$password123"),
+				},
+				{
+					Name: "user2",
+					Key:  common.ToPtr("ssh-rsa AAAAB3NzaC1"),
+				},
+			}),
+		},
+		Distribution: "centos-9",
+		ImageRequest: &composer.ImageRequest{
+			Architecture:  "aarch64",
+			ImageType:     composer.ImageTypesGuestImage,
+			Repositories:  reposAarch,
+			UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{}),
+		},
+	}
+
+	tests := map[string]struct {
+		payload         any
+		composeRequests []composer.ComposeRequest
+		expectedImages  int
+	}{
+		"empty targets": {
+			payload:         strings.NewReader(""),
+			composeRequests: []composer.ComposeRequest{creq1, creq2, creq3},
+			expectedImages:  3,
+		},
+		"multiple targets": {
+			payload:         v1.ComposeBlueprintJSONBody{ImageTypes: &[]v1.ImageTypes{"aws", "guest-image", "gcp"}},
+			composeRequests: []composer.ComposeRequest{creq1, creq2, creq3},
+			expectedImages:  3,
+		},
+		"one target": {
+			payload:         v1.ComposeBlueprintJSONBody{ImageTypes: &[]v1.ImageTypes{"guest-image"}},
+			composeRequests: []composer.ComposeRequest{creq3},
+			expectedImages:  1,
+		},
+	}
+
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			composeRequests = []composer.ComposeRequest{}
+
 			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s/compose", id.String()), tc.payload)
 			require.Equal(t, http.StatusCreated, respStatusCode)
 
 			var result []v1.ComposeResponse
 			err = json.Unmarshal([]byte(body), &result)
 			require.NoError(t, err)
-			require.Len(t, result, tc.expect)
-			for i := 0; i < tc.expect; i++ {
-				require.Equal(t, ids[len(ids)-tc.expect+i], result[i].Id)
+			require.ElementsMatch(t, tc.composeRequests, composeRequests)
+			require.Len(t, result, tc.expectedImages)
+			for i := 0; i < tc.expectedImages; i++ {
+				require.Equal(t, ids[len(ids)-tc.expectedImages+i], result[i].Id)
 			}
 		})
 	}
+
 	t.Run("non-existing blueprint", func(t *testing.T) {
 		respStatusCode, _ := tutils.PostResponseBody(t, srv.URL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s/compose", uuid.New()), v1.ComposeBlueprintJSONBody{})
 		require.Equal(t, http.StatusNotFound, respStatusCode)
