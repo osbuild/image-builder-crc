@@ -39,7 +39,7 @@ test:
       - PROVIDER:
           - aws
         RUNNER:
-          - aws/rhel-8.8-ga-x86_64
+          - aws/rhel-8.10-ga-x86_64
 
 finish:
   stage: finish
