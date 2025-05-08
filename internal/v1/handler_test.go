@@ -322,13 +322,30 @@ func TestGetComposes(t *testing.T) {
 	require.Equal(t, 0, result.Meta.Count)
 	require.Contains(t, body, "\"data\":[]")
 
+	cr := v1.ComposeRequest{
+		Distribution: "rhel-9",
+		Customizations: &v1.Customizations{
+			// Since we are not calling handleCommonCompose but inserting directly to DB
+			// there is no point in using plaintext passwords
+			// If there is plaintext password in DB there is problem elsewhere (eg. CreateBlueprint)
+			Users: &[]v1.User{
+				{
+					Name:     "user",
+					SshKey:   common.ToPtr("ssh-rsa AAAAB3NzaC2"),
+					Password: common.ToPtr("$6$password123"),
+				},
+			},
+		}}
+	crJson, err := json.Marshal(cr)
+	require.NoError(t, err)
+
 	imageName := "MyImageName"
 	clientId := "ui"
-	err = srv.DB.InsertCompose(ctx, id, "500000", "user500000@test.test", "000000", &imageName, json.RawMessage("{}"), &clientId, nil)
+	err = srv.DB.InsertCompose(ctx, id, "500000", "user500000@test.test", "000000", &imageName, crJson, &clientId, nil)
 	require.NoError(t, err)
-	err = srv.DB.InsertCompose(ctx, id2, "500000", "user500000@test.test", "000000", &imageName, json.RawMessage("{}"), &clientId, nil)
+	err = srv.DB.InsertCompose(ctx, id2, "500000", "user500000@test.test", "000000", &imageName, crJson, &clientId, nil)
 	require.NoError(t, err)
-	err = srv.DB.InsertCompose(ctx, id3, "500000", "user500000@test.test", "000000", &imageName, json.RawMessage("{}"), &clientId, nil)
+	err = srv.DB.InsertCompose(ctx, id3, "500000", "user500000@test.test", "000000", &imageName, crJson, &clientId, nil)
 	require.NoError(t, err)
 
 	composeEntry, err := srv.DB.GetCompose(ctx, id, "000000")
@@ -346,6 +363,9 @@ func TestGetComposes(t *testing.T) {
 	require.Equal(t, "/api/image-builder/v1.0/composes?limit=100&offset=2", result.Links.Last)
 	require.Equal(t, 3, result.Meta.Count)
 	require.Equal(t, 3, len(result.Data))
+	for _, res := range result.Data {
+		require.Nil(t, (*res.Request.Customizations.Users)[0].Password)
+	}
 
 	bpId := uuid.New()
 	versionId := uuid.New()
