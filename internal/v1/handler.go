@@ -578,6 +578,14 @@ func (h *Handlers) GetComposes(ctx echo.Context, params GetComposesParams) error
 		if err = json.Unmarshal(c.Request, &cmpr); err != nil {
 			return fmt.Errorf("failed to parse compose request: %w", err)
 		}
+
+		if cmpr.Customizations != nil && cmpr.Customizations.Users != nil {
+			users := *cmpr.Customizations.Users
+			for i := range users {
+				users[i].RedactPassword()
+			}
+		}
+
 		data = append(data, ComposesResponseItem{
 			CreatedAt:        c.CreatedAt.Format(time.RFC3339),
 			Id:               c.Id,
