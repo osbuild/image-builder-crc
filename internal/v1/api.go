@@ -784,9 +784,12 @@ type ImageRequest struct {
 
 	// ContentTemplate ID of the content template. A content template and snapshot date cannot both be specified.
 	// If a content template is specified, the snapshot date used will be the one from the content template.
-	ContentTemplate *string    `json:"content_template,omitempty"`
-	ImageType       ImageTypes `json:"image_type"`
-	Ostree          *OSTree    `json:"ostree,omitempty"`
+	ContentTemplate *string `json:"content_template,omitempty"`
+
+	// ContentTemplateName Name of the content template. Used when registering the system to Insights.
+	ContentTemplateName *string    `json:"content_template_name,omitempty"`
+	ImageType           ImageTypes `json:"image_type"`
+	Ostree              *OSTree    `json:"ostree,omitempty"`
 
 	// Size Size of image, in bytes. When set to 0 the image size is a minimum
 	// defined by the image type.

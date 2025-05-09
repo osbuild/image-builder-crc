@@ -839,6 +839,18 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			ServerUrl:           cust.Subscription.ServerUrl,
 			InsightsClientProxy: &h.server.insightsClientProxy,
 		}
+
+		if d != nil && cr.ImageRequests[0].ContentTemplate != nil {
+			major, minor, err := d.RHELMajorMinor()
+			if err != nil {
+				return nil, err
+			}
+			if (major >= 9 && minor >= 6) && cr.ImageRequests[0].ContentTemplateName != nil {
+				res.Subscription.TemplateName = cr.ImageRequests[0].ContentTemplateName
+			} else {
+				res.Subscription.TemplateUuid = cr.ImageRequests[0].ContentTemplate
+			}
+		}
 	}
 
 	if cust.Packages != nil {

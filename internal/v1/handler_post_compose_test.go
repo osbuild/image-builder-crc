@@ -2892,6 +2892,9 @@ func TestComposeCustomizations(t *testing.T) {
 							Id:       mocks.RepoPLID,
 						},
 					},
+					Subscription: &v1.Subscription{
+						Insights: true,
+					},
 				},
 				ImageRequests: []v1.ImageRequest{
 					{
@@ -2905,6 +2908,7 @@ func TestComposeCustomizations(t *testing.T) {
 					},
 				},
 			},
+			// content template with 2 rhel repos with registration
 			composerRequest: composer.ComposeRequest{
 				Customizations: &composer.Customizations{
 					CustomRepositories: nil,
@@ -2915,6 +2919,16 @@ func TestComposeCustomizations(t *testing.T) {
 							Gpgkey:   common.ToPtr("some-gpg-key"),
 							Rhsm:     common.ToPtr(false),
 						},
+					},
+					Subscription: &composer.Subscription{
+						ActivationKey:       "",
+						BaseUrl:             "",
+						Insights:            true,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						ServerUrl:           "",
+						InsightsClientProxy: common.ToPtr(""),
+						TemplateUuid:        common.ToPtr(mocks.TemplateID),
 					},
 				},
 				Distribution: "rhel-9.5",

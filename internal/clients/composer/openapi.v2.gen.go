@@ -1386,6 +1386,12 @@ type Subscription struct {
 	// Rhc Optional flag to use rhc to register the system, which also always enables Insights.
 	Rhc       *bool  `json:"rhc,omitempty"`
 	ServerUrl string `json:"server_url"`
+
+	// TemplateName Optional value to register with a template when using rhc to register the system with Insights.
+	TemplateName *string `json:"template_name,omitempty"`
+
+	// TemplateUuid Optional value to register with a template when registering the system with Insights.
+	TemplateUuid *string `json:"template_uuid,omitempty"`
 }
 
 // Timezone Timezone configuration
