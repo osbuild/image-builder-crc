@@ -206,6 +206,8 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		return err
 	}
 
+	blueprintRequest.BuildDefaults()
+
 	var metadata []byte
 	if blueprintRequest.Metadata != nil {
 		metadata, err = json.Marshal(blueprintRequest.Metadata)
@@ -441,6 +443,8 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 	if err != nil {
 		return err
 	}
+
+	blueprintRequest.BuildDefaults()
 
 	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
 		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
