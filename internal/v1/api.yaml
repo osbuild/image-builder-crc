@@ -1254,6 +1254,10 @@ components:
           description: |
             ID of the content template. A content template and snapshot date cannot both be specified.
             If a content template is specified, the snapshot date used will be the one from the content template.
+        content_template_name:
+          type: string
+          description: |
+            Name of the content template. Used when registering the system to Insights.
         aap_registration:
           $ref: '#/components/schemas/AAPRegistration'
     ImageTypes:
