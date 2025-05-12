@@ -1749,6 +1749,8 @@ components:
           $ref: '#/components/schemas/Installer'
         cacerts:
           $ref: '#/components/schemas/CACertsCustomization'
+        aap:
+          $ref: '#/components/schemas/AAPCustomization'
     Container:
       type: object
       required:
@@ -1984,6 +1986,26 @@ components:
           example: [ '---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---' ]
           items:
             type: string
+    AAPCustomization:
+      type: object
+      x-go-name: AAP
+      additionalProperties: false
+      required:
+        - ansible_controller_url
+        - job_template_id
+        - host_config_key
+      properties:
+        ansible_controller_url:
+          type: string
+          example: "example.towerhost.net"
+        job_template_id:
+          type: integer
+          example: 38
+        host_config_key:
+          type: string
+          example: "44d7507f2ead49af5fca80aa18fd24bc"
+        tls_certificate_authority:
+          type: string
     Ignition:
       type: object
       additionalProperties: false
