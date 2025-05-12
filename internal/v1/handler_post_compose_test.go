@@ -1265,7 +1265,8 @@ func TestComposeWithSnapshots(t *testing.T) {
 							Metalink:    nil,
 							Mirrorlist:  nil,
 							PackageSets: nil,
-						}, {
+						},
+						{
 							Baseurl:     common.ToPtr("https://content-sources.org/api/neat/snappy/baseos"),
 							Rhsm:        common.ToPtr(false),
 							Gpgkey:      common.ToPtr(mocks.RhelGPG),
@@ -1694,7 +1695,6 @@ func TestComposeCustomizations(t *testing.T) {
 					ImageType:    composer.ImageTypesEdgeInstaller,
 					Ostree:       nil,
 					Repositories: []composer.Repository{
-
 						{
 							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 							IgnoreSsl:   nil,
@@ -1932,7 +1932,6 @@ func TestComposeCustomizations(t *testing.T) {
 						Rhsm:       common.ToPtr(true),
 					},
 					Repositories: []composer.Repository{
-
 						{
 							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 							IgnoreSsl:   nil,
@@ -1992,7 +1991,6 @@ func TestComposeCustomizations(t *testing.T) {
 						Parent: common.ToPtr("test/edge/ref2"),
 					},
 					Repositories: []composer.Repository{
-
 						{
 							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 							IgnoreSsl:   nil,
@@ -2056,7 +2054,6 @@ func TestComposeCustomizations(t *testing.T) {
 						Parent: common.ToPtr("test/edge/ref2"),
 					},
 					Repositories: []composer.Repository{
-
 						{
 							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 							IgnoreSsl:   nil,
@@ -2109,7 +2106,6 @@ func TestComposeCustomizations(t *testing.T) {
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesAws,
 					Repositories: []composer.Repository{
-
 						{
 							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 							IgnoreSsl:   nil,
@@ -2161,7 +2157,6 @@ func TestComposeCustomizations(t *testing.T) {
 					ImageType:    composer.ImageTypesAws,
 					Size:         common.ToPtr(uint64(13958643712)),
 					Repositories: []composer.Repository{
-
 						{
 							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 							IgnoreSsl:   nil,
@@ -2946,6 +2941,94 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
+		// aap first boot registration
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					AAP: &v1.AAP{
+						AnsibleControllerUrl: "http://some-url.org",
+						HostConfigKey:        "some-key",
+						JobTemplateId:        38,
+					},
+				},
+				Distribution: "rhel-8",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-8.10",
+				Customizations: &composer.Customizations{
+					Files: &[]composer.File{
+						{
+							Data: common.ToPtr(fmt.Sprintf(
+								"#!/usr/bin/bash\n\ncurl -s -i --data %q %s\n",
+								fmt.Sprintf("host_config_key=%s", "some-key"),
+								fmt.Sprintf(
+									"%s/api/v2/job_templates/%v/callback/",
+									"http://some-url.org",
+									"38",
+								),
+							)),
+							Path:          "/usr/local/sbin/aap-first-boot-reg",
+							Mode:          common.ToPtr("0774"),
+							EnsureParents: common.ToPtr(true),
+						},
+						{
+							Data: common.ToPtr(`Description=Ansible Automations Platform first boot registration
+ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
+ConditionPathExists=!/var/local/.aap-first-boot-reg-done
+Wants=network-online.target
+After=network-online.target
+After=osbuild-first-boot.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/aap-first-boot-reg
+ExecStartPost=/usr/bin/touch /var/local/.aap-first-boot-reg-done
+RemainAfterExit=yes
+
+[Install]
+WantedBy=basic.target
+`),
+							Path:          "/etc/systemd/system/aap-first-boot-reg.service",
+							EnsureParents: common.ToPtr(true),
+						},
+					},
+					Services: &composer.Services{
+						Enabled: common.ToPtr([]string{"aap-first-boot-reg.service"}),
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
 	}
 
 	for idx, payload := range payloads {
@@ -2957,7 +3040,7 @@ func TestComposeCustomizations(t *testing.T) {
 		err := json.Unmarshal([]byte(body), &result)
 		require.NoError(t, err)
 		require.Equal(t, id, result.Id)
-		//compare expected compose request with actual receieved compose request
+		// compare expected compose request with actual receieved compose request
 		require.Equal(t, payload.composerRequest, composerRequest)
 		composerRequest = composer.ComposeRequest{}
 	}

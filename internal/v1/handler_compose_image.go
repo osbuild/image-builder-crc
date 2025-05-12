@@ -18,10 +18,15 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/distribution"
+	"github.com/osbuild/image-builder-crc/internal/tmpl"
 	"github.com/osbuild/image-builder-crc/internal/unleash"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+)
+
+const (
+	AAP_FIRST_BOOT_FILENAME = "aap-first-boot-reg"
 )
 
 func (h *Handlers) ComposeImage(ctx echo.Context) error {
@@ -231,7 +236,6 @@ func buildRepositories(arch *distribution.Architecture, imageType ImageTypes) []
 
 func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string, repoIDs []string, external bool, snapshotDate string) ([]composer.Repository, []composer.CustomRepository, error) {
 	date, err := time.Parse(time.RFC3339, snapshotDate)
-
 	if err != nil {
 		date, err = time.Parse(time.DateOnly, snapshotDate)
 	}
@@ -713,7 +717,6 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 
 			var uploadInfo provisioning.V1SourceUploadInfoResponse
 			err = json.NewDecoder(resp.Body).Decode(&uploadInfo)
-
 			if err != nil {
 				return uploadOptions, "", echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to resolve source: %s", *uo.SourceId))
 			}
@@ -1253,6 +1256,54 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	if cust.Cacerts != nil {
 		res.Cacerts = &composer.CACertsCustomization{
 			PemCerts: cust.Cacerts.PemCerts,
+		}
+	}
+
+	if cust.AAP != nil {
+		script, err := tmpl.RenderAAPRegistrationScript(ctx.Request().Context(), tmpl.AAPRegistrationParams{
+			HostConfigKey:        cust.AAP.HostConfigKey,
+			AnsibleControllerUrl: cust.AAP.AnsibleControllerUrl,
+			JobTemplateId:        cust.AAP.JobTemplateId,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		serviceUnit, err := tmpl.RenderAAPServiceUnit(ctx.Request().Context())
+		if err != nil {
+			return nil, err
+		}
+
+		files := []composer.File{
+			// This follows the convention used in the frontend here:
+			// https://github.com/osbuild/image-builder-frontend/blob/e500efc56bd8fd72ba920825f68b031067edd8c8/src/Components/CreateImageWizard/utilities/requestMapper.ts#L566-L577
+			// This is not done in the frontend though, so we have the ability to use
+			// make AAP requests using the image-builder-api
+			{
+				Data:          script,
+				Path:          fmt.Sprintf("/usr/local/sbin/%s", AAP_FIRST_BOOT_FILENAME),
+				Mode:          common.ToPtr("0774"),
+				EnsureParents: common.ToPtr(true),
+			},
+			{
+				Data:          serviceUnit,
+				Path:          fmt.Sprintf("/etc/systemd/system/%s.service", AAP_FIRST_BOOT_FILENAME),
+				EnsureParents: common.ToPtr(true),
+			},
+		}
+
+		if res.Services != nil {
+			res.Services.Enabled = common.ToPtr(append(*res.Services.Enabled, fmt.Sprintf("%s.service", AAP_FIRST_BOOT_FILENAME)))
+		} else {
+			res.Services = &composer.Services{
+				Enabled: &[]string{fmt.Sprintf("%s.service", AAP_FIRST_BOOT_FILENAME)},
+			}
+		}
+
+		if res.Files != nil {
+			res.Files = common.ToPtr(append(*res.Files, files...))
+		} else {
+			res.Files = &files
 		}
 	}
 
