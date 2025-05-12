@@ -1292,6 +1292,16 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			},
 		}
 
+		if aap.TlsCertificateAuthority != "" {
+			if res.Cacerts != nil {
+				res.Cacerts.PemCerts = append(res.Cacerts.PemCerts, aap.TlsCertificateAuthority)
+			} else {
+				res.Cacerts = &composer.CACertsCustomization{
+					PemCerts: []string{aap.TlsCertificateAuthority},
+				}
+			}
+		}
+
 		if res.Services != nil {
 			res.Services.Enabled = common.ToPtr(append(*res.Services.Enabled, fmt.Sprintf("%s.service", AAP_FIRST_BOOT_FILENAME)))
 		} else {

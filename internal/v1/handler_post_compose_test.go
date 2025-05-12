@@ -2955,9 +2955,10 @@ func TestComposeCustomizations(t *testing.T) {
 							Options: uo,
 						},
 						AAPRegistration: &v1.AAPRegistration{
-							AnsibleControllerUrl: "http://some-url.org",
-							HostConfigKey:        "some-key",
-							JobTemplateId:        38,
+							AnsibleControllerUrl:    "http://some-url.org",
+							HostConfigKey:           "some-key",
+							JobTemplateId:           38,
+							TlsCertificateAuthority: "---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---",
 						},
 					},
 				},
@@ -3003,6 +3004,9 @@ WantedBy=basic.target
 					},
 					Services: &composer.Services{
 						Enabled: common.ToPtr([]string{"aap-first-boot-reg.service"}),
+					},
+					Cacerts: &composer.CACertsCustomization{
+						PemCerts: []string{"---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---"},
 					},
 				},
 				ImageRequest: &composer.ImageRequest{
