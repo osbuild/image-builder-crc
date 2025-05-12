@@ -41,6 +41,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"fedora-39",
 		"fedora-40",
 		"fedora-41",
+		"fedora-42",
 	}
 	notEntitledDistros := []string{
 		"rhel-8-nightly",
@@ -57,6 +58,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"fedora-39",
 		"fedora-40",
 		"fedora-41",
+		"fedora-42",
 	}
 
 	dr, err := LoadDistroRegistry("../../distributions")
