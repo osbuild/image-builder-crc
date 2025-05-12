@@ -167,6 +167,14 @@ const (
 	GetPackagesParamsArchitectureX8664   GetPackagesParamsArchitecture = "x86_64"
 )
 
+// AAP defines model for AAPCustomization.
+type AAP struct {
+	AnsibleControllerUrl    string  `json:"ansible_controller_url"`
+	HostConfigKey           string  `json:"host_config_key"`
+	JobTemplateId           int     `json:"job_template_id"`
+	TlsCertificateAuthority *string `json:"tls_certificate_authority,omitempty"`
+}
+
 // AWSEC2Clone defines model for AWSEC2Clone.
 type AWSEC2Clone struct {
 	// Region A region as described in
@@ -496,6 +504,7 @@ type CustomRepository struct {
 
 // Customizations defines model for Customizations.
 type Customizations struct {
+	AAP        *AAP                  `json:"aap,omitempty"`
 	Cacerts    *CACertsCustomization `json:"cacerts,omitempty"`
 	Containers *[]Container          `json:"containers,omitempty"`
 
