@@ -167,12 +167,12 @@ const (
 	GetPackagesParamsArchitectureX8664   GetPackagesParamsArchitecture = "x86_64"
 )
 
-// AAP defines model for AAPCustomization.
-type AAP struct {
-	AnsibleControllerUrl    string  `json:"ansible_controller_url"`
-	HostConfigKey           string  `json:"host_config_key"`
-	JobTemplateId           int     `json:"job_template_id"`
-	TlsCertificateAuthority *string `json:"tls_certificate_authority,omitempty"`
+// AAPRegistration defines model for AAPRegistration.
+type AAPRegistration struct {
+	AnsibleControllerUrl    string `json:"ansible_controller_url"`
+	HostConfigKey           string `json:"host_config_key"`
+	JobTemplateId           int    `json:"job_template_id"`
+	TlsCertificateAuthority string `json:"tls_certificate_authority,omitempty"`
 }
 
 // AWSEC2Clone defines model for AWSEC2Clone.
@@ -504,7 +504,6 @@ type CustomRepository struct {
 
 // Customizations defines model for Customizations.
 type Customizations struct {
-	AAP        *AAP                  `json:"aap,omitempty"`
 	Cacerts    *CACertsCustomization `json:"cacerts,omitempty"`
 	Containers *[]Container          `json:"containers,omitempty"`
 
@@ -778,6 +777,8 @@ type IgnitionFirstboot struct {
 
 // ImageRequest defines model for ImageRequest.
 type ImageRequest struct {
+	AAPRegistration *AAPRegistration `json:"aap_registration,omitempty"`
+
 	// Architecture CPU architecture of the image, x86_64 and aarch64 are currently supported.
 	Architecture ImageRequestArchitecture `json:"architecture"`
 
@@ -882,7 +883,7 @@ type OSTree struct {
 
 	// Rhsm Determines whether a valid subscription manager (candlepin) identity is required to
 	// access this repository. Consumer certificates will be used as client certificates when
-	// fetching metadata and content.
+	//  fetching metadata and content.
 	Rhsm *bool   `json:"rhsm,omitempty"`
 	Url  *string `json:"url,omitempty"`
 }

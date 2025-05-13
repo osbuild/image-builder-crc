@@ -1254,6 +1254,8 @@ components:
           description: |
             ID of the content template. A content template and snapshot date cannot both be specified.
             If a content template is specified, the snapshot date used will be the one from the content template.
+        aap_registration:
+          $ref: '#/components/schemas/AAPRegistration'
     ImageTypes:
       type: string
       enum:
@@ -1465,7 +1467,28 @@ components:
           description: |
             Determines whether a valid subscription manager (candlepin) identity is required to
             access this repository. Consumer certificates will be used as client certificates when
-            fetching metadata and content.
+             fetching metadata and content.
+    AAPRegistration:
+      type: object
+      x-go-name: AAPRegistration
+      additionalProperties: false
+      required:
+        - ansible_controller_url
+        - job_template_id
+        - host_config_key
+      properties:
+        ansible_controller_url:
+          type: string
+          example: "example.towerhost.net"
+        job_template_id:
+          type: integer
+          example: 38
+        host_config_key:
+          type: string
+          example: "44d7507f2ead49af5fca80aa18fd24bc"
+        tls_certificate_authority:
+          type: string
+          x-go-type-skip-optional-pointer: true
     PackagesResponse:
       type: object
       required:
@@ -1749,8 +1772,6 @@ components:
           $ref: '#/components/schemas/Installer'
         cacerts:
           $ref: '#/components/schemas/CACertsCustomization'
-        aap:
-          $ref: '#/components/schemas/AAPCustomization'
     Container:
       type: object
       required:
@@ -1986,26 +2007,6 @@ components:
           example: [ '---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---' ]
           items:
             type: string
-    AAPCustomization:
-      type: object
-      x-go-name: AAP
-      additionalProperties: false
-      required:
-        - ansible_controller_url
-        - job_template_id
-        - host_config_key
-      properties:
-        ansible_controller_url:
-          type: string
-          example: "example.towerhost.net"
-        job_template_id:
-          type: integer
-          example: 38
-        host_config_key:
-          type: string
-          example: "44d7507f2ead49af5fca80aa18fd24bc"
-        tls_certificate_authority:
-          type: string
     Ignition:
       type: object
       additionalProperties: false
