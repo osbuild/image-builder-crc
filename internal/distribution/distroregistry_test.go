@@ -30,11 +30,14 @@ func TestDistroRegistry_List(t *testing.T) {
 		"rhel-93",
 		"rhel-94",
 		"rhel-95",
+		"rhel-9.6",
 		"centos-9",
+		"rhel-10",
 		"rhel-10-beta",
 		"rhel-10-nightly",
 		"rhel-10.0-nightly",
 		"rhel-10.1-nightly",
+		"rhel-10.0",
 		"centos-10",
 		"fedora-37",
 		"fedora-38",
@@ -82,7 +85,7 @@ func TestDistroRegistry_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := dr.Available(true).Get("rhel-9")
-	require.Equal(t, "rhel-95", result.Distribution.Name)
+	require.Equal(t, "rhel-9.6", result.Distribution.Name)
 	require.Nil(t, err)
 
 	// don't test packages, they are huge
@@ -94,9 +97,10 @@ func TestDistroRegistry_Get(t *testing.T) {
 		OscapName:        "rhel9",
 		Distribution: DistributionItem{
 			Description:      "Red Hat Enterprise Linux (RHEL) 9",
-			Name:             "rhel-95",
-			ComposerName:     common.ToPtr("rhel-9.5"),
+			Name:             "rhel-9.6",
+			ComposerName:     common.ToPtr("rhel-9.6"),
 			RestrictedAccess: false,
+			NoPackageList:    true,
 		},
 		ArchX86: &Architecture{
 			ImageTypes: []string{"aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl"},
