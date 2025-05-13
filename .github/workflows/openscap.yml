@@ -12,7 +12,7 @@ jobs:
     if: github.repository == 'osbuild/image-builder-crc'
     runs-on: ubuntu-latest
     container:
-      image: registry.fedoraproject.org/fedora:39
+      image: registry.fedoraproject.org/fedora:42
 
     steps:
       - name: Install dependencies
