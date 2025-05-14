@@ -67,6 +67,10 @@ func OscapProfiles(distribution Distributions) (DistributionProfileResponse, err
 		fallthrough
 	case Rhel94:
 		fallthrough
+	case Rhel95:
+		fallthrough
+	case Rhel96:
+		fallthrough
 	case Rhel96Nightly:
 		fallthrough
 	case Rhel97Nightly:
