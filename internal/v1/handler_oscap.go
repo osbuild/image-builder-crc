@@ -97,6 +97,32 @@ func OscapProfiles(distribution Distributions) (DistributionProfileResponse, err
 			XccdfOrgSsgprojectContentProfileStig,
 			XccdfOrgSsgprojectContentProfileStigGui,
 		}, nil
+	case Rhel100:
+		fallthrough
+	case Rhel10Nightly:
+		fallthrough
+	case Rhel100Nightly:
+		fallthrough
+	case Rhel101Nightly:
+		fallthrough
+	case Rhel10:
+		return DistributionProfileResponse{
+			XccdfOrgSsgprojectContentProfileAnssiBp28Enhanced,
+			XccdfOrgSsgprojectContentProfileAnssiBp28High,
+			XccdfOrgSsgprojectContentProfileAnssiBp28Intermediary,
+			XccdfOrgSsgprojectContentProfileAnssiBp28Minimal,
+			XccdfOrgSsgprojectContentProfileCis,
+			XccdfOrgSsgprojectContentProfileCisServerL1,
+			XccdfOrgSsgprojectContentProfileCisWorkstationL1,
+			XccdfOrgSsgprojectContentProfileCisWorkstationL2,
+			XccdfOrgSsgprojectContentProfileE8,
+			XccdfOrgSsgprojectContentProfileHipaa,
+			XccdfOrgSsgprojectContentProfileIsmO,
+			XccdfOrgSsgprojectContentProfilePciDss,
+			XccdfOrgSsgprojectContentProfileStig,
+			XccdfOrgSsgprojectContentProfileStigGui,
+		}, nil
+
 	case Rhel90:
 		fallthrough
 	default:
