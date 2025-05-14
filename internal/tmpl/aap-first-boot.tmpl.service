@@ -1,0 +1,15 @@
+Description=Ansible Automations Platform first boot registration
+ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
+ConditionPathExists=!/var/local/.aap-first-boot-reg-done
+Wants=network-online.target
+After=network-online.target
+After=osbuild-first-boot.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/aap-first-boot-reg
+ExecStartPost=/usr/bin/touch /var/local/.aap-first-boot-reg-done
+RemainAfterExit=yes
+
+[Install]
+WantedBy=basic.target
