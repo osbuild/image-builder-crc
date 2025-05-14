@@ -2944,14 +2944,8 @@ func TestComposeCustomizations(t *testing.T) {
 		// aap first boot registration
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Customizations: &v1.Customizations{
-					AAP: &v1.AAP{
-						AnsibleControllerUrl: "http://some-url.org",
-						HostConfigKey:        "some-key",
-						JobTemplateId:        38,
-					},
-				},
-				Distribution: "rhel-8",
+				Customizations: &v1.Customizations{},
+				Distribution:   "rhel-8",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2959,6 +2953,11 @@ func TestComposeCustomizations(t *testing.T) {
 						UploadRequest: v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
+						},
+						AAPRegistration: &v1.AAPRegistration{
+							AnsibleControllerUrl: "http://some-url.org",
+							HostConfigKey:        "some-key",
+							JobTemplateId:        38,
 						},
 					},
 				},

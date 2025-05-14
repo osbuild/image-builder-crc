@@ -1259,11 +1259,11 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		}
 	}
 
-	if cust.AAP != nil {
+	if aap := cr.ImageRequests[0].AAPRegistration; aap != nil {
 		script, err := tmpl.RenderAAPRegistrationScript(ctx.Request().Context(), tmpl.AAPRegistrationParams{
-			HostConfigKey:        cust.AAP.HostConfigKey,
-			AnsibleControllerUrl: cust.AAP.AnsibleControllerUrl,
-			JobTemplateId:        cust.AAP.JobTemplateId,
+			HostConfigKey:        aap.HostConfigKey,
+			AnsibleControllerUrl: aap.AnsibleControllerUrl,
+			JobTemplateId:        aap.JobTemplateId,
 		})
 		if err != nil {
 			return nil, err
