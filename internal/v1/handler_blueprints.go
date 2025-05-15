@@ -463,15 +463,18 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		if err != nil {
 			return err
 		}
-		for i := range *blueprintRequest.Customizations.Users {
-			err := (*blueprintRequest.Customizations.Users)[i].MergeForUpdate(*eb.Customizations.Users)
-			if err != nil {
-				return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-					Errors: []HTTPError{{
-						Title:  "Invalid user",
-						Detail: err.Error(),
-					}},
-				})
+
+		if eb.Customizations.Users != nil {
+			for i := range *blueprintRequest.Customizations.Users {
+				err := (*blueprintRequest.Customizations.Users)[i].MergeForUpdate(*eb.Customizations.Users)
+				if err != nil {
+					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid user",
+							Detail: err.Error(),
+						}},
+					})
+				}
 			}
 		}
 	}
