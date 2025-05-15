@@ -2982,7 +2982,8 @@ func TestComposeCustomizations(t *testing.T) {
 							EnsureParents: common.ToPtr(true),
 						},
 						{
-							Data: common.ToPtr(`Description=Ansible Automations Platform first boot registration
+							Data: common.ToPtr(`[Unit]
+Description=Ansible Automations Platform first boot registration
 ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
 ConditionPathExists=!/var/local/.aap-first-boot-reg-done
 Wants=network-online.target
