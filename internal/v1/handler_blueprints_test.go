@@ -345,12 +345,10 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 
 	ctx := context.Background()
 	body := map[string]interface{}{
-		"name":        "Blueprint",
-		"description": "desc",
-		"customizations": map[string]interface{}{
-			"users": []map[string]interface{}{},
-		},
-		"distribution": "centos-9",
+		"name":           "Blueprint",
+		"description":    "desc",
+		"customizations": map[string]interface{}{},
+		"distribution":   "centos-9",
 		"image_requests": []map[string]interface{}{
 			{
 				"architecture":   "x86_64",
