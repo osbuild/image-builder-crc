@@ -124,7 +124,7 @@ func main() {
 			ClientSecret: conf.RecommendSecret,
 		},
 	}
-	compClient, err := composer.NewClient(composerConf)
+	compClient, err := composer.NewClientFromConfig(composerConf)
 	if err != nil {
 		panic(err)
 	}

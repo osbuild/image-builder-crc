@@ -20,6 +20,21 @@ type Tokener interface {
 	ForceRefresh(context.Context) (string, error)
 }
 
+// Doer is an interface that defines the Do method for making HTTP requests.
+type Doer interface {
+	// SetClients sets HTTP client for the Do method.
+	SetClient(*http.Client)
+
+	// Do performs an HTTP request and returns the response.
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// TokenerDoer is an interface that combines the Tokener and Doer interfaces.
+type TokenerDoer interface {
+	Tokener
+	Doer
+}
+
 type LazyToken struct {
 	// Url represents the URL used for acquiring the token.
 	Url string
@@ -31,6 +46,9 @@ type LazyToken struct {
 	AccessToken string
 	// Expiration stores the expiration time of the current token.
 	Expiration time.Time
+
+	// HTTP client for Do method
+	client *http.Client
 	// mutex ensures safe concurrent access to the token and expiration fields.
 	mutex sync.Mutex
 }
@@ -38,6 +56,21 @@ type LazyToken struct {
 type tokenResponse struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
+}
+
+// SetClient sets the HTTP client for the Do method. This client is used to delegate the call to.
+func (lt *LazyToken) SetClient(c *http.Client) {
+	lt.client = c
+}
+
+// Do is a method that performs an HTTP request with the lazy token.
+// It sets the Authorization header with the token and handles token refresh if needed.
+// It returns the HTTP response or an error if the request fails.
+// The method reads the request body, sets the Authorization header, and performs the HTTP request.
+// If the response status code is 401 or 403, it refreshes the token and retries the request.
+// Client must be set before calling this method, otherwise it panics.
+func (lt *LazyToken) Do(req *http.Request) (*http.Response, error) {
+	return do(lt.client, lt, req)
 }
 
 func (lt *LazyToken) acquireNewToken(ctx context.Context, forceRefresh bool) (string, error) {

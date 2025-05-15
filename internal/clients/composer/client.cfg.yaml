@@ -2,3 +2,16 @@ package: composer
 output: openapi.v2.gen.go
 generate:
   models: true
+  client: true
+output-options:
+  include-operation-ids:
+    - getComposeStatus
+    - getComposeMetadata
+    - postCompose
+    - postComposeStatus
+    - getCloneStatus
+    - cloneComposeBody
+    - awsEc2ComposeBody
+    - postCloneCompose
+    - getCompose
+    - getOpenapi
