@@ -1,3 +1,4 @@
+[Unit]
 Description=Ansible Automations Platform first boot registration
 ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
 ConditionPathExists=!/var/local/.aap-first-boot-reg-done
