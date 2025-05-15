@@ -454,6 +454,44 @@ paths:
       responses:
         200:
           description: OK
+  /composes/{composeId}/sboms:
+    get:
+      operationId: getComposeSBOMs
+      summary: Get the SBOMs for a compose.
+      parameters:
+        - in: path
+          name: composeId
+          schema:
+            type: string
+            format: uuid
+            example: 123e4567-e89b-12d3-a456-426655440000
+          required: true
+          description: Id of compose for which to get SBOMs
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 100
+          description: The numbers of items to return, default 100.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: The number of items to skip before starting to collect the result set, default 0.
+      description: |-
+        Returns a set of SBOM documents for each image in the request.
+        SBOM documents are in the SPDX JSON format.
+      responses:
+        '200':
+          description: The SBOMs for the given compose.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComposeSBOMsResponse'
   /composes/{composeId}/metadata:
     get:
       summary: get metadata of an image compose
@@ -1674,6 +1712,56 @@ components:
         - xccdf_org.ssgproject.content_profile_standard
         - xccdf_org.ssgproject.content_profile_stig
         - xccdf_org.ssgproject.content_profile_stig_gui
+    ImageSBOM:
+      required:
+        - sbom
+        - sbom_type
+        - pipeline_name
+        - pipeline_purpose
+      properties:
+        sbom:
+          type: object
+          x-go-type: interface{}
+          description: |-
+            The SBOM document in the 'sbom_type' format.
+        sbom_type:
+          type: string
+          enum: ["spdx"]
+          description: |-
+            The type of the SBOM document. Currently only SPDX is supported.
+        pipeline_name:
+          type: string
+          description: |-
+            The name of the osbuild pipeline which has the packages described
+            in the SBOM installed.
+        pipeline_purpose:
+          type: string
+          enum: ["buildroot", "image"]
+          description: |-
+            The purpose of the pipeline. The `buildroot` pipeline was used for
+            the build environment dueing the image build. The `image` pipeline
+            represents the actual content of the image. Due to the nature of
+            some image types, there may be multiple pipelines of the same
+            purpose.
+    ComposeSBOMsResponse:
+      type: object
+      required:
+        - meta
+        - links
+        - data
+      properties:
+        meta:
+          $ref: '#/components/schemas/ListResponseMeta'
+        links:
+          $ref: '#/components/schemas/ListResponseLinks'
+        data:
+          type: array
+          description: |-
+            The SBOM documents for the given image. Each image usually has
+            at least two SBOMs, one for the build environment and one for the
+            actual content of the image.
+          items:
+            $ref: '#/components/schemas/ImageSBOM'
 
     # all customizations and sub-objects
     Customizations:
