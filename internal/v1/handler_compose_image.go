@@ -991,6 +991,20 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		res.Filesystem = &fsc
 	}
 
+	if cust.Disk != nil {
+		var disk composer.Disk
+		disk.Minsize = cust.Disk.Minsize
+		diskType := composer.DiskType(*cust.Disk.Type)
+		disk.Type = &diskType
+		for _, part := range cust.Disk.Partitions {
+			disk.Partitions = append(disk.Partitions,
+				composer.Partition{
+					Type: part.union,
+				},
+			)
+		}
+	}
+
 	if cust.Users != nil {
 		var users []composer.User
 		for _, u := range *cust.Users {
