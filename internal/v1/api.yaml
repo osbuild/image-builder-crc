@@ -1483,7 +1483,7 @@ components:
       properties:
         ansible_controller_url:
           type: string
-          example: "example.towerhost.net"
+          example: "https://aap-gw.example.com"
         job_template_id:
           type: integer
           example: 38
