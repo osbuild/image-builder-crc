@@ -1730,6 +1730,8 @@ components:
           maxItems: 128
           items:
             $ref: '#/components/schemas/Filesystem'
+        disk:
+          $ref: '#/components/schemas/Disk'
         users:
           type: array
           items:
@@ -2274,3 +2276,148 @@ components:
           example: '22'
           description: |
             Stream to enable.
+    Disk:
+      x-go-type: composer.Disk
+      type: object
+      required:
+        - partitions
+      properties:
+        type:
+          type: string
+          enum:
+            - gpt
+            - dos
+          description: |
+            Type of the partition table
+        minsize:
+          $ref: '#/components/schemas/minsize'
+        partitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Partition'
+    Partition:
+      x-go-type: composer.Partition
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/FilesystemTyped'
+        - $ref: '#/components/schemas/BtrfsVolume'
+        - $ref: '#/components/schemas/VolumeGroup'
+    FilesystemTyped:
+      x-go-type: composer.FilesystemTyped
+      type: object
+      required:
+        - fs_type
+      properties:
+        type:
+          type: string
+          enum:
+            - plain
+        part_type:
+          type: string
+          description: |
+            The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
+        minsize:
+          $ref: '#/components/schemas/minsize'
+        mountpoint:
+          type: string
+        label:
+          type: string
+        fs_type:
+          type: string
+          enum:
+            - ext4
+            - xfs
+            - vfat
+            - swap
+          description: |
+            The filesystem type. Swap partitions must have an empty mountpoint.
+    BtrfsVolume:
+      x-go-type: composer.BtrfsVolume
+      type: object
+      required:
+        - type
+        - subvolumes
+      properties:
+        type:
+          type: string
+          enum:
+            - btrfs
+        part_type:
+          type: string
+          description: |
+            The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
+        minsize:
+          $ref: '#/components/schemas/minsize'
+        subvolumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BtrfsSubvolume'
+    BtrfsSubvolume:
+      x-go-type: composer.BtrfsSubvolume
+      type: object
+      required:
+        - name
+        - mountpoint
+      properties:
+        name:
+          type: string
+          description: |
+            The name of the subvolume, which defines the location (path) on the root volume
+        mountpoint:
+          type: string
+          description: |
+            Mountpoint for the subvolume
+    VolumeGroup:
+      x-go-type: composer.VolumeGroup
+      type: object
+      required:
+        - type
+        - logical_volumes
+      properties:
+        type:
+          type: string
+          enum:
+            - lvm
+        part_type:
+          type: string
+          description: |
+            The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
+        name:
+          type: string
+          description: |
+            Volume group name (will be automatically generated if omitted)
+        minsize:
+          $ref: '#/components/schemas/minsize'
+        logical_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogicalVolume'
+    LogicalVolume:
+      x-go-type: composer.LogicalVolume
+      type: object
+      required:
+        - fs_type
+      properties:
+        name:
+          type: string
+        minsize:
+          $ref: '#/components/schemas/minsize'
+        mountpoint:
+          type: string
+          description: |
+            Mountpoint for the logical volume
+        label:
+          type: string
+        fs_type:
+          type: string
+          enum:
+            - ext4
+            - xfs
+            - vfat
+            - swap
+          description: |
+            The filesystem type for the logical volume. Swap LVs must have an empty mountpoint.
+    minsize:
+      type: string
+      example: "2 GiB"
+      description: 'size with data units'
