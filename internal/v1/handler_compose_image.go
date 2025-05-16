@@ -1329,5 +1329,8 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		}
 	}
 
+	// IB API Disk uses the same type as the osbuild-composer Disk
+	res.Disk = cust.Disk
+
 	return res, nil
 }

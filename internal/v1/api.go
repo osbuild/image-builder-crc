@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 )
 
 // Defines values for AzureUploadRequestOptionsHyperVGeneration.
@@ -335,6 +336,12 @@ type BlueprintsResponse struct {
 	Meta  ListResponseMeta  `json:"meta"`
 }
 
+// BtrfsSubvolume defines model for BtrfsSubvolume.
+type BtrfsSubvolume = composer.BtrfsSubvolume
+
+// BtrfsVolume defines model for BtrfsVolume.
+type BtrfsVolume = composer.BtrfsVolume
+
 // CACertsCustomization defines model for CACertsCustomization.
 type CACertsCustomization struct {
 	PemCerts []string `json:"pem_certs"`
@@ -511,6 +518,7 @@ type Customizations struct {
 	// CustomRepositories List of custom repositories.
 	CustomRepositories *[]CustomRepository `json:"custom_repositories,omitempty"`
 	Directories        *[]Directory        `json:"directories,omitempty"`
+	Disk               *Disk               `json:"disk,omitempty"`
 
 	// EnabledModules List of dnf modules to enable, so that packages can be installed from them.
 	EnabledModules *[]Module `json:"enabled_modules,omitempty"`
@@ -610,6 +618,9 @@ type Directory_User struct {
 	union json.RawMessage
 }
 
+// Disk defines model for Disk.
+type Disk = composer.Disk
+
 // DistributionItem defines model for DistributionItem.
 type DistributionItem struct {
 	Description string `json:"description"`
@@ -700,6 +711,9 @@ type Filesystem struct {
 	MinSize    uint64 `json:"min_size"`
 	Mountpoint string `json:"mountpoint"`
 }
+
+// FilesystemTyped defines model for FilesystemTyped.
+type FilesystemTyped = composer.FilesystemTyped
 
 // FirewallCustomization Firewalld configuration
 type FirewallCustomization struct {
@@ -858,6 +872,9 @@ type Locale struct {
 	Languages *[]string `json:"languages,omitempty"`
 }
 
+// LogicalVolume defines model for LogicalVolume.
+type LogicalVolume = composer.LogicalVolume
+
 // Module defines model for Module.
 type Module struct {
 	// Name Name of the module to enable.
@@ -941,6 +958,9 @@ type PackagesResponse struct {
 	Links ListResponseLinks `json:"links"`
 	Meta  ListResponseMeta  `json:"meta"`
 }
+
+// Partition defines model for Partition.
+type Partition = composer.Partition
 
 // Readiness defines model for Readiness.
 type Readiness struct {
@@ -1069,6 +1089,12 @@ type Version struct {
 	BuildTime   *string `json:"build_time,omitempty"`
 	Version     string  `json:"version"`
 }
+
+// VolumeGroup defines model for VolumeGroup.
+type VolumeGroup = composer.VolumeGroup
+
+// Minsize size with data units
+type Minsize = string
 
 // GetBlueprintsParams defines parameters for GetBlueprints.
 type GetBlueprintsParams struct {
