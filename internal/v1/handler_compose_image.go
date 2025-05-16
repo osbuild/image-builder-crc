@@ -845,7 +845,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			if err != nil {
 				return nil, err
 			}
-			if (major >= 9 && minor >= 6) && cr.ImageRequests[0].ContentTemplateName != nil {
+			if ((major >= 9 && minor >= 6) || (major >= 10)) && cr.ImageRequests[0].ContentTemplateName != nil {
 				res.Subscription.TemplateName = cr.ImageRequests[0].ContentTemplateName
 			} else {
 				res.Subscription.TemplateUuid = cr.ImageRequests[0].ContentTemplate
