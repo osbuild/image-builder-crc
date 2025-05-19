@@ -31,7 +31,7 @@ import (
 
 type Server struct {
 	echo                *echo.Echo
-	cClient             *composer.ComposerClient
+	cClient             *composer.Client
 	pClient             *provisioning.ProvisioningClient
 	csClient            *content_sources.ContentSourcesClient
 	csReposURL          *url.URL
@@ -53,7 +53,7 @@ type Server struct {
 
 type ServerConfig struct {
 	EchoServer          *echo.Echo
-	CompClient          *composer.ComposerClient
+	CompClient          *composer.Client
 	ProvClient          *provisioning.ProvisioningClient
 	CSClient            *content_sources.ContentSourcesClient
 	CSReposURL          string
