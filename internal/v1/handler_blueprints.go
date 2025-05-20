@@ -583,7 +583,9 @@ func (h *Handlers) GetBlueprints(ctx echo.Context, params GetBlueprintsParams) e
 	var blueprints []db.BlueprintWithNoBody
 	var count int
 
+	urlParams := url.Values{}
 	if params.Name != nil && common.FromPtr(params.Name) != "" {
+		urlParams.Add("name", *params.Name)
 		blueprint, err := h.server.db.FindBlueprintByName(ctx.Request().Context(), userID.OrgID(), *params.Name)
 		if err != nil {
 			return err
@@ -594,6 +596,7 @@ func (h *Handlers) GetBlueprints(ctx echo.Context, params GetBlueprintsParams) e
 		}
 		// Else no blueprint found - return empty list and count = 0
 	} else if params.Search != nil && common.FromPtr(params.Search) != "" {
+		urlParams.Add("search", *params.Search)
 		blueprints, count, err = h.server.db.FindBlueprints(ctx.Request().Context(), userID.OrgID(), *params.Search, limit, offset)
 		if err != nil {
 			return err
@@ -620,7 +623,7 @@ func (h *Handlers) GetBlueprints(ctx echo.Context, params GetBlueprintsParams) e
 
 	return ctx.JSON(http.StatusOK, BlueprintsResponse{
 		Meta:  ListResponseMeta{count},
-		Links: h.newLinksWithExtraParams("composes", count, limit, url.Values{}),
+		Links: h.newLinksWithExtraParams("blueprints", count, limit, urlParams),
 		Data:  data,
 	})
 }

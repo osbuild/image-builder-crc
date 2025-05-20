@@ -1325,12 +1325,18 @@ func TestHandlers_GetBlueprints(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, result.Data, 1)
 	require.Equal(t, blueprintId, result.Data[0].Id)
+	require.Equal(t, 1, result.Meta.Count)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=blueprint&offset=0", result.Links.First)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=blueprint&offset=0", result.Links.Last)
 
 	respStatusCode, body = tutils.GetResponseBody(t, srvURL+"/api/image-builder/v1/blueprints?name=Blueprint", &tutils.AuthString0)
 	require.Equal(t, http.StatusOK, respStatusCode)
 	err = json.Unmarshal([]byte(body), &result)
 	require.NoError(t, err)
 	require.Len(t, result.Data, 0)
+	require.Equal(t, 0, result.Meta.Count)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=Blueprint&offset=0", result.Links.First)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=Blueprint&offset=0", result.Links.Last)
 }
 
 func TestHandlers_DeleteBlueprint(t *testing.T) {
