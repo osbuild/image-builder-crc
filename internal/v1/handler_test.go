@@ -360,7 +360,7 @@ func TestGetComposes(t *testing.T) {
 	require.Nil(t, result.Data[2].BlueprintId)
 	require.Nil(t, result.Data[2].BlueprintVersion)
 	require.Equal(t, "/api/image-builder/v1.0/composes?limit=100&offset=0", result.Links.First)
-	require.Equal(t, "/api/image-builder/v1.0/composes?limit=100&offset=2", result.Links.Last)
+	require.Equal(t, "/api/image-builder/v1.0/composes?limit=100&offset=0", result.Links.Last)
 	require.Equal(t, 3, result.Meta.Count)
 	require.Equal(t, 3, len(result.Data))
 	for _, res := range result.Data {
