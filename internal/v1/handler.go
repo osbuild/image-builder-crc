@@ -823,25 +823,10 @@ func (h *Handlers) GetComposeClones(ctx echo.Context, composeId uuid.UUID, param
 		})
 	}
 
-	lastOffset := count - 1
-	if lastOffset < 0 {
-		lastOffset = 0
-	}
-
-	spec, err := GetSwagger()
-	if err != nil {
-		return err
-	}
-
 	return ctx.JSON(http.StatusOK, ClonesResponse{
-		Meta: ListResponseMeta{count},
-		Links: ListResponseLinks{
-			fmt.Sprintf("%v/v%v/composes/%v/clones?offset=%v&limit=%v",
-				RoutePrefix(), spec.Info.Version, composeId, 0, limit),
-			fmt.Sprintf("%v/v%v/composes/%v/clones?offset=%v&limit=%v",
-				RoutePrefix(), spec.Info.Version, composeId, lastOffset, limit),
-		},
-		Data: data,
+		Meta:  ListResponseMeta{count},
+		Links: h.newLinksWithExtraParams(fmt.Sprintf("composes/%v/clones", composeId), count, limit, url.Values{}),
+		Data:  data,
 	})
 }
 
