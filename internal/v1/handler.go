@@ -29,10 +29,9 @@ const (
 )
 
 func (h *Handlers) newLinksWithExtraParams(path string, count, limit int, params url.Values) ListResponseLinks {
-	lastOffset := count - 1
-	if lastOffset < 0 {
-		lastOffset = 0
-	}
+	// last page offset with page size defined by the limit
+	lastOffset := common.CalculateLastPageOffset(count, limit)
+
 	fullPath := url.URL{Path: fmt.Sprintf("%v/v%v/%s", RoutePrefix(), h.server.spec.Info.Version, path)}
 
 	params.Add("offset", "0")
