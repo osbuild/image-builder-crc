@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -242,7 +243,10 @@ func generateJson(dir, datastreamDistro, profileDescription, profile string) {
 
 // This program needs as an argument the directory to the distributions root file
 func main() {
-	var distributionsFolder = os.Args[1]
+	var distributionsFolder string
+	flag.StringVar(&distributionsFolder, "input", "./distributions", "Path to distributions folder")
+	flag.Parse()
+
 	distros, err := distribution.LoadDistroRegistry(distributionsFolder)
 	distros.Available(true).List()
 	if err != nil {
