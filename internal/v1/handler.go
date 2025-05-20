@@ -191,42 +191,31 @@ func (h *Handlers) GetPackages(ctx echo.Context, params GetPackagesParams) error
 	}
 
 	limit := 100
-	if params.Limit != nil {
-		if *params.Limit > 0 {
-			limit = *params.Limit
-		}
+	if params.Limit != nil && *params.Limit > 0 {
+		limit = *params.Limit
 	}
 
 	offset := 0
 	if params.Offset != nil {
-		if *params.Offset > len(packages) {
-			offset = len(packages)
-		} else if *params.Offset > 0 {
-			offset = *params.Offset
-		}
+		offset = *params.Offset
 	}
 
-	upto := offset + limit
-	if upto > len(packages) {
-		upto = len(packages)
-	}
-
-	lastOffset := len(packages) - 1
-	if lastOffset < 0 {
-		lastOffset = 0
+	paginator, err := common.NewPaginator(packages, limit, offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid pagination parameters: %v", err))
 	}
 
 	return ctx.JSON(http.StatusOK, PackagesResponse{
-		Meta: ListResponseMeta{
-			len(packages),
-		},
+		Meta: ListResponseMeta{paginator.Count()},
 		Links: ListResponseLinks{
 			fmt.Sprintf("%v/v%v/packages?search=%v&distribution=%v&architecture=%v&offset=0&limit=%v",
-				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture, limit),
+				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture,
+				paginator.Limit()),
 			fmt.Sprintf("%v/v%v/packages?search=%v&distribution=%v&architecture=%v&offset=%v&limit=%v",
-				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture, lastOffset, limit),
+				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture,
+				paginator.LastPageOffset(), paginator.Limit()),
 		},
-		Data: packages[offset:upto],
+		Data: paginator.GetPage(),
 	})
 }
 
