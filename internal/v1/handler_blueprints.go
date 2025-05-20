@@ -566,20 +566,14 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 }
 
 func (h *Handlers) GetBlueprints(ctx echo.Context, params GetBlueprintsParams) error {
-	spec, err := GetSwagger()
-	if err != nil {
-		return err
-	}
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
 		return err
 	}
 
 	limit := 100
-	if params.Limit != nil {
-		if *params.Limit > 0 {
-			limit = *params.Limit
-		}
+	if params.Limit != nil && *params.Limit > 0 {
+		limit = *params.Limit
 	}
 
 	offset := 0
@@ -623,19 +617,11 @@ func (h *Handlers) GetBlueprints(ctx echo.Context, params GetBlueprintsParams) e
 			LastModifiedAt: blueprint.LastModifiedAt.Format(time.RFC3339),
 		})
 	}
-	lastOffset := count - 1
-	if lastOffset < 0 {
-		lastOffset = 0
-	}
+
 	return ctx.JSON(http.StatusOK, BlueprintsResponse{
-		Meta: ListResponseMeta{count},
-		Links: ListResponseLinks{
-			fmt.Sprintf("%v/v%v/composes?offset=0&limit=%v",
-				RoutePrefix(), spec.Info.Version, limit),
-			fmt.Sprintf("%v/v%v/composes?offset=%v&limit=%v",
-				RoutePrefix(), spec.Info.Version, lastOffset, limit),
-		},
-		Data: data,
+		Meta:  ListResponseMeta{count},
+		Links: h.newLinksWithExtraParams("composes", count, limit, url.Values{}),
+		Data:  data,
 	})
 }
 
