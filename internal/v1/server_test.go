@@ -151,11 +151,16 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	})
 	require.NoError(t, err)
 
-	recommendToken := &oauth2.LazyToken{
-		Url:          tscc.OAuthURL,
-		ClientId:     "id",
-		ClientSecret: "secret",
-		AccessToken:  "token",
+	var recommendToken oauth2.Tokener
+	if tscc.OAuthURL != "" {
+		recommendToken = &oauth2.LazyToken{
+			Url:          tscc.OAuthURL,
+			ClientId:     "id",
+			ClientSecret: "secret",
+			AccessToken:  "token",
+		}
+	} else {
+		recommendToken = &oauth2.DummyToken{}
 	}
 	recommendClient, err := recommendations.NewClient(recommendations.RecommendationsClientConfig{
 		URL:     tscc.RecommendURL,
