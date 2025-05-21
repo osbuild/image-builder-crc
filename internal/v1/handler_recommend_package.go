@@ -21,7 +21,7 @@ func (h *Handlers) RecommendPackage(ctx echo.Context) error {
 
 	resp, err := h.handleRecommendationsResponse(ctx, req)
 	if err != nil {
-		slog.ErrorContext(ctx.Request().Context(), "Failed to recommendation package Response", "error", err)
+		slog.ErrorContext(ctx.Request().Context(), "failed to get package recommendation response", "error", err)
 		return err
 	}
 
@@ -43,7 +43,7 @@ func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, req Recommend
 
 	resp, err := h.server.rClient.RecommendationsPackages(ctx.Request().Context(), cloudRP)
 	if err != nil {
-		ctx.Logger().Errorf("Failed to get recommendation response: %v", err)
+		ctx.Logger().Errorf("failed to get recommendation response: %v", err)
 		return RecommendationsResponse{}, err
 	}
 	defer closeBody(ctx, resp.Body)
@@ -54,7 +54,7 @@ func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, req Recommend
 		return RecommendationsResponse{}, err
 	}
 
-	slog.InfoContext(ctx.Request().Context(), "Package recommendation",
+	slog.InfoContext(ctx.Request().Context(), "package recommendation",
 		"stats", true,
 		"packages", req.Packages,
 		"amount", req.RecommendedPackages,
