@@ -2,7 +2,10 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"slices"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/recommendations"
 
@@ -10,25 +13,32 @@ import (
 )
 
 func (h *Handlers) RecommendPackage(ctx echo.Context) error {
-	var uploadPackageRequest RecommendPackageRequest
-	err := ctx.Bind(&uploadPackageRequest)
+	var req RecommendPackageRequest
+	err := ctx.Bind(&req)
 	if err != nil {
 		return err
 	}
 
-	recommendationResponse, err := h.handleRecommendationsResponse(ctx, uploadPackageRequest)
+	resp, err := h.handleRecommendationsResponse(ctx, req)
 	if err != nil {
-		ctx.Logger().Errorf("Failed to recommendation package Response: %v", err)
+		slog.ErrorContext(ctx.Request().Context(), "Failed to recommendation package Response", "error", err)
 		return err
 	}
 
-	return ctx.JSON(http.StatusOK, recommendationResponse)
+	return ctx.JSON(http.StatusOK, resp)
 }
 
-func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, uploadPackageRequest RecommendPackageRequest) (RecommendationsResponse, error) {
+var supportedDistros = []string{"rhel-8", "rhel-9", "rhel-10"}
+
+func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, req RecommendPackageRequest) (RecommendationsResponse, error) {
 	cloudRP := recommendations.RecommendPackageRequest{
-		Packages:            uploadPackageRequest.Packages,
-		RecommendedPackages: uploadPackageRequest.RecommendedPackages,
+		Packages:            req.Packages,
+		RecommendedPackages: req.RecommendedPackages,
+		Distribution:        req.Distribution.String(),
+	}
+
+	if !slices.Contains(supportedDistros, cloudRP.Distribution) {
+		return RecommendationsResponse{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unsupported distribution %s", cloudRP.Distribution))
 	}
 
 	resp, err := h.server.rClient.RecommendationsPackages(ctx.Request().Context(), cloudRP)
@@ -36,8 +46,6 @@ func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, uploadPackage
 		ctx.Logger().Errorf("Failed to get recommendation response: %v", err)
 		return RecommendationsResponse{}, err
 	}
-
-	ctx.Logger().Debugf("Getting Response list of items %v", resp)
 	defer closeBody(ctx, resp.Body)
 
 	var responsePackages RecommendationsResponse
@@ -46,8 +54,16 @@ func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, uploadPackage
 		return RecommendationsResponse{}, err
 	}
 
+	slog.InfoContext(ctx.Request().Context(), "Package recommendation",
+		"stats", true,
+		"packages", req.Packages,
+		"amount", req.RecommendedPackages,
+		"distribution", req.Distribution,
+		"response", responsePackages.Packages,
+		"model", responsePackages.ModelVersion,
+	)
+
 	if len(responsePackages.Packages) == 0 {
-		ctx.Logger().Warn("User should define packages")
 		return RecommendationsResponse{}, nil
 	}
 
