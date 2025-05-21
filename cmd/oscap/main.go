@@ -17,6 +17,38 @@ import (
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
 )
 
+type release = string
+type majorDistro = string
+
+const (
+	ALL_RELEASES release = "all"
+	FEDORA       release = "fedora"
+	EL9          release = "el9"
+	EL10         release = "el10"
+
+	CENTOS9  majorDistro = "centos-9"
+	CENTOS10 majorDistro = "centos-10"
+	RHEL9    majorDistro = "rhel-9"
+	RHEL10   majorDistro = "rhel-10"
+)
+
+func isWantedRelease(wantedRelease release, distro string) bool {
+	if wantedRelease == ALL_RELEASES {
+		return true
+	}
+
+	switch wantedRelease {
+	case FEDORA:
+		return strings.HasPrefix(distro, FEDORA)
+	case EL9:
+		return strings.HasPrefix(distro, CENTOS9) || strings.HasPrefix(distro, RHEL9)
+	case EL10:
+		return strings.HasPrefix(distro, CENTOS10) || strings.HasPrefix(distro, RHEL10)
+	default:
+		return false
+	}
+}
+
 // Unmarshal the blueprint toml file in a custom data structure
 type Packages struct {
 	Name    string `json:"name,omitempty"`
@@ -244,7 +276,9 @@ func generateJson(dir, datastreamDistro, profileDescription, profile string) {
 // This program needs as an argument the directory to the distributions root file
 func main() {
 	var distributionsFolder string
+	var wantedRelease release
 	flag.StringVar(&distributionsFolder, "input", "./distributions", "Path to distributions folder")
+	flag.StringVar(&wantedRelease, "release", ALL_RELEASES, "filter the customizations by release [fedora, el9, el10, all]")
 	flag.Parse()
 
 	distros, err := distribution.LoadDistroRegistry(distributionsFolder)
@@ -254,6 +288,9 @@ func main() {
 	}
 
 	for _, distro := range distros.Available(true).List() {
+		if !isWantedRelease(wantedRelease, distro.Distribution.Name) {
+			continue
+		}
 		oscapDistroName := distro.OscapName
 		profiles, _ := v1.OscapProfiles(
 			v1.Distributions(distro.Distribution.Name),
