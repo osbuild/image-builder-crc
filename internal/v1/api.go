@@ -999,13 +999,19 @@ type Readiness struct {
 
 // RecommendPackageRequest defines model for RecommendPackageRequest.
 type RecommendPackageRequest struct {
-	Packages            []string `json:"packages"`
-	RecommendedPackages int32    `json:"recommendedPackages"`
+	// Distribution List of all distributions that image builder supports. A user might not have access to
+	// restricted distributions.
+	//
+	// Restricted distributions include the RHEL nightlies and the Fedora distributions.
+	Distribution        Distributions `json:"distribution"`
+	Packages            []string      `json:"packages"`
+	RecommendedPackages int32         `json:"recommendedPackages"`
 }
 
 // RecommendationsResponse defines model for RecommendationsResponse.
 type RecommendationsResponse struct {
-	Packages []string `json:"packages"`
+	ModelVersion *string  `json:"modelVersion,omitempty"`
+	Packages     []string `json:"packages"`
 }
 
 // Repository defines model for Repository.

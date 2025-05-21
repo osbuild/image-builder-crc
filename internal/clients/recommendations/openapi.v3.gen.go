@@ -10,13 +10,15 @@ type GetModelVersion200Response struct {
 
 // RecommendPackageRequest defines model for RecommendPackageRequest.
 type RecommendPackageRequest struct {
+	Distribution        string   `json:"distribution"`
 	Packages            []string `json:"packages"`
 	RecommendedPackages int32    `json:"recommendedPackages"`
 }
 
 // RecommendationsResponse defines model for RecommendationsResponse.
 type RecommendationsResponse struct {
-	Packages []string `json:"packages"`
+	ModelVersion string   `json:"modelVersion"`
+	Packages     []string `json:"packages"`
 }
 
 // RefreshModel200Response defines model for RefreshModel200Response.

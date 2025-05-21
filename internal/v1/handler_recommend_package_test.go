@@ -206,6 +206,7 @@ func TestRecommendPackage_with_authenticationServer(t *testing.T) {
 	srv := startServer(t, &testServerClientsConf{RecommendURL: apiSrv.URL, OAuthURL: oauthMock.URL}, &v1.ServerConfig{})
 	defer srv.Shutdown(t)
 	payload := v1.RecommendPackageRequest{
+		Distribution: "rhel-8",
 		Packages: []string{
 			"some",
 			"packages",
