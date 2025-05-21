@@ -92,6 +92,7 @@
     "schemas": {
       "RecommendationsResponse": {
         "required": [
+          "modelVersion",
           "packages"
         ],
         "type": "object",
@@ -101,11 +102,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "modelVersion": {
+            "type": "string"
           }
         }
       },
       "RecommendPackageRequest": {
         "required": [
+          "distribution",
           "packages",
           "recommendedPackages"
         ],
@@ -120,6 +125,9 @@
           "recommendedPackages": {
             "type": "integer",
             "format": "int32"
+          },
+          "distribution": {
+            "type": "string"
           }
         }
       },
