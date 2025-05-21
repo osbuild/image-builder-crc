@@ -10,9 +10,18 @@ jobs:
   update-openscap:
     name: "Update OpenSCAP configs"
     if: github.repository == 'osbuild/image-builder-crc'
+    strategy:
+      matrix:
+        include:
+          - image: registry.fedoraproject.org/fedora:42
+            release: fedora
+          - image: quay.io/centos/centos:stream9
+            release: el9
+          - image: quay.io/centos/centos:stream10
+            release: el10
     runs-on: ubuntu-latest
     container:
-      image: registry.fedoraproject.org/fedora:42
+      image: ${{ matrix.image }}
 
     steps:
       - name: Install dependencies
@@ -25,7 +34,7 @@ jobs:
         run: git config --global --add safe.directory "$(pwd)"
 
       - name: Run OpenSCAP config generation
-        run: go run ./cmd/oscap ./distributions
+        run: go run ./cmd/oscap -release ${{ matrix.release }}
 
       - name: Check if there are any changes
         run: |
@@ -35,13 +44,15 @@ jobs:
             exit "0"
           fi
 
+      # this is not ideal since it creates a PR per release
+      # with potentially 3 prs per workflow.
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           branch: update-openscap
           delete-branch: true
           title: "distributions: regenerate OpenSCAP configs"
-          commit-message: "distributions: regenerate OpenSCAP configs"
-          body: Update OpenSCAP configs
+          commit-message: "distributions: regenerate OpenSCAP configs for ${{ matrix.release }}"
+          body: Update OpenSCAP configs for ${{ matrix.release }}
           token: ${{ secrets.SCHUTZBOT_GITHUB_ACCESS_TOKEN }}
           author: schutzbot <schutzbot@gmail.com>
