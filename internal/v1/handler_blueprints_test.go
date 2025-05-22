@@ -778,7 +778,7 @@ func TestHandlers_GetBlueprintComposes(t *testing.T) {
 	require.Equal(t, blueprintId, *result.Data[0].BlueprintId)
 	require.Equal(t, 2, *result.Data[0].BlueprintVersion)
 	require.Equal(t, fmt.Sprintf("/api/image-builder/v1.0/composes?blueprint_id=%s&limit=100&offset=0", blueprintId.String()), result.Links.First)
-	require.Equal(t, fmt.Sprintf("/api/image-builder/v1.0/composes?blueprint_id=%s&limit=100&offset=3", blueprintId.String()), result.Links.Last)
+	require.Equal(t, fmt.Sprintf("/api/image-builder/v1.0/composes?blueprint_id=%s&limit=100&offset=0", blueprintId.String()), result.Links.Last)
 	require.Equal(t, 4, len(result.Data))
 	require.Equal(t, 4, result.Meta.Count)
 
@@ -792,7 +792,7 @@ func TestHandlers_GetBlueprintComposes(t *testing.T) {
 	require.Equal(t, blueprintId, *result.Data[0].BlueprintId)
 	require.Equal(t, 2, *result.Data[0].BlueprintVersion)
 	require.Equal(t, fmt.Sprintf("/api/image-builder/v1.0/composes?blueprint_id=%s&blueprint_version=2&limit=100&offset=0", blueprintId.String()), result.Links.First)
-	require.Equal(t, fmt.Sprintf("/api/image-builder/v1.0/composes?blueprint_id=%s&blueprint_version=2&limit=100&offset=1", blueprintId.String()), result.Links.Last)
+	require.Equal(t, fmt.Sprintf("/api/image-builder/v1.0/composes?blueprint_id=%s&blueprint_version=2&limit=100&offset=0", blueprintId.String()), result.Links.Last)
 	require.Equal(t, 2, len(result.Data))
 	require.Equal(t, 2, result.Meta.Count)
 
@@ -1325,12 +1325,18 @@ func TestHandlers_GetBlueprints(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, result.Data, 1)
 	require.Equal(t, blueprintId, result.Data[0].Id)
+	require.Equal(t, 1, result.Meta.Count)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=blueprint&offset=0", result.Links.First)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=blueprint&offset=0", result.Links.Last)
 
 	respStatusCode, body = tutils.GetResponseBody(t, srvURL+"/api/image-builder/v1/blueprints?name=Blueprint", &tutils.AuthString0)
 	require.Equal(t, http.StatusOK, respStatusCode)
 	err = json.Unmarshal([]byte(body), &result)
 	require.NoError(t, err)
 	require.Len(t, result.Data, 0)
+	require.Equal(t, 0, result.Meta.Count)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=Blueprint&offset=0", result.Links.First)
+	require.Equal(t, "/api/image-builder/v1.0/blueprints?limit=100&name=Blueprint&offset=0", result.Links.Last)
 }
 
 func TestHandlers_DeleteBlueprint(t *testing.T) {

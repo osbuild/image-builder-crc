@@ -29,10 +29,9 @@ const (
 )
 
 func (h *Handlers) newLinksWithExtraParams(path string, count, limit int, params url.Values) ListResponseLinks {
-	lastOffset := count - 1
-	if lastOffset < 0 {
-		lastOffset = 0
-	}
+	// last page offset with page size defined by the limit
+	lastOffset := common.CalculateLastPageOffset(count, limit)
+
 	fullPath := url.URL{Path: fmt.Sprintf("%v/v%v/%s", RoutePrefix(), h.server.spec.Info.Version, path)}
 
 	params.Add("offset", "0")
@@ -192,42 +191,31 @@ func (h *Handlers) GetPackages(ctx echo.Context, params GetPackagesParams) error
 	}
 
 	limit := 100
-	if params.Limit != nil {
-		if *params.Limit > 0 {
-			limit = *params.Limit
-		}
+	if params.Limit != nil && *params.Limit > 0 {
+		limit = *params.Limit
 	}
 
 	offset := 0
 	if params.Offset != nil {
-		if *params.Offset > len(packages) {
-			offset = len(packages)
-		} else if *params.Offset > 0 {
-			offset = *params.Offset
-		}
+		offset = *params.Offset
 	}
 
-	upto := offset + limit
-	if upto > len(packages) {
-		upto = len(packages)
-	}
-
-	lastOffset := len(packages) - 1
-	if lastOffset < 0 {
-		lastOffset = 0
+	paginator, err := common.NewPaginator(packages, limit, offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid pagination parameters: %v", err))
 	}
 
 	return ctx.JSON(http.StatusOK, PackagesResponse{
-		Meta: ListResponseMeta{
-			len(packages),
-		},
+		Meta: ListResponseMeta{paginator.Count()},
 		Links: ListResponseLinks{
 			fmt.Sprintf("%v/v%v/packages?search=%v&distribution=%v&architecture=%v&offset=0&limit=%v",
-				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture, limit),
+				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture,
+				paginator.Limit()),
 			fmt.Sprintf("%v/v%v/packages?search=%v&distribution=%v&architecture=%v&offset=%v&limit=%v",
-				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture, lastOffset, limit),
+				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture,
+				paginator.LastPageOffset(), paginator.Limit()),
 		},
-		Data: packages[offset:upto],
+		Data: paginator.GetPage(),
 	})
 }
 
@@ -501,6 +489,92 @@ func (h *Handlers) GetComposeMetadata(ctx echo.Context, composeId uuid.UUID) err
 	status := ComposeMetadata{
 		OstreeCommit: cloudStat.OstreeCommit,
 		Packages:     &packages,
+	}
+
+	return ctx.JSON(http.StatusOK, status)
+}
+
+func (h *Handlers) GetComposeSBOMs(ctx echo.Context, composeId uuid.UUID, params GetComposeSBOMsParams) error {
+	err := h.canUserAccessComposeId(ctx, composeId)
+	if err != nil {
+		return err
+	}
+
+	limit := 100
+	if params.Limit != nil && *params.Limit > 0 {
+		limit = *params.Limit
+	}
+
+	offset := 0
+	if params.Offset != nil {
+		offset = *params.Offset
+	}
+
+	resp, err := h.server.cClient.ComposeSBOMs(ctx.Request().Context(), composeId)
+	if err != nil {
+		return err
+	}
+	defer closeBody(ctx, resp.Body)
+
+	if resp.StatusCode == http.StatusNotFound {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return echo.NewHTTPError(http.StatusNotFound, string(body))
+	} else if resp.StatusCode != http.StatusOK {
+		httpError := echo.NewHTTPError(http.StatusInternalServerError, "Failed querying compose SBOMs")
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			ctx.Logger().Errorf("unable to parse composer's compose SBOMs response: %v", err)
+		} else {
+			_ = httpError.SetInternal(fmt.Errorf("%s", body))
+		}
+		return httpError
+	}
+
+	var comSboms composer.ComposeSBOMs
+	err = json.NewDecoder(resp.Body).Decode(&comSboms)
+	if err != nil {
+		return err
+	}
+
+	var sboms []ImageSBOM
+
+	// NB: Composer returns a list of SBOMs for each image request, but CRC API
+	// allows only one image request per compose.
+	if len(comSboms.Items) > 1 {
+		return echo.NewHTTPError(http.StatusInternalServerError, "More than one image request in compose")
+	}
+
+	if len(comSboms.Items) > 0 {
+		firstImgReqSBOMs := comSboms.Items[0]
+		for _, sbom := range firstImgReqSBOMs {
+			sboms = append(sboms, ImageSBOM{
+				PipelineName:    sbom.PipelineName,
+				PipelinePurpose: ImageSBOMPipelinePurpose(sbom.PipelinePurpose),
+				SbomType:        ImageSBOMSbomType(sbom.SbomType),
+				Sbom:            sbom.Sbom,
+			})
+		}
+	}
+
+	paginator, err := common.NewPaginator(sboms, limit, offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid pagination parameters: %v", err))
+	}
+
+	status := ComposeSBOMsResponse{
+		Meta: ListResponseMeta{
+			Count: paginator.Count(),
+		},
+		Links: ListResponseLinks{
+			First: fmt.Sprintf("%v/v%v/composes/%v/sboms?offset=0&limit=%v",
+				RoutePrefix(), h.server.spec.Info.Version, composeId, paginator.Limit()),
+			Last: fmt.Sprintf("%v/v%v/composes/%v/sboms?offset=%v&limit=%v",
+				RoutePrefix(), h.server.spec.Info.Version, composeId, paginator.LastPageOffset(), paginator.Limit()),
+		},
+		Data: paginator.GetPage(),
 	}
 
 	return ctx.JSON(http.StatusOK, status)
@@ -824,25 +898,10 @@ func (h *Handlers) GetComposeClones(ctx echo.Context, composeId uuid.UUID, param
 		})
 	}
 
-	lastOffset := count - 1
-	if lastOffset < 0 {
-		lastOffset = 0
-	}
-
-	spec, err := GetSwagger()
-	if err != nil {
-		return err
-	}
-
 	return ctx.JSON(http.StatusOK, ClonesResponse{
-		Meta: ListResponseMeta{count},
-		Links: ListResponseLinks{
-			fmt.Sprintf("%v/v%v/composes/%v/clones?offset=%v&limit=%v",
-				RoutePrefix(), spec.Info.Version, composeId, 0, limit),
-			fmt.Sprintf("%v/v%v/composes/%v/clones?offset=%v&limit=%v",
-				RoutePrefix(), spec.Info.Version, composeId, lastOffset, limit),
-		},
-		Data: data,
+		Meta:  ListResponseMeta{count},
+		Links: h.newLinksWithExtraParams(fmt.Sprintf("composes/%v/clones", composeId), count, limit, url.Values{}),
+		Data:  data,
 	})
 }
 
