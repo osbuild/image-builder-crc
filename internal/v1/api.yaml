@@ -1595,6 +1595,7 @@ components:
       required:
         - packages
         - recommendedPackages
+        - distribution
       type: object
       properties:
         packages:
@@ -1605,6 +1606,8 @@ components:
           type: integer
           format: int32
           default: 3
+        distribution:
+          $ref: '#/components/schemas/Distributions'
     RecommendationsResponse:
       required:
         - packages
@@ -1614,6 +1617,8 @@ components:
           type: array
           items:
             type: string
+        modelVersion:
+          type: string
     ClonesResponse:
       required:
         - meta
