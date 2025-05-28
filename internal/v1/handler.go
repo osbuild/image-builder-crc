@@ -564,8 +564,7 @@ func (h *Handlers) GetComposeSBOMs(ctx echo.Context, composeId uuid.UUID, params
 	// NB: This is to signal to ourselves that the endpoint is not efficient,
 	// because it is not using paginated endpoint in the composer service.
 	if len(sboms) > 100 {
-		slog.WarnContext(ctx.Request().Context(),
-			"More than 100 SBOMs returned for a compose. Consider using paginated endpoint in composer service")
+		slog.WarnContext(ctx.Request().Context(), "more than 100 SBOMs returned for a compose")
 	}
 
 	paginator, err := common.NewPaginator(sboms, limit, offset)
