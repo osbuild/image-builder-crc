@@ -997,11 +997,24 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		diskType := composer.DiskType(*cust.Disk.Type)
 		disk.Type = &diskType
 		for _, part := range cust.Disk.Partitions {
-			disk.Partitions = append(disk.Partitions,
-				composer.Partition{
-					Type: part.union,
-				},
-			)
+			if fs, err := part.AsFilesystemTyped(); err != nil {
+				fstype := composer.FilesystemTypedFsType(*fs.FsType)
+
+				plainType := composer.FilesystemTypedType(*fs.Type)
+				fspart := composer.Partition{}
+				err := fspart.FromFilesystemTyped(composer.FilesystemTyped{
+					Type:       &plainType,
+					FsType:     &fstype,
+					Label:      fs.Label,
+					Minsize:    fs.Minsize,
+					Mountpoint: fs.Mountpoint,
+					PartType:   fs.PartType,
+				})
+				if err != nil {
+					return nil, echo.NewHTTPError(http.StatusInternalServerError, "")
+				}
+				disk.Partitions = append(disk.Partitions, fspart)
+			}
 		}
 	}
 
