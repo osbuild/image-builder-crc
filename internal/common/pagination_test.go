@@ -144,7 +144,7 @@ func TestGetPage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			paginator, err := common.NewPaginator(tc.items, tc.limit, tc.offset)
 			require.NoError(t, err)
-			page := paginator.GetPage()
+			page := paginator.Page()
 			assert.Equal(t, tc.page, page)
 		})
 	}
