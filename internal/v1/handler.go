@@ -216,7 +216,7 @@ func (h *Handlers) GetPackages(ctx echo.Context, params GetPackagesParams) error
 				RoutePrefix(), h.server.spec.Info.Version, params.Search, params.Distribution, params.Architecture,
 				paginator.LastPageOffset(), paginator.Limit()),
 		},
-		Data: paginator.GetPage(),
+		Data: paginator.Page(),
 	})
 }
 
@@ -582,7 +582,7 @@ func (h *Handlers) GetComposeSBOMs(ctx echo.Context, composeId uuid.UUID, params
 			Last: fmt.Sprintf("%v/v%v/composes/%v/sboms?offset=%v&limit=%v",
 				RoutePrefix(), h.server.spec.Info.Version, composeId, paginator.LastPageOffset(), paginator.Limit()),
 		},
-		Data: paginator.GetPage(),
+		Data: paginator.Page(),
 	}
 
 	return ctx.JSON(http.StatusOK, status)
