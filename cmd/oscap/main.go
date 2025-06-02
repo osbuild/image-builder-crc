@@ -227,7 +227,7 @@ func generateJson(dir, datastreamDistro, profileDescription, profile string) {
 	customizations.Openscap = &openscap
 
 	// Write it all down on the fileSystem
-	bArray, err := json.Marshal(customizations)
+	bArray, err := json.MarshalIndent(customizations, "", "  ")
 	if err != nil {
 		panic(err)
 	}
