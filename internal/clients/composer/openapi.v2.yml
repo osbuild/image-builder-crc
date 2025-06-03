@@ -133,6 +133,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteCompose
+      summary: Delete a compose
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+            example: '123e4567-e89b-12d3-a456-426655440000'
+          required: true
+          description: ID of compose to delete
+      description: |-
+        Delete a compose and all of its independent jobs.
+      responses:
+        '200':
+          description: compose delete status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComposeDeleteStatus'
+        '400':
+          description: Invalid compose id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Auth token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Unauthorized to perform operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Unknown compose id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Unexpected error occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 
   /composes/{id}/metadata:
     get:
@@ -805,6 +859,10 @@ components:
         - failure
         - pending
       example: success
+
+    ComposeDeleteStatus:
+      $ref: '#/components/schemas/ObjectReference'
+
     ComposeLogs:
       allOf:
       - $ref: '#/components/schemas/ObjectReference'
@@ -1154,6 +1212,7 @@ components:
         - aws-rhui
         - aws-sap-rhui
         - azure
+        - azure-cvm
         - azure-eap7-rhui
         - azure-rhui
         - azure-sap-rhui
@@ -2626,11 +2685,10 @@ components:
     FilesystemTyped:
       type: object
       required:
-        - mountpoint
+        - fs_type
       properties:
         type:
           type: string
-          default: plain
           enum:
             - plain
         part_type:
@@ -2649,11 +2707,13 @@ components:
             - ext4
             - xfs
             - vfat
+            - swap
           description: |
-            The filesystem type
+            The filesystem type. Swap partitions must have an empty mountpoint.
     BtrfsVolume:
       type: object
       required:
+        - type
         - subvolumes
       properties:
         type:
@@ -2687,6 +2747,7 @@ components:
     VolumeGroup:
       type: object
       required:
+        - type
         - logical_volumes
       properties:
         type:
@@ -2710,7 +2771,7 @@ components:
     LogicalVolume:
       type: object
       required:
-        - mountpoint
+        - fs_type
       properties:
         name:
           type: string
@@ -2728,8 +2789,9 @@ components:
             - ext4
             - xfs
             - vfat
+            - swap
           description: |
-            The filesystem type for the logical volume
+            The filesystem type for the logical volume. Swap LVs must have an empty mountpoint.
     minsize:
       type: string
       example: "2 GiB"
