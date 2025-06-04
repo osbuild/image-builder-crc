@@ -1349,7 +1349,18 @@ func TestGetCustomizations(t *testing.T) {
 				if result.Openscap == nil {
 					require.Nil(t, customizations.Openscap)
 				} else {
-					require.Equal(t, *customizations.Openscap, *result.Openscap)
+					// v1.OpenSCAP is a union type, which means internally it's
+					// a raw message ([]byte) that can be unmarshalled into one
+					// of a number of types. If we compare them directly, they
+					// wont match if the indentation of the json doesn't match.
+					// Marshalling the two instances makes sure we get rid of
+					// any internal json formatting differences between the two
+					// sources.
+					custSerialized, err := json.Marshal(customizations.Openscap)
+					require.NoError(t, err)
+					resSerialized, err := json.Marshal(result.Openscap)
+					require.NoError(t, err)
+					require.Equal(t, custSerialized, resSerialized)
 				}
 			}
 		}
