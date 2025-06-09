@@ -490,6 +490,9 @@ type CloneStatus_Options struct {
 	union json.RawMessage
 }
 
+// ComposeDeleteStatus defines model for ComposeDeleteStatus.
+type ComposeDeleteStatus = ObjectReference
+
 // ComposeId defines model for ComposeId.
 type ComposeId struct {
 	Href string             `json:"href"`
