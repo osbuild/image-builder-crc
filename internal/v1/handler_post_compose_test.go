@@ -817,7 +817,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// basic without payload or custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -831,7 +831,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -866,7 +866,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// basic with old snapshotting date format
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -880,7 +880,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -915,7 +915,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload 2 custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -953,7 +953,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1014,7 +1014,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 2 payload 1 custom repository
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1051,7 +1051,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1110,7 +1110,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// repositories by uuid
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1146,7 +1146,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1207,7 +1207,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// gcp
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1241,7 +1241,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGcp,
@@ -1318,7 +1318,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload & custom repository with an empty, but not-nil gpg key
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: "rhel-9.6",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1344,7 +1344,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: "rhel-9.6",
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
