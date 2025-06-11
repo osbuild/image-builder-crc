@@ -2626,11 +2626,10 @@ components:
     FilesystemTyped:
       type: object
       required:
-        - mountpoint
+        - fs_type
       properties:
         type:
           type: string
-          default: plain
           enum:
             - plain
         part_type:
@@ -2649,11 +2648,13 @@ components:
             - ext4
             - xfs
             - vfat
+            - swap
           description: |
-            The filesystem type
+            The filesystem type. Swap partitions must have an empty mountpoint.
     BtrfsVolume:
       type: object
       required:
+        - type
         - subvolumes
       properties:
         type:
@@ -2687,6 +2688,7 @@ components:
     VolumeGroup:
       type: object
       required:
+        - type
         - logical_volumes
       properties:
         type:
@@ -2710,7 +2712,7 @@ components:
     LogicalVolume:
       type: object
       required:
-        - mountpoint
+        - fs_type
       properties:
         name:
           type: string
@@ -2728,8 +2730,9 @@ components:
             - ext4
             - xfs
             - vfat
+            - swap
           description: |
-            The filesystem type for the logical volume
+            The filesystem type for the logical volume. Swap LVs must have an empty mountpoint.
     minsize:
       type: string
       example: "2 GiB"
