@@ -147,6 +147,7 @@ const (
 	ImageTypesGuestImage        ImageTypes = "guest-image"
 	ImageTypesImageInstaller    ImageTypes = "image-installer"
 	ImageTypesOci               ImageTypes = "oci"
+	ImageTypesOpenshiftVirt     ImageTypes = "openshift-virt"
 	ImageTypesRhelEdgeCommit    ImageTypes = "rhel-edge-commit"
 	ImageTypesRhelEdgeInstaller ImageTypes = "rhel-edge-installer"
 	ImageTypesVhd               ImageTypes = "vhd"
