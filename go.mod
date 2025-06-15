@@ -3,7 +3,7 @@ module github.com/osbuild/image-builder-crc
 go 1.22.9
 
 require (
-	github.com/BurntSushi/toml v1.5.0
+	github.com/BurntSushi/toml v1.5.1-0.20250403130103-3d3abc24416a
 	github.com/Unleash/unleash-client-go/v4 v4.3.0
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/getsentry/sentry-go/echo v0.31.1
@@ -14,9 +14,9 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/labstack/gommon v0.4.2
 	github.com/oapi-codegen/runtime v1.1.1
-	github.com/osbuild/blueprint v1.0.0
+	github.com/osbuild/blueprint v1.9.0
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32
-	github.com/osbuild/images v0.129.0
+	github.com/osbuild/images v0.147.0
 	github.com/osbuild/logging v0.0.4
 	github.com/prometheus/client_golang v1.21.1
 	github.com/redhatinsights/app-common-go v1.6.8
