@@ -26,10 +26,10 @@
     }
   ],
   "kernel": {
-    "append": "audit_backlog_limit=8192 audit=1 slub_debug=P page_poison=1 vsyscall=none pti=on"
+    "append": "audit_backlog_limit=8192 audit=1 page_poison=1 vsyscall=none pti=on init_on_free=1"
   },
   "openscap": {
-    "profile_description": "This profile contains configuration checks that align to the DISA STIG for Red Hat Enterprise Linux 8 V2R1.  In addition to being applicable to Red Hat Enterprise Linux 8, DISA recognizes this configuration baseline as applicable to the operating system tier of Red Hat technologies that are based on Red Hat Enterprise Linux 8, such as:  - Red Hat Enterprise Linux Server - Red Hat Enterprise Linux Workstation and Desktop - Red Hat Enterprise Linux for HPC - Red Hat Storage - Red Hat Containers with a Red Hat Enterprise Linux 8 image",
+    "profile_description": "This profile contains configuration checks that align to the DISA STIG for Red Hat Enterprise Linux 8 V2R3.  In addition to being applicable to Red Hat Enterprise Linux 8, this configuration baseline is applicable to the operating system tier of Red Hat technologies that are based on Red Hat Enterprise Linux 8, such as:  - Red Hat Enterprise Linux Server - Red Hat Enterprise Linux Workstation and Desktop - Red Hat Enterprise Linux for HPC - Red Hat Storage - Red Hat Containers with a Red Hat Enterprise Linux 8 image",
     "profile_id": "xccdf_org.ssgproject.content_profile_stig",
     "profile_name": "DISA STIG for Red Hat Enterprise Linux 8"
   },
