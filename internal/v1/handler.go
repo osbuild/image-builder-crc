@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -490,99 +489,6 @@ func (h *Handlers) GetComposeMetadata(ctx echo.Context, composeId uuid.UUID) err
 	status := ComposeMetadata{
 		OstreeCommit: cloudStat.OstreeCommit,
 		Packages:     &packages,
-	}
-
-	return ctx.JSON(http.StatusOK, status)
-}
-
-func (h *Handlers) GetComposeSBOMs(ctx echo.Context, composeId uuid.UUID, params GetComposeSBOMsParams) error {
-	err := h.canUserAccessComposeId(ctx, composeId)
-	if err != nil {
-		return err
-	}
-
-	limit := 100
-	if params.Limit != nil && *params.Limit > 0 {
-		limit = *params.Limit
-	}
-
-	offset := 0
-	if params.Offset != nil {
-		offset = *params.Offset
-	}
-
-	resp, err := h.server.cClient.ComposeSBOMs(ctx.Request().Context(), composeId)
-	if err != nil {
-		return err
-	}
-	defer closeBody(ctx, resp.Body)
-
-	if resp.StatusCode == http.StatusNotFound {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return echo.NewHTTPError(http.StatusNotFound, string(body))
-	} else if resp.StatusCode != http.StatusOK {
-		httpError := echo.NewHTTPError(http.StatusInternalServerError, "Failed querying compose SBOMs")
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			ctx.Logger().Errorf("unable to read composer's compose SBOMs response: %v", err)
-		} else {
-			_ = httpError.SetInternal(fmt.Errorf("%s", body))
-		}
-		return httpError
-	}
-
-	var comSboms composer.ComposeSBOMs
-	err = json.NewDecoder(resp.Body).Decode(&comSboms)
-	if err != nil {
-		return echo.NewHTTPError(
-			http.StatusInternalServerError, "Failed to decode composer's compose SBOMs response").SetInternal(err)
-	}
-
-	var sboms []ImageSBOM
-
-	// NB: Composer returns a list of SBOMs for each image request, but CRC API
-	// allows only one image request per compose.
-	if len(comSboms.Items) > 1 {
-		return echo.NewHTTPError(http.StatusInternalServerError, "More than one image request in compose")
-	}
-
-	if len(comSboms.Items) > 0 {
-		firstImgReqSBOMs := comSboms.Items[0]
-		for _, sbom := range firstImgReqSBOMs {
-			sboms = append(sboms, ImageSBOM{
-				PipelineName:    sbom.PipelineName,
-				PipelinePurpose: ImageSBOMPipelinePurpose(sbom.PipelinePurpose),
-				SbomType:        ImageSBOMSbomType(sbom.SbomType),
-				Sbom:            sbom.Sbom,
-			})
-		}
-	}
-
-	// NB: This is to signal to ourselves that the endpoint is not efficient,
-	// because it is not using paginated endpoint in the composer service.
-	if len(sboms) > 100 {
-		slog.WarnContext(ctx.Request().Context(), "more than 100 SBOMs returned for a compose")
-	}
-
-	paginator, err := common.NewPaginator(sboms, limit, offset)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid pagination parameters: %v", err))
-	}
-
-	status := ComposeSBOMsResponse{
-		Meta: ListResponseMeta{
-			Count: paginator.Count(),
-		},
-		Links: ListResponseLinks{
-			First: fmt.Sprintf("%v/v%v/composes/%v/sboms?offset=0&limit=%v",
-				RoutePrefix(), h.server.spec.Info.Version, composeId, paginator.Limit()),
-			Last: fmt.Sprintf("%v/v%v/composes/%v/sboms?offset=%v&limit=%v",
-				RoutePrefix(), h.server.spec.Info.Version, composeId, paginator.LastPageOffset(), paginator.Limit()),
-		},
-		Data: paginator.Page(),
 	}
 
 	return ctx.JSON(http.StatusOK, status)

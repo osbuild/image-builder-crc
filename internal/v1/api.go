@@ -115,17 +115,6 @@ const (
 	ImageRequestArchitectureX8664   ImageRequestArchitecture = "x86_64"
 )
 
-// Defines values for ImageSBOMPipelinePurpose.
-const (
-	Buildroot ImageSBOMPipelinePurpose = "buildroot"
-	Image     ImageSBOMPipelinePurpose = "image"
-)
-
-// Defines values for ImageSBOMSbomType.
-const (
-	Spdx ImageSBOMSbomType = "spdx"
-)
-
 // Defines values for ImageStatusStatus.
 const (
 	ImageStatusStatusBuilding    ImageStatusStatus = "building"
@@ -424,16 +413,6 @@ type ComposeRequest struct {
 // ComposeResponse defines model for ComposeResponse.
 type ComposeResponse struct {
 	Id openapi_types.UUID `json:"id"`
-}
-
-// ComposeSBOMsResponse defines model for ComposeSBOMsResponse.
-type ComposeSBOMsResponse struct {
-	// Data The SBOM documents for the given image. Each image usually has
-	// at least two SBOMs, one for the build environment and one for the
-	// actual content of the image.
-	Data  []ImageSBOM       `json:"data"`
-	Links ListResponseLinks `json:"links"`
-	Meta  ListResponseMeta  `json:"meta"`
 }
 
 // ComposeStatus defines model for ComposeStatus.
@@ -828,36 +807,6 @@ type ImageRequest struct {
 // ImageRequestArchitecture CPU architecture of the image, x86_64 and aarch64 are currently supported.
 type ImageRequestArchitecture string
 
-// ImageSBOM defines model for ImageSBOM.
-type ImageSBOM struct {
-	// PipelineName The name of the osbuild pipeline which has the packages described
-	// in the SBOM installed.
-	PipelineName string `json:"pipeline_name"`
-
-	// PipelinePurpose The purpose of the pipeline. The `buildroot` pipeline was used for
-	// the build environment dueing the image build. The `image` pipeline
-	// represents the actual content of the image. Due to the nature of
-	// some image types, there may be multiple pipelines of the same
-	// purpose.
-	PipelinePurpose ImageSBOMPipelinePurpose `json:"pipeline_purpose"`
-
-	// Sbom The SBOM document in the 'sbom_type' format.
-	Sbom interface{} `json:"sbom"`
-
-	// SbomType The type of the SBOM document. Currently only SPDX is supported.
-	SbomType ImageSBOMSbomType `json:"sbom_type"`
-}
-
-// ImageSBOMPipelinePurpose The purpose of the pipeline. The `buildroot` pipeline was used for
-// the build environment dueing the image build. The `image` pipeline
-// represents the actual content of the image. Due to the nature of
-// some image types, there may be multiple pipelines of the same
-// purpose.
-type ImageSBOMPipelinePurpose string
-
-// ImageSBOMSbomType The type of the SBOM document. Currently only SPDX is supported.
-type ImageSBOMSbomType string
-
 // ImageStatus defines model for ImageStatus.
 type ImageStatus struct {
 	Error        *ComposeStatusError `json:"error,omitempty"`
@@ -1185,15 +1134,6 @@ type GetComposeClonesParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Offset clones page offset, default 0
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
-}
-
-// GetComposeSBOMsParams defines parameters for GetComposeSBOMs.
-type GetComposeSBOMsParams struct {
-	// Limit The numbers of items to return, default 100.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
-
-	// Offset The number of items to skip before starting to collect the result set, default 0.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
@@ -2055,9 +1995,6 @@ type ServerInterface interface {
 	// get metadata of an image compose
 	// (GET /composes/{composeId}/metadata)
 	GetComposeMetadata(ctx echo.Context, composeId openapi_types.UUID) error
-	// Get the SBOMs for a compose.
-	// (GET /composes/{composeId}/sboms)
-	GetComposeSBOMs(ctx echo.Context, composeId openapi_types.UUID, params GetComposeSBOMsParams) error
 	// get the distributions available to this user
 	// (GET /distributions)
 	GetDistributions(ctx echo.Context) error
@@ -2444,38 +2381,6 @@ func (w *ServerInterfaceWrapper) GetComposeMetadata(ctx echo.Context) error {
 	return err
 }
 
-// GetComposeSBOMs converts echo context to params.
-func (w *ServerInterfaceWrapper) GetComposeSBOMs(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "composeId" -------------
-	var composeId openapi_types.UUID
-
-	err = runtime.BindStyledParameterWithOptions("simple", "composeId", ctx.Param("composeId"), &composeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter composeId: %s", err))
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetComposeSBOMsParams
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
-	}
-
-	// ------------- Optional query parameter "offset" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetComposeSBOMs(ctx, composeId, params)
-	return err
-}
-
 // GetDistributions converts echo context to params.
 func (w *ServerInterfaceWrapper) GetDistributions(ctx echo.Context) error {
 	var err error
@@ -2683,7 +2588,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/composes/:composeId/clone", wrapper.CloneCompose)
 	router.GET(baseURL+"/composes/:composeId/clones", wrapper.GetComposeClones)
 	router.GET(baseURL+"/composes/:composeId/metadata", wrapper.GetComposeMetadata)
-	router.GET(baseURL+"/composes/:composeId/sboms", wrapper.GetComposeSBOMs)
 	router.GET(baseURL+"/distributions", wrapper.GetDistributions)
 	router.POST(baseURL+"/experimental/blueprints/:id/fixup", wrapper.FixupBlueprint)
 	router.POST(baseURL+"/experimental/recommendations", wrapper.RecommendPackage)
