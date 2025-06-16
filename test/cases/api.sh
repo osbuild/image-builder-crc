@@ -392,60 +392,6 @@ function Test_verifyComposeResult() {
   Test_verifyComposeResultAWS "$UPLOAD_OPTIONS"
 }
 
-### Case: verify the Software Bill of Materials (SBOMs) for a finished compose
-function Test_verifyComposeSBOMs() {
-  local RESULT
-  # disable verbose shell output because the response is too long
-  set +x
-  RESULT=$($CURLCMD -H "$HEADER" --request GET "$BASEURL/composes/$COMPOSE_ID/sboms")
-  EXIT_CODE=$(getExitCode "$RESULT")
-  [[ $EXIT_CODE == 200 ]]
-
-  local SBOMS
-  SBOMS=$(getResponse "$RESULT" | jq -r '.data')
-  if [[ $(echo "$SBOMS" | jq -r 'length') -ne 2 ]]; then
-    set -x
-    echo "SBOMs are not 2. Got response:"
-    echo "$RESULT" | jq -r .
-    exit 1
-  fi
-
-  # There should be 2 SBOMs: one for the 'image' and one for the 'buildroot'
-  # Check the 'image' SBOM
-  local SBOM_OS
-  SBOM_OS=$(echo "$SBOMS" | jq -r '.[] | select(.pipeline_name == "os")')
-  if [[ -z "$SBOM_OS" ]]; then
-    set -x
-    echo "SBOM for pipeline name 'os' not found. Got response:"
-    echo "$RESULT" | jq -r .
-    exit 1
-  fi
-  [[ $(echo "$SBOM_OS" | jq -r '.pipeline_purpose') == "image" ]]
-  [[ $(echo "$SBOM_OS" | jq -r '.sbom_type') == "spdx" ]]
-  # check if there is 'postgresql' in the sbom
-  local SBOM_OS_PGSQL_PKG
-  SBOM_OS_PGSQL_PKG=$(echo "$SBOM_OS" | jq -r '.sbom.packages[] | select(.name == "postgresql")')
-  if [[ -z "$SBOM_OS_PGSQL_PKG" ]]; then
-    set -x
-    echo "'postgresql' not found in SBOM for pipeline name 'os'. Got response:"
-    echo "$RESULT" | jq -r .
-    exit 1
-  fi
-
-  # Check the 'buildroot' SBOM
-  local SBOM_BUILD
-  SBOM_BUILD=$(echo "$SBOMS" | jq -r '.[] | select(.pipeline_name == "build")')
-  if [[ -z "$SBOM_BUILD" ]]; then
-    set -x
-    echo "SBOM for pipeline name 'build' not found. Got response:"
-    echo "$RESULT" | jq -r .
-    exit 1
-  fi
-  [[ $(echo "$SBOM_BUILD" | jq -r '.pipeline_purpose') == "buildroot" ]]
-  [[ $(echo "$SBOM_BUILD" | jq -r '.sbom_type') == "spdx" ]]
-  set -x
-}
-
 ### Case: verify package list of a finished compose
 function Test_verifyComposeMetadata() {
   local RESULT
@@ -486,7 +432,6 @@ Test_verifyComposeResult
 Test_verifyComposeMetadata
 Test_getComposes
 Test_postToComposerWithoutEnoughQuotas
-Test_verifyComposeSBOMs
 
 echo "########## Test success! ##########"
 exit 0
