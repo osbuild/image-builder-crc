@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 )
 
 // Defines values for AzureUploadRequestOptionsHyperVGeneration.
@@ -510,6 +511,7 @@ type Customizations struct {
 	// CustomRepositories List of custom repositories.
 	CustomRepositories *[]CustomRepository `json:"custom_repositories,omitempty"`
 	Directories        *[]Directory        `json:"directories,omitempty"`
+	Disk               *Disk               `json:"disk,omitempty"`
 
 	// EnabledModules List of dnf modules to enable, so that packages can be installed from them.
 	EnabledModules *[]Module `json:"enabled_modules,omitempty"`
@@ -608,6 +610,9 @@ type DirectoryUser1 = int64
 type Directory_User struct {
 	union json.RawMessage
 }
+
+// Disk defines model for Disk.
+type Disk = composer.Disk
 
 // DistributionItem defines model for DistributionItem.
 type DistributionItem struct {

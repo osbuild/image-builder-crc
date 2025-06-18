@@ -55,6 +55,7 @@ const (
 // Defines values for FilesystemTypedFsType.
 const (
 	FilesystemTypedFsTypeExt4 FilesystemTypedFsType = "ext4"
+	FilesystemTypedFsTypeSwap FilesystemTypedFsType = "swap"
 	FilesystemTypedFsTypeVfat FilesystemTypedFsType = "vfat"
 	FilesystemTypedFsTypeXfs  FilesystemTypedFsType = "xfs"
 )
@@ -119,6 +120,7 @@ const (
 // Defines values for LogicalVolumeFsType.
 const (
 	LogicalVolumeFsTypeExt4 LogicalVolumeFsType = "ext4"
+	LogicalVolumeFsTypeSwap LogicalVolumeFsType = "swap"
 	LogicalVolumeFsTypeVfat LogicalVolumeFsType = "vfat"
 	LogicalVolumeFsTypeXfs  LogicalVolumeFsType = "xfs"
 )
@@ -452,7 +454,7 @@ type BtrfsVolume struct {
 	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
 	PartType   *string          `json:"part_type,omitempty"`
 	Subvolumes []BtrfsSubvolume `json:"subvolumes"`
-	Type       *BtrfsVolumeType `json:"type,omitempty"`
+	Type       BtrfsVolumeType  `json:"type"`
 }
 
 // BtrfsVolumeType defines model for BtrfsVolume.Type.
@@ -859,20 +861,20 @@ type Filesystem struct {
 
 // FilesystemTyped defines model for FilesystemTyped.
 type FilesystemTyped struct {
-	// FsType The filesystem type
-	FsType *FilesystemTypedFsType `json:"fs_type,omitempty"`
-	Label  *string                `json:"label,omitempty"`
+	// FsType The filesystem type. Swap partitions must have an empty mountpoint.
+	FsType FilesystemTypedFsType `json:"fs_type"`
+	Label  *string               `json:"label,omitempty"`
 
 	// Minsize size with data units
 	Minsize    *Minsize `json:"minsize,omitempty"`
-	Mountpoint string   `json:"mountpoint"`
+	Mountpoint *string  `json:"mountpoint,omitempty"`
 
 	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
 	PartType *string              `json:"part_type,omitempty"`
 	Type     *FilesystemTypedType `json:"type,omitempty"`
 }
 
-// FilesystemTypedFsType The filesystem type
+// FilesystemTypedFsType The filesystem type. Swap partitions must have an empty mountpoint.
 type FilesystemTypedFsType string
 
 // FilesystemTypedType defines model for FilesystemTyped.Type.
@@ -1108,19 +1110,19 @@ type Locale struct {
 
 // LogicalVolume defines model for LogicalVolume.
 type LogicalVolume struct {
-	// FsType The filesystem type for the logical volume
-	FsType *LogicalVolumeFsType `json:"fs_type,omitempty"`
-	Label  *string              `json:"label,omitempty"`
+	// FsType The filesystem type for the logical volume. Swap LVs must have an empty mountpoint.
+	FsType LogicalVolumeFsType `json:"fs_type"`
+	Label  *string             `json:"label,omitempty"`
 
 	// Minsize size with data units
 	Minsize *Minsize `json:"minsize,omitempty"`
 
 	// Mountpoint Mountpoint for the logical volume
-	Mountpoint string  `json:"mountpoint"`
+	Mountpoint *string `json:"mountpoint,omitempty"`
 	Name       *string `json:"name,omitempty"`
 }
 
-// LogicalVolumeFsType The filesystem type for the logical volume
+// LogicalVolumeFsType The filesystem type for the logical volume. Swap LVs must have an empty mountpoint.
 type LogicalVolumeFsType string
 
 // Module defines model for Module.
@@ -1467,8 +1469,8 @@ type VolumeGroup struct {
 	Name *string `json:"name,omitempty"`
 
 	// PartType The partition type GUID for GPT partitions. For DOS partitions, this field can be used to set the (2 hex digit) partition type. If not set, the type will be automatically set based on the mountpoint or the payload type.
-	PartType *string          `json:"part_type,omitempty"`
-	Type     *VolumeGroupType `json:"type,omitempty"`
+	PartType *string         `json:"part_type,omitempty"`
+	Type     VolumeGroupType `json:"type"`
 }
 
 // VolumeGroupType defines model for VolumeGroup.Type.

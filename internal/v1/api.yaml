@@ -1729,6 +1729,8 @@ components:
           maxItems: 128
           items:
             $ref: '#/components/schemas/Filesystem'
+        disk:
+          $ref: '#/components/schemas/Disk'
         users:
           type: array
           items:
@@ -2273,3 +2275,5 @@ components:
           example: '22'
           description: |
             Stream to enable.
+    Disk:
+      x-go-type: composer.Disk
