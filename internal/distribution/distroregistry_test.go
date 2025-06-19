@@ -103,7 +103,7 @@ func TestDistroRegistry_Get(t *testing.T) {
 			NoPackageList:    true,
 		},
 		ArchX86: &Architecture{
-			ImageTypes: []string{"aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl"},
+			ImageTypes: []string{"aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "openshift-virt", "vsphere", "vsphere-ova", "wsl"},
 			Repositories: []Repository{
 				{
 					Id:            "baseos",
