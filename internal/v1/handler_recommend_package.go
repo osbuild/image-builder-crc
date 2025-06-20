@@ -28,17 +28,17 @@ func (h *Handlers) RecommendPackage(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, resp)
 }
 
-var supportedDistros = []string{"rhel-8", "rhel-9", "rhel-10"}
+var supportedDistros = []string{"rhel8", "rhel9", "rhel10"}
 
 func (h *Handlers) handleRecommendationsResponse(ctx echo.Context, req RecommendPackageRequest) (RecommendationsResponse, error) {
 	cloudRP := recommendations.RecommendPackageRequest{
 		Packages:            req.Packages,
 		RecommendedPackages: req.RecommendedPackages,
-		Distribution:        req.Distribution.String(),
+		Distribution:        req.Distribution,
 	}
 
 	if !slices.Contains(supportedDistros, cloudRP.Distribution) {
-		return RecommendationsResponse{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unsupported distribution %s", cloudRP.Distribution))
+		return RecommendationsResponse{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unsupported distribution %q", cloudRP.Distribution))
 	}
 
 	resp, err := h.server.rClient.RecommendationsPackages(ctx.Request().Context(), cloudRP)

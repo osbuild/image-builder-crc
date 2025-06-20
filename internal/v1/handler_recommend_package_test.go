@@ -34,7 +34,7 @@ func TestRecommendPackage(t *testing.T) {
 	defer srv.Shutdown(t)
 
 	payload := v1.RecommendPackageRequest{
-		Distribution: "rhel-8",
+		Distribution: "rhel8",
 		Packages: []string{
 			"some",
 			"packages",
