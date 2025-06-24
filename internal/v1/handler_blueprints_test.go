@@ -1538,6 +1538,29 @@ func TestLintBlueprint(t *testing.T) {
 			},
 			lintErrors: []v1.BlueprintLintItem{},
 		},
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-89",
+				Customizations: v1.Customizations{
+					Openscap: &oscap2,
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{
+				{Name: "Compliance", Description: "Compliance policy does not have a definition for the latest minor version"},
+			},
+		},
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-89",
+				Customizations: v1.Customizations{
+					Openscap: &oscap2,
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{
+				// this error is unfixable for now
+				{Name: "Compliance", Description: "Compliance policy does not have a definition for the latest minor version"},
+			},
+		},
 	}
 
 	for idx, c := range cases {
