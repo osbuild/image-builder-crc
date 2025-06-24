@@ -12,18 +12,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
-
+	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/labstack/echo/v4"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
+	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/images/pkg/crypt"
-
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
 )
 
 var (
