@@ -13,6 +13,7 @@ objects:
       "ignore-check.kube-linter.io/no-readiness-probe": "probes not required on Job pods"
   spec:
     backoffLimit: 0
+    ttlSecondsAfterFinished: 600
     template:
       spec:
         serviceAccountName: ${SERVICE_ACCOUNT}
