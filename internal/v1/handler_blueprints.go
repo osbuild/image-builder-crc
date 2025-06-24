@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/images/pkg/crypt"
@@ -334,10 +335,16 @@ func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fix
 		var err error
 		if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err == nil && compl.PolicyId != uuid.Nil {
 			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String())
-			if err != nil {
+			if err == compliance.ErrorTailoringNotFound {
+				lintErrors = append(lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: "Compliance policy does not have a definition for the latest minor version",
+				})
+			} else if err != nil {
 				return nil, err
+			} else {
+				lintErrors = append(lintErrors, errs...)
 			}
-			lintErrors = append(lintErrors, errs...)
 		}
 	}
 	return lintErrors, nil

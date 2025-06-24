@@ -206,8 +206,10 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 		return nil, err
 	}
 	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, policy)
-	if err != nil {
+	if err == compliance.ErrorTailoringNotFound {
 		return nil, err
+	} else if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args
