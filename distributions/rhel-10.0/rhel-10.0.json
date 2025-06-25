@@ -8,7 +8,7 @@
     "no_package_list": true
   },
   "x86_64": {
-    "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "oci", "wsl"],
+    "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl"],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/os",
