@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-GO_MAJOR_VER=1.22
-GO_VERSION=1.22.9 # also update .github/workflows/tests.yml
+GO_MAJOR_VER=1.23
+GO_VERSION=1.23.9 # also update .github/workflows/tests.yml
 
 # Check latest Go version for the minor we're using
 LATEST=$(curl -s https://endoflife.date/api/go/"${GO_MAJOR_VER}".json  | jq -r .latest)
