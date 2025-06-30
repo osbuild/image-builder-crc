@@ -1,6 +1,6 @@
 module github.com/osbuild/image-builder-crc
 
-go 1.22.9
+go 1.23.9
 
 require (
 	github.com/BurntSushi/toml v1.5.0
