@@ -198,6 +198,7 @@ objects:
           b.deleted as blueprint_deleted,
           c.request->'customizations'->'subscription' as subscription,
           c.request->'customizations'->'packages' as packages,
+          c.request->'customizations'->'enabled_modules' as enabled_modules,
           c.request->'customizations'->'filesystem' as filesystem,
           c.request->'customizations'->'payload_repositories' as payload_repositories,
           c.request->'customizations'->'openscap' as openscap,
