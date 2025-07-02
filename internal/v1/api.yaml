@@ -1319,7 +1319,7 @@ components:
           nullable: true
     ClientId:
       type: string
-      enum: ["api", "ui"]
+      enum: ["api", "ui", "mcp"]
       default: "api"
     ComposeResponse:
       required:
