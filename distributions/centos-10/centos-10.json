@@ -8,7 +8,7 @@
     "restricted_access": true
   },
   "x86_64": {
-    "image_types": [ "ami", "aws", "azure", "gcp", "guest-image", "image-installer", "oci", "openshift-virt", "openstack", "vsphere", "vsphere-ova", "wsl"],
+    "image_types": [ "ami", "aws", "azure", "gcp", "guest-image", "image-installer", "oci", "openstack", "vsphere", "vsphere-ova", "wsl"],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://composes.stream.centos.org/stream-10/production/latest-CentOS-Stream/compose/BaseOS/x86_64/os/",
@@ -36,7 +36,7 @@
     }]
   },
   "aarch64": {
-    "image_types": [ "aws", "azure", "guest-image", "openshift-virt", "openstack", "wsl"],
+    "image_types": [ "aws", "azure", "guest-image", "openstack", "wsl"],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://composes.stream.centos.org/stream-10/production/latest-CentOS-Stream/compose/BaseOS/aarch64/os/",

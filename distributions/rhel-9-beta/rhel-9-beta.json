@@ -8,7 +8,7 @@
     "no_package_list": true
   },
   "x86_64": {
-    "image_types": [ "aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "openshift-virt", "vsphere", "vsphere-ova", "wsl" ],
+    "image_types": [ "aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl" ],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://cdn.redhat.com/content/beta/rhel9/9/x86_64/baseos/os",
@@ -38,7 +38,7 @@
     }]
   },
   "aarch64": {
-    "image_types": [ "aws", "guest-image", "image-installer", "openshift-virt" ],
+    "image_types": [ "aws", "guest-image", "image-installer" ],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://cdn.redhat.com/content/beta/rhel9/9/aarch64/baseos/os",
