@@ -8,7 +8,7 @@
     "no_package_list": true
   },
   "x86_64": {
-    "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "oci", "openshift-virt", "wsl"],
+    "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "oci", "wsl"],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://cdn.redhat.com/content/beta/rhel10/10/x86_64/baseos/os",
@@ -36,7 +36,7 @@
     }]
   },
   "aarch64": {
-    "image_types": [ "aws", "guest-image", "image-installer", "openshift-virt"],
+    "image_types": [ "aws", "guest-image", "image-installer"],
     "repositories": [{
       "id": "baseos",
       "baseurl": "https://cdn.redhat.com/content/beta/rhel10/10/aarch64/baseos/os",

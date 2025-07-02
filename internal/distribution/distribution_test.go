@@ -27,7 +27,7 @@ func TestDistributionFile_Architecture(t *testing.T) {
 	arch.Packages = nil
 
 	require.Equal(t, &Architecture{
-		ImageTypes: []string{"ami", "vhd", "aws", "gcp", "azure", "edge-commit", "edge-installer", "rhel-edge-commit", "rhel-edge-installer", "guest-image", "image-installer", "oci", "openshift-virt", "vsphere", "vsphere-ova", "wsl"},
+		ImageTypes: []string{"ami", "vhd", "aws", "gcp", "azure", "edge-commit", "edge-installer", "rhel-edge-commit", "rhel-edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl"},
 		Repositories: []Repository{
 			{
 				Id:       "baseos",

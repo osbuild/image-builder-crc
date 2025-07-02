@@ -675,7 +675,7 @@ func TestGetArchitectures(t *testing.T) {
 		require.Equal(t, v1.Architectures{
 			v1.ArchitectureItem{
 				Arch:       "x86_64",
-				ImageTypes: []string{"ami", "vhd", "aws", "gcp", "azure", "edge-commit", "edge-installer", "rhel-edge-commit", "rhel-edge-installer", "guest-image", "image-installer", "oci", "openshift-virt", "vsphere", "vsphere-ova", "wsl"},
+				ImageTypes: []string{"ami", "vhd", "aws", "gcp", "azure", "edge-commit", "edge-installer", "rhel-edge-commit", "rhel-edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl"},
 				Repositories: []v1.Repository{
 					{
 						Baseurl: common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
@@ -688,7 +688,7 @@ func TestGetArchitectures(t *testing.T) {
 			},
 			v1.ArchitectureItem{
 				Arch:       "aarch64",
-				ImageTypes: []string{"aws", "guest-image", "image-installer", "openshift-virt"},
+				ImageTypes: []string{"aws", "guest-image", "image-installer"},
 				Repositories: []v1.Repository{
 					{
 						Baseurl: common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/aarch64/os/"),
