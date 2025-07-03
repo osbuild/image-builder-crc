@@ -22,6 +22,7 @@ const (
 // Defines values for ClientId.
 const (
 	Api ClientId = "api"
+	Mcp ClientId = "mcp"
 	Ui  ClientId = "ui"
 )
 
