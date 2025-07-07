@@ -1389,6 +1389,9 @@ type Subscription struct {
 	InsightsClientProxy *string `json:"insights_client_proxy,omitempty"`
 	Organization        string  `json:"organization"`
 
+	// PatchUrl Optional value used to specify the patch host when registering the system with Insights.
+	PatchUrl *string `json:"patch_url,omitempty"`
+
 	// Rhc Optional flag to use rhc to register the system, which also always enables Insights.
 	Rhc       *bool  `json:"rhc,omitempty"`
 	ServerUrl string `json:"server_url"`
