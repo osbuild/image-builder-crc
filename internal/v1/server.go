@@ -49,6 +49,7 @@ type Server struct {
 	distributionsDir    string
 	fedoraAuth          bool
 	insightsClientProxy string
+	patchURL            string
 }
 
 type ServerConfig struct {
@@ -69,6 +70,7 @@ type ServerConfig struct {
 	DistributionsDir    string
 	FedoraAuth          bool
 	InsightsClientProxy string
+	PatchURL            string
 }
 
 type AWSConfig struct {
@@ -127,6 +129,7 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		conf.DistributionsDir,
 		conf.FedoraAuth,
 		conf.InsightsClientProxy,
+		conf.PatchURL,
 	}
 	var h Handlers
 	h.server = &s

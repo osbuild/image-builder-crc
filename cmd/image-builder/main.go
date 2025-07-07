@@ -214,6 +214,7 @@ func main() {
 		DistributionsDir:    conf.DistributionsDir,
 		FedoraAuth:          conf.FedoraAuth,
 		InsightsClientProxy: conf.InsightsClientProxy,
+		PatchURL:            conf.PatchURL,
 	}
 
 	_, err = v1.Attach(serverConfig)

@@ -50,6 +50,7 @@ type ImageBuilderConfig struct {
 	UnleashURL               string `env:"UNLEASH_URL"`
 	UnleashToken             string `env:"UNLEASH_TOKEN"`
 	InsightsClientProxy      string `env:"INSIGHTS_CLIENT_PROXY"`
+	PatchURL                 string `env:"PATCH_URL"`
 }
 
 func (ibc *ImageBuilderConfig) IsDebug() bool {
