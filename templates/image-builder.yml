@@ -351,4 +351,6 @@ parameters:
       "local", "staging" or "production".
   - name: INSIGHTS_CLIENT_PROXY
     value: ""
+  - name: PATCH_URL
+    value: ""
 

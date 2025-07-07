@@ -2929,6 +2929,7 @@ func TestComposeCustomizations(t *testing.T) {
 						ServerUrl:           "",
 						InsightsClientProxy: common.ToPtr(""),
 						TemplateUuid:        common.ToPtr(mocks.TemplateID),
+						PatchUrl:            common.ToPtr(""),
 					},
 				},
 				Distribution: "rhel-9.5",

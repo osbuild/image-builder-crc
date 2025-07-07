@@ -848,6 +848,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			if ((major >= 9 && minor >= 6) || (major >= 10)) && cr.ImageRequests[0].ContentTemplateName != nil {
 				res.Subscription.TemplateName = cr.ImageRequests[0].ContentTemplateName
 			} else {
+				res.Subscription.PatchUrl = &h.server.patchURL
 				res.Subscription.TemplateUuid = cr.ImageRequests[0].ContentTemplate
 			}
 		}
