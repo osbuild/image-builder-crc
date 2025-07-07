@@ -4,22 +4,7 @@
     "schedule:earlyMondays"
   ],
   "prConcurrentLimit": 3,
-  "packageRules": [
-    {
-      "groupName": "go dependencies patch updates",
-      "groupSlug": "go-deps-patch",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchPackagePatterns": [
-        "*"
-      ],
-      "matchUpdateTypes": [
-        "patch"
-      ]
-    }
-  ],
-  "postUpdateOptions": [
-    "gomodTidy"
-  ]
+  "gomod": {
+    "enabled": false
+  }
 }
