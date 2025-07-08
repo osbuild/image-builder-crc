@@ -2969,9 +2969,8 @@ func TestComposeCustomizations(t *testing.T) {
 							Options: uo,
 						},
 						AAPRegistration: &v1.AAPRegistration{
-							AnsibleControllerUrl:    "http://some-url.org",
+							AnsibleCallbackUrl:      "http://some-url.org/api/controller/v2/job_templates/38/callback/",
 							HostConfigKey:           "some-key",
-							JobTemplateId:           38,
 							TlsCertificateAuthority: "---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---",
 						},
 					},
@@ -2986,7 +2985,7 @@ func TestComposeCustomizations(t *testing.T) {
 								"#!/usr/bin/bash\n\ncurl -s -i --data %q %s\n",
 								fmt.Sprintf("host_config_key=%s", "some-key"),
 								fmt.Sprintf(
-									"%s/api/v2/job_templates/%v/callback/",
+									"%s/api/controller/v2/job_templates/%v/callback/",
 									"http://some-url.org",
 									"38",
 								),

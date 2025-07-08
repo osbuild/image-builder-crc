@@ -1477,22 +1477,21 @@ components:
       x-go-name: AAPRegistration
       additionalProperties: false
       required:
-        - ansible_controller_url
-        - job_template_id
+        - ansible_callback_url
         - host_config_key
       properties:
-        ansible_controller_url:
+        ansible_callback_url:
           type: string
-          example: "https://aap-gw.example.com"
-        job_template_id:
-          type: integer
-          example: 38
+          example: "https://aap-gw.example.com/api/controller/v2/job_templates/9/callback/"
         host_config_key:
           type: string
           example: "44d7507f2ead49af5fca80aa18fd24bc"
         tls_certificate_authority:
           type: string
           x-go-type-skip-optional-pointer: true
+        skip_tls_verification:
+          type: boolean
+          description: "When true, indicates the user has confirmed that HTTPS callback URL does not require a CA certificate for verification"
     PackagesResponse:
       type: object
       required:

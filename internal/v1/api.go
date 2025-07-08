@@ -171,9 +171,11 @@ const (
 
 // AAPRegistration defines model for AAPRegistration.
 type AAPRegistration struct {
-	AnsibleControllerUrl    string `json:"ansible_controller_url"`
-	HostConfigKey           string `json:"host_config_key"`
-	JobTemplateId           int    `json:"job_template_id"`
+	AnsibleCallbackUrl string `json:"ansible_callback_url"`
+	HostConfigKey      string `json:"host_config_key"`
+
+	// SkipTlsVerification When true, indicates the user has confirmed that HTTPS callback URL does not require a CA certificate for verification
+	SkipTlsVerification     *bool  `json:"skip_tls_verification,omitempty"`
 	TlsCertificateAuthority string `json:"tls_certificate_authority,omitempty"`
 }
 

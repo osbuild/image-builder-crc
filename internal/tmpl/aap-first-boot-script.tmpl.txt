@@ -1,3 +1,3 @@
 #!/usr/bin/bash
 
-curl -s -i --data "host_config_key={{ .HostConfigKey }}" {{ .AnsibleControllerUrl }}/api/v2/job_templates/{{ .JobTemplateId }}/callback/
+curl -s -i --data "host_config_key={{ .HostConfigKey }}" {{ .AnsibleCallbackUrl }}
