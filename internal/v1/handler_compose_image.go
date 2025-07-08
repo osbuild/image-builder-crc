@@ -1273,9 +1273,9 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 
 	if aap := cr.ImageRequests[0].AAPRegistration; aap != nil {
 		script, err := tmpl.RenderAAPRegistrationScript(ctx.Request().Context(), tmpl.AAPRegistrationParams{
-			HostConfigKey:        aap.HostConfigKey,
-			AnsibleControllerUrl: aap.AnsibleControllerUrl,
-			JobTemplateId:        aap.JobTemplateId,
+			HostConfigKey:       aap.HostConfigKey,
+			AnsibleCallbackUrl:  aap.AnsibleCallbackUrl,
+			SkipTlsVerification: aap.SkipTlsVerification != nil && *aap.SkipTlsVerification,
 		})
 		if err != nil {
 			return nil, err
