@@ -225,6 +225,11 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 		}
 	}
 
+	// some policies (ansi minimal) only require some extra packages
+	if bp.Customizations == nil {
+		return lintErrors, nil
+	}
+
 	for _, fsc := range bp.Customizations.GetFilesystems() {
 		if cust.Filesystem == nil || !slices.ContainsFunc(*cust.Filesystem, func(fs Filesystem) bool {
 			return fs.Mountpoint == fsc.Mountpoint
@@ -280,6 +285,7 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 			}
 		}
 	}
+
 	if kernel := bp.Customizations.Kernel; kernel != nil {
 		if kernel.Name != "" && (cust.Kernel == nil || *cust.Kernel.Name != kernel.Name) {
 			lintErrors = append(lintErrors, BlueprintLintItem{
