@@ -1465,6 +1465,10 @@ func TestLintBlueprint(t *testing.T) {
 	require.NoError(t, oscap2.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
 		PolicyId: uuid.MustParse(mocks.PolicyID2),
 	}))
+	var oscap3 v1.OpenSCAP
+	require.NoError(t, oscap3.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
+		PolicyId: uuid.MustParse(mocks.MinimalPolicyID),
+	}))
 
 	cases := []struct {
 		blueprint  v1.BlueprintBody
@@ -1559,6 +1563,17 @@ func TestLintBlueprint(t *testing.T) {
 			lintErrors: []v1.BlueprintLintItem{
 				// this error is unfixable for now
 				{Name: "Compliance", Description: "Compliance policy does not have a definition for the latest minor version"},
+			},
+		},
+		{
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-8",
+				Customizations: v1.Customizations{
+					Openscap: &oscap3,
+				},
+			},
+			lintErrors: []v1.BlueprintLintItem{
+				{Name: "Compliance", Description: "package required-by-compliance required by policy is not present"},
 			},
 		},
 	}

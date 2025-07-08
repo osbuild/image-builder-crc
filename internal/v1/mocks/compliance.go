@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	PolicyID  = "2531793b-c607-4e1c-80b2-fbbaf9d12790"
-	PolicyID2 = "6b9bed55-153e-4315-b6c9-3e5d3985ef96"
+	PolicyID        = "2531793b-c607-4e1c-80b2-fbbaf9d12790"
+	PolicyID2       = "6b9bed55-153e-4315-b6c9-3e5d3985ef96"
+	MinimalPolicyID = "eb2bf3d1-9308-45d0-84f6-d638f3928a63"
 )
 
 func policies(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +24,7 @@ func policies(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	if !slices.Contains([]string{PolicyID, PolicyID2}, r.PathValue("id")) {
+	if !slices.Contains([]string{PolicyID, PolicyID2, MinimalPolicyID}, r.PathValue("id")) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -40,7 +41,7 @@ func policies(w http.ResponseWriter, r *http.Request) {
 			RefID          string `json:"ref_id"`
 			OSMajorVersion int    `json:"os_major_version"`
 		}{
-			ID:             PolicyID,
+			ID:             r.PathValue("id"),
 			RefID:          "openscap-ref-id",
 			OSMajorVersion: 8,
 		},
@@ -58,7 +59,7 @@ func tailorings(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	if !slices.Contains([]string{PolicyID, PolicyID2}, r.PathValue("id")) {
+	if !slices.Contains([]string{PolicyID, PolicyID2, MinimalPolicyID}, r.PathValue("id")) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -119,6 +120,15 @@ func tailoredBlueprint(w http.ResponseWriter, r *http.Request) {
 						Mountpoint: "/var",
 						MinSize:    400,
 					},
+				},
+			},
+		}
+	case MinimalPolicyID:
+		bp = blueprint.Blueprint{
+			Packages: []blueprint.Package{
+				{
+					Name:    "required-by-compliance",
+					Version: "*",
 				},
 			},
 		}
