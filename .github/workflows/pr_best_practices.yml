@@ -6,6 +6,7 @@ on:
     types: [opened, synchronize, reopened, edited]
   issue_comment:
     types: [created]
+  merge_group:
 
 jobs:
   pr-best-practices:
