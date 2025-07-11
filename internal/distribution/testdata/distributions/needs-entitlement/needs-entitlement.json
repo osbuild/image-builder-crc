@@ -1,0 +1,35 @@
+{
+  "module_platform_id": "platform:ned",
+  "distribution": {
+    "name": "needs-entitlement",
+    "description": "A distribution for testing entitlement"
+  },
+  "x86_64": {
+    "image_types": ["ned"],
+    "repositories": [
+      {
+        "id": "base",
+        "baseurl": "https://ned.example.com/base/x86_64",
+        "rhsm": true
+      },
+      {
+        "id": "other",
+        "baseurl": "https://ned.example.com/other/x86_64"
+      }
+    ]
+  },
+  "aarch64": {
+    "image_types": ["ned"],
+    "repositories": [
+      {
+        "id": "base",
+        "baseurl": "https://ned.example.com/base/aarch64",
+        "rhsm": true
+      },
+      {
+        "id": "other",
+        "baseurl": "https://ned.example.com/other/aarch64"
+      }
+    ]
+  }
+}

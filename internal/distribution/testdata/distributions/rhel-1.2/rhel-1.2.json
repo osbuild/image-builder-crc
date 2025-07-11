@@ -1,0 +1,16 @@
+{
+  "module_platform_id": "platform:rhel",
+  "distribution": {
+    "name": "rhel-1.2",
+    "description": "A distribution for rhel major/minor discovery",
+    "no_package_lists": true
+  },
+  "x86_64": {
+    "image_types": ["rhel"],
+    "repositories": []
+  },
+  "aarch64": {
+    "image_types": ["rhel"],
+    "repositories": []
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "module_platform_id": "platform:rad",
+  "distribution": {
+    "name": "restricted-access",
+    "description": "A distribution for testing the restricted_access field",
+    "restricted_access": true
+  },
+  "x86_64": {
+    "image_types": ["rad"],
+    "repositories": [
+      {
+        "id": "base",
+        "baseurl": "https://rad.example.com/base/x86_64"
+      },
+      {
+        "id": "other",
+        "baseurl": "https://rad.example.com/other/x86_64"
+      }
+    ]
+  },
+  "aarch64": {
+    "image_types": ["rad"],
+    "repositories": [
+      {
+        "id": "base",
+        "baseurl": "https://rad.example.com/base/aarch64"
+      },
+      {
+        "id": "other",
+        "baseurl": "https://rad.example.com/other/aarch64"
+      }
+    ]
+  }
+}
