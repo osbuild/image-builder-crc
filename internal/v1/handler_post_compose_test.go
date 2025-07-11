@@ -626,7 +626,6 @@ func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
 }
 
 func TestComposeImageAllowList(t *testing.T) {
-	distsDir := "../distribution/testdata/distributions"
 	allowFile := "../common/testdata/allow.json"
 	id := uuid.New()
 
@@ -673,8 +672,7 @@ func TestComposeImageAllowList(t *testing.T) {
 		defer apiSrv.Close()
 
 		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
-			DistributionsDir: distsDir,
-			AllowFile:        allowFile,
+			AllowFile: allowFile,
 		})
 		defer srv.Shutdown(t)
 
@@ -694,14 +692,13 @@ func TestComposeImageAllowList(t *testing.T) {
 		defer apiSrv.Close()
 
 		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
-			DistributionsDir: distsDir,
-			AllowFile:        allowFile,
+			AllowFile: allowFile,
 		})
 		defer srv.Shutdown(t)
 
-		payload := createPayload("rhel-8")
+		payload := createPayload("fedora-42")
 
-		respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
+		respStatusCode, body := tutils.PostResponseBodyWithAuth(t, srv.URL+"/api/image-builder/v1/compose", payload, &tutils.AuthString1)
 		require.Equal(t, http.StatusForbidden, respStatusCode)
 
 		var result v1.ComposeResponse
@@ -715,12 +712,11 @@ func TestComposeImageAllowList(t *testing.T) {
 		defer apiSrv.Close()
 
 		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
-			DistributionsDir: distsDir,
-			AllowFile:        "",
+			AllowFile: "",
 		})
 		defer srv.Shutdown(t)
 
-		payload := createPayload("rhel-8")
+		payload := createPayload("fedora-42")
 
 		respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
 		require.Equal(t, http.StatusForbidden, respStatusCode)
