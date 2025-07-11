@@ -10,61 +10,20 @@ import (
 
 func TestDistroRegistry_List(t *testing.T) {
 	allDistros := []string{
-		"rhel-8",
-		"rhel-8-nightly",
-		"rhel-84",
-		"rhel-85",
-		"rhel-86",
-		"rhel-87",
-		"rhel-88",
-		"rhel-89",
-		"rhel-8.10",
-		"rhel-9",
-		"rhel-9-beta",
-		"rhel-9-nightly",
-		"rhel-9.6-nightly",
-		"rhel-9.7-nightly",
-		"rhel-90",
-		"rhel-91",
-		"rhel-92",
-		"rhel-93",
-		"rhel-94",
-		"rhel-95",
-		"rhel-9.6",
-		"centos-9",
-		"rhel-10",
-		"rhel-10-beta",
-		"rhel-10-nightly",
-		"rhel-10.0-nightly",
-		"rhel-10.1-nightly",
-		"rhel-10.0",
-		"centos-10",
-		"fedora-37",
-		"fedora-38",
-		"fedora-39",
-		"fedora-40",
-		"fedora-41",
-		"fedora-42",
+		"needs-entitlement",
+		"no-packages",
+		"restricted-access",
+		"rhel-1.2",
+		"standard",
 	}
 	notEntitledDistros := []string{
-		"rhel-8-nightly",
-		"rhel-9-nightly",
-		"rhel-9.6-nightly",
-		"rhel-9.7-nightly",
-		"rhel-10-nightly",
-		"rhel-10.0-nightly",
-		"rhel-10.1-nightly",
-		"centos-9",
-		"centos-10",
-		"fedora-37",
-		"fedora-38",
-		"fedora-39",
-		"fedora-40",
-		"fedora-41",
-		"fedora-42",
+		"no-packages",
+		"restricted-access",
+		"rhel-1.2",
+		"standard",
 	}
 
-	dr, err := LoadDistroRegistry("../../distributions")
+	dr, err := LoadDistroRegistry("./testdata/distributions")
 	require.NoError(t, err)
 
 	result := dr.Available(true).List()
@@ -81,84 +40,90 @@ func TestDistroRegistry_List(t *testing.T) {
 }
 
 func TestDistroRegistry_Get(t *testing.T) {
-	dr, err := LoadDistroRegistry("../../distributions")
+	dr, err := LoadDistroRegistry("./testdata/distributions")
 	require.NoError(t, err)
 
-	result, err := dr.Available(true).Get("rhel-9")
-	require.Equal(t, "rhel-9.6", result.Distribution.Name)
+	result, err := dr.Available(true).Get("standard")
+	require.NoError(t, err)
+	require.Equal(t, "standard", result.Distribution.Name)
 	require.Nil(t, err)
 
-	// don't test packages, they are huge
-	result.ArchX86.Packages = nil
-	result.Aarch64.Packages = nil
+	pkgs := map[string][]Package{
+		"base": []Package{
+			{
+				Name:    "pkg-base-1",
+				Summary: "pkg-base-1",
+			},
+			{
+				Name:    "pkg-base-2",
+				Summary: "pkg-base-2",
+			},
+		},
+		"other": []Package{
+			{
+				Name:    "pkg-other-1",
+				Summary: "pkg-other-1",
+			},
+			{
+				Name:    "pkg-other-2",
+				Summary: "pkg-other-2",
+			},
+		},
+	}
 
 	require.Equal(t, &DistributionFile{
-		ModulePlatformID: "platform:el9",
-		OscapName:        "rhel9",
+		ModulePlatformID: "platform:std",
+		OscapName:        "standard",
 		Distribution: DistributionItem{
-			Description:      "Red Hat Enterprise Linux (RHEL) 9",
-			Name:             "rhel-9.6",
-			ComposerName:     common.ToPtr("rhel-9.6"),
+			Description:      "A distribution with no frills",
+			Name:             "standard",
+			ComposerName:     common.ToPtr("composer-standard"),
 			RestrictedAccess: false,
-			NoPackageList:    true,
+			NoPackageList:    false,
 		},
 		ArchX86: &Architecture{
-			ImageTypes: []string{"aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl"},
+			ImageTypes: []string{"std", "std2"},
 			Repositories: []Repository{
 				{
-					Id:            "baseos",
-					Baseurl:       common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os"),
-					Rhsm:          true,
+					Id:            "base",
+					Baseurl:       common.ToPtr("https://std.example.com/base/x86_64"),
+					Rhsm:          false,
 					CheckGpg:      common.ToPtr(true),
-					GpgKey:        common.ToPtr(rhelGpg),
+					GpgKey:        common.ToPtr("standard-gpgkey"),
 					ImageTypeTags: nil,
 				},
 				{
-					Id:            "appstream",
-					Baseurl:       common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os"),
-					Rhsm:          true,
-					CheckGpg:      common.ToPtr(true),
-					GpgKey:        common.ToPtr(rhelGpg),
-					ImageTypeTags: nil,
-				},
-				{
-					Id:            "google-compute-engine",
-					Baseurl:       common.ToPtr("https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable"),
+					Id:            "other",
+					Baseurl:       common.ToPtr("https://std.example.com/other/x86_64"),
 					Rhsm:          false,
 					CheckGpg:      common.ToPtr(true),
-					GpgKey:        common.ToPtr(googleSdkGpg),
-					ImageTypeTags: []string{"gcp"},
-				},
-				{
-					Id:            "google-cloud-sdk",
-					Baseurl:       common.ToPtr("https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64"),
-					Rhsm:          false,
-					CheckGpg:      common.ToPtr(true),
-					GpgKey:        common.ToPtr(googleSdkGpg),
-					ImageTypeTags: []string{"gcp"},
+					GpgKey:        common.ToPtr("standard-gpgkey"),
+					ImageTypeTags: []string{"std2"},
 				},
 			},
+			Packages: pkgs,
 		},
 		Aarch64: &Architecture{
-			ImageTypes: []string{"aws", "guest-image", "image-installer"},
+			ImageTypes: []string{"std", "std2"},
 			Repositories: []Repository{
 				{
-					Id:            "baseos",
-					Baseurl:       common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os"),
-					Rhsm:          true,
+					Id:            "base",
+					Baseurl:       common.ToPtr("https://std.example.com/base/aarch64"),
+					Rhsm:          false,
 					CheckGpg:      common.ToPtr(true),
-					GpgKey:        common.ToPtr(rhelGpg),
+					GpgKey:        common.ToPtr("standard-gpgkey"),
 					ImageTypeTags: nil,
 				},
 				{
-					Id:            "appstream",
-					Baseurl:       common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os"),
-					Rhsm:          true,
+					Id:            "other",
+					Baseurl:       common.ToPtr("https://std.example.com/other/aarch64"),
+					Rhsm:          false,
 					CheckGpg:      common.ToPtr(true),
-					GpgKey:        common.ToPtr(rhelGpg),
-					ImageTypeTags: nil,
+					GpgKey:        common.ToPtr("standard-gpgkey"),
+					ImageTypeTags: []string{"std2"},
 				},
 			},
+			Packages: pkgs,
 		},
 	}, result)
 
