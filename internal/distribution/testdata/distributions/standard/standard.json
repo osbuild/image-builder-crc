@@ -1,0 +1,45 @@
+{
+  "module_platform_id": "platform:std",
+  "oscap_name": "standard",
+  "distribution": {
+    "name": "standard",
+    "composer_name": "composer-standard",
+    "description": "A distribution with no frills"
+  },
+  "x86_64": {
+    "image_types": ["std", "std2"],
+    "repositories": [
+      {
+        "id": "base",
+        "baseurl": "https://std.example.com/base/x86_64",
+        "gpgkey": "standard-gpgkey",
+        "check_gpg": true
+      },
+      {
+        "id": "other",
+        "baseurl": "https://std.example.com/other/x86_64",
+        "gpgkey": "standard-gpgkey",
+        "check_gpg": true,
+        "image_type_tags": ["std2"]
+      }
+    ]
+  },
+  "aarch64": {
+    "image_types": ["std", "std2"],
+    "repositories": [
+      {
+        "id": "base",
+        "baseurl": "https://std.example.com/base/aarch64",
+        "gpgkey": "standard-gpgkey",
+        "check_gpg": true
+      },
+      {
+        "id": "other",
+        "baseurl": "https://std.example.com/other/aarch64",
+        "gpgkey": "standard-gpgkey",
+        "check_gpg": true,
+        "image_type_tags": ["std2"]
+      }
+    ]
+  }
+}

@@ -72,6 +72,10 @@ func PostResponseBody(t *testing.T, url string, body interface{}) (int, string) 
 	return responseBody(t, http.MethodPost, url, &AuthString0, body)
 }
 
+func PostResponseBodyWithAuth(t *testing.T, url string, body interface{}, auth *string) (int, string) {
+	return responseBody(t, http.MethodPost, url, auth, body)
+}
+
 func PutResponseBody(t *testing.T, url string, body interface{}) (int, string) {
 	return responseBody(t, http.MethodPut, url, &AuthString0, body)
 }
