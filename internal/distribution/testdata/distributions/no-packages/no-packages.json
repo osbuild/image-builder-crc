@@ -1,8 +1,8 @@
 {
   "module_platform_id": "platform:npd",
   "distribution": {
-    "name": "no-packages-distro",
-    "description": "A dummy distribution for testing the no_package_list field",
+    "name": "no-packages",
+    "description": "A distribution for testing the no_package_list field",
     "no_package_list": true
   },
   "x86_64": {
@@ -10,11 +10,11 @@
     "repositories": [
       {
         "id": "base",
-        "baseurl": "https://no-packages-distro.example.com/base/"
+        "baseurl": "https://npd.example.com/base/x86_64"
       },
       {
         "id": "other",
-        "baseurl": "https://no-packages-distro.example.com/other/"
+        "baseurl": "https://npd.example.com/other/x86_64"
       }
     ]
   },
@@ -23,11 +23,11 @@
     "repositories": [
       {
         "id": "base",
-        "baseurl": "https://no-packages-distro.example.com/base/aarch64"
+        "baseurl": "https://npd.example.com/base/aarch64"
       },
       {
         "id": "other",
-        "baseurl": "https://no-packages-distro.example.com/other/aarch64"
+        "baseurl": "https://npd.example.com/other/aarch64"
       }
     ]
   }
