@@ -87,6 +87,12 @@ func (bb *BlueprintBody) RedactCertificates() {
 	bb.Customizations.Cacerts = nil
 }
 
+func (bb *BlueprintBody) RedactAAPRegistration() {
+	if bb.Customizations.AAPRegistration != nil {
+		bb.Customizations.AAPRegistration.HostConfigKey = ""
+	}
+}
+
 // Merges Password or SshKey from other User struct to this User struct if it is not set
 func (u *User) MergeExisting(other User) {
 	if u.Password == nil {
@@ -176,6 +182,12 @@ func WithRedactedPasswords() BlueprintBodyOption {
 func WithRedactedCertificates() BlueprintBodyOption {
 	return func(bp *BlueprintBody) {
 		bp.RedactCertificates()
+	}
+}
+
+func WithRedactedAAPRegistration() BlueprintBodyOption {
+	return func(bp *BlueprintBody) {
+		bp.RedactAAPRegistration()
 	}
 }
 
@@ -369,9 +381,11 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 		blueprintEntry,
 		WithRedactedPasswords(),
 		WithRedactedCertificates(),
+		WithRedactedAAPRegistration(),
 		WithRedactedFiles([]string{
 			"/etc/systemd/system/register-satellite.service",
 			"/usr/local/sbin/register-satellite",
+			"/usr/local/sbin/aap-first-boot-reg",
 		}),
 	)
 	if err != nil {
