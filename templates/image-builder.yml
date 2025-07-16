@@ -136,6 +136,8 @@ objects:
             value: ${CHANNEL}
           - name: INSIGHTS_CLIENT_PROXY
             value: ${INSIGHTS_CLIENT_PROXY}
+          - name: PATCH_URL
+            value: ${PATCH_URL}
         volumeMounts:
           - name: config-volume
             mountPath: /app/config
