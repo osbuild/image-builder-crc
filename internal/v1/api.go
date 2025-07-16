@@ -514,8 +514,9 @@ type CustomRepository struct {
 
 // Customizations defines model for Customizations.
 type Customizations struct {
-	Cacerts    *CACertsCustomization `json:"cacerts,omitempty"`
-	Containers *[]Container          `json:"containers,omitempty"`
+	AAPRegistration *AAPRegistration      `json:"aap_registration,omitempty"`
+	Cacerts         *CACertsCustomization `json:"cacerts,omitempty"`
+	Containers      *[]Container          `json:"containers,omitempty"`
 
 	// CustomRepositories List of custom repositories.
 	CustomRepositories *[]CustomRepository `json:"custom_repositories,omitempty"`
@@ -794,8 +795,6 @@ type IgnitionFirstboot struct {
 
 // ImageRequest defines model for ImageRequest.
 type ImageRequest struct {
-	AAPRegistration *AAPRegistration `json:"aap_registration,omitempty"`
-
 	// Architecture CPU architecture of the image, x86_64 and aarch64 are currently supported.
 	Architecture ImageRequestArchitecture `json:"architecture"`
 
