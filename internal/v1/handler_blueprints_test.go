@@ -71,6 +71,12 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 				{"name": "user", "password": "test"},
 				{"name": "user2", "ssh_key": "ssh-rsa AAAAB3NzaC1"},
 			},
+			"aap_registration": map[string]interface{}{
+				"ansible_callback_url":      "https://aap-gw.example.com/api/controller/v2/job_templates/42/callback/",
+				"host_config_key":           "test-host-config-key-12345",
+				"tls_certificate_authority": "-----BEGIN CERTIFICATE-----\nMIIC0DCCAbigAwIBAgIUI...\n-----END CERTIFICATE-----",
+				"skip_tls_verification":     false,
+			},
 		},
 		"distribution": "centos-9",
 		"image_requests": []map[string]interface{}{
@@ -92,6 +98,15 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	be, err := dbase.GetBlueprint(ctx, result.Id, "000000", nil)
 	require.NoError(t, err)
 	require.Nil(t, be.Metadata)
+
+	blueprint, err := v1.BlueprintFromEntry(be)
+	require.NoError(t, err)
+	require.NotNil(t, blueprint.Customizations.AAPRegistration)
+	require.Equal(t, "https://aap-gw.example.com/api/controller/v2/job_templates/42/callback/", blueprint.Customizations.AAPRegistration.AnsibleCallbackUrl)
+	require.Equal(t, "test-host-config-key-12345", blueprint.Customizations.AAPRegistration.HostConfigKey)
+	require.Equal(t, "-----BEGIN CERTIFICATE-----\nMIIC0DCCAbigAwIBAgIUI...\n-----END CERTIFICATE-----", blueprint.Customizations.AAPRegistration.TlsCertificateAuthority)
+	require.NotNil(t, blueprint.Customizations.AAPRegistration.SkipTlsVerification)
+	require.False(t, *blueprint.Customizations.AAPRegistration.SkipTlsVerification)
 
 	// Test unique name constraint
 	statusCode, resp := tutils.PostResponseBody(t, srvURL+"/api/image-builder/v1/blueprints", body)
@@ -877,14 +892,13 @@ func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
 		result, err := v1.BlueprintFromEntry(
 			be,
 			v1.WithRedactedPasswords(),
-			v1.WithRedactedCertificates(),
 			v1.WithRedactedFiles([]string{
 				"/etc/systemd/system/register-satellite.service",
 				"/usr/local/sbin/register-satellite",
 			}),
 		)
 		require.NoError(t, err)
-		require.Nil(t, result.Customizations.Cacerts)
+		require.NotNil(t, result.Customizations.Cacerts)
 		require.Nil(t, result.Customizations.Files)
 	})
 
@@ -916,7 +930,6 @@ func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
 		result, err := v1.BlueprintFromEntry(
 			be,
 			v1.WithRedactedPasswords(),
-			v1.WithRedactedCertificates(),
 			v1.WithRedactedFiles([]string{
 				"/etc/systemd/system/register-satellite.service",
 				"/usr/local/sbin/register-satellite",
@@ -1127,6 +1140,12 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 			Subscription: &v1.Subscription{
 				ActivationKey: "aaa",
 			},
+			AAPRegistration: &v1.AAPRegistration{
+				AnsibleCallbackUrl:      "https://aap-gw.example.com/api/controller/v2/job_templates/42/callback/",
+				HostConfigKey:           "test-host-config-key-12345",
+				TlsCertificateAuthority: "-----BEGIN CERTIFICATE-----\nMIIC0DCCAbigAwIBAgIUI...\n-----END CERTIFICATE-----",
+				SkipTlsVerification:     common.ToPtr(false),
+			},
 			Users: common.ToPtr([]v1.User{
 				{
 					Name:     "user",
@@ -1256,6 +1275,12 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 			Packages: common.ToPtr([]string{"nginx"}),
 			Subscription: &v1.Subscription{
 				ActivationKey: "aaa",
+			},
+			AAPRegistration: &v1.AAPRegistration{
+				AnsibleCallbackUrl:      "https://aap-gw.example.com/api/controller/v2/job_templates/42/callback/",
+				HostConfigKey:           "test-host-config-key-12345",
+				TlsCertificateAuthority: "-----BEGIN CERTIFICATE-----\nMIIC0DCCAbigAwIBAgIUI...\n-----END CERTIFICATE-----",
+				SkipTlsVerification:     common.ToPtr(false),
 			},
 			Users: common.ToPtr([]v1.User{
 				{
