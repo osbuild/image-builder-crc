@@ -1258,8 +1258,6 @@ components:
           type: string
           description: |
             Name of the content template. Used when registering the system to Insights.
-        aap_registration:
-          $ref: '#/components/schemas/AAPRegistration'
     ImageTypes:
       type: string
       enum:
@@ -1783,6 +1781,8 @@ components:
           $ref: '#/components/schemas/Installer'
         cacerts:
           $ref: '#/components/schemas/CACertsCustomization'
+        aap_registration:
+          $ref: '#/components/schemas/AAPRegistration'
     Container:
       type: object
       required:

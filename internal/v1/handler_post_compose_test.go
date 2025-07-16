@@ -2955,8 +2955,14 @@ func TestComposeCustomizations(t *testing.T) {
 		// aap first boot registration
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Customizations: &v1.Customizations{},
-				Distribution:   "rhel-8",
+				Customizations: &v1.Customizations{
+					AAPRegistration: &v1.AAPRegistration{
+						AnsibleCallbackUrl:      "http://some-url.org/api/controller/v2/job_templates/38/callback/",
+						HostConfigKey:           "some-key",
+						TlsCertificateAuthority: "---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---",
+					},
+				},
+				Distribution: "rhel-8",
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2964,11 +2970,6 @@ func TestComposeCustomizations(t *testing.T) {
 						UploadRequest: v1.UploadRequest{
 							Type:    v1.UploadTypesAwsS3,
 							Options: uo,
-						},
-						AAPRegistration: &v1.AAPRegistration{
-							AnsibleCallbackUrl:      "http://some-url.org/api/controller/v2/job_templates/38/callback/",
-							HostConfigKey:           "some-key",
-							TlsCertificateAuthority: "---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---",
 						},
 					},
 				},
