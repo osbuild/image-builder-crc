@@ -4,8 +4,7 @@
   "distribution": {
     "name": "rhel-9.6",
     "composer_name": "rhel-9.6",
-    "description": "Red Hat Enterprise Linux (RHEL) 9",
-    "no_package_list": true
+    "description": "Red Hat Enterprise Linux (RHEL) 9"
   },
   "x86_64": {
     "image_types": [ "aws", "gcp", "azure", "rhel-edge-commit", "rhel-edge-installer", "edge-commit", "edge-installer", "guest-image", "image-installer", "oci", "vsphere", "vsphere-ova", "wsl" ],
