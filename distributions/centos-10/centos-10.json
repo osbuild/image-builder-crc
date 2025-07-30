@@ -4,8 +4,7 @@
   "distribution": {
     "name": "centos-10",
     "description": "CentOS Stream 10",
-    "no_package_list": true,
-    "restricted_access": true
+    "no_package_list": true
   },
   "x86_64": {
     "image_types": [ "ami", "aws", "azure", "gcp", "guest-image", "image-installer", "oci", "openstack", "vsphere", "vsphere-ova", "wsl"],

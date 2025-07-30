@@ -905,6 +905,7 @@ func TestGetDistributions(t *testing.T) {
 				"rhel-10.1-nightly",
 				"rhel-10.0",
 				"centos-9",
+				"centos-10",
 			},
 			distros)
 	})
