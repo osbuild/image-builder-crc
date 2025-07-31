@@ -8,6 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/osbuild/blueprint/pkg/blueprint"
 
+	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 )
 
@@ -103,6 +104,7 @@ func tailoredBlueprint(w http.ResponseWriter, r *http.Request) {
 					Enabled: []string{"enabled-required-by-compliance"},
 					Masked:  []string{"masked-required-by-compliance"},
 				},
+				FIPS: common.ToPtr(true),
 			},
 		}
 	case PolicyID2:

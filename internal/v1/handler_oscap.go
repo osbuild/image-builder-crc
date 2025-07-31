@@ -311,5 +311,20 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 			}
 		}
 	}
+
+	if fips := bp.Customizations.FIPS; fips != nil {
+		if *fips && (cust.Fips == nil || cust.Fips.Enabled == nil) {
+			lintErrors = append(lintErrors, BlueprintLintItem{
+				Name:        "Compliance",
+				Description: fmt.Sprintf("FIPS required '%t' by policy but not set", *fips),
+			})
+			if fixup {
+				cust.Fips = &FIPS{
+					Enabled: fips,
+				}
+			}
+		}
+	}
+
 	return lintErrors, nil
 }

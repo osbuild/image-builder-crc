@@ -1119,6 +1119,9 @@ func TestGetCustomizations(t *testing.T) {
 					"masked-required-by-compliance",
 				}),
 			},
+			Fips: &v1.FIPS{
+				Enabled: common.ToPtr(true),
+			},
 		}, result)
 		code, body = tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/oscap/%s/%s/policy_customizations", srv.URL, mocks.PolicyID2, v1.Rhel810), &tutils.AuthString0)
 		require.Equal(t, http.StatusOK, code)
