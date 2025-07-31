@@ -5,6 +5,9 @@
       "mountpoint": "/var/log/audit"
     }
   ],
+  "fips": {
+    "enabled": true
+  },
   "kernel": {
     "append": "audit_backlog_limit=8192 audit=1 vsyscall=none page_alloc.shuffle=1 init_on_alloc=1"
   },
