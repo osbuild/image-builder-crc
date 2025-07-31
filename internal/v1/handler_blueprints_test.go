@@ -1510,6 +1510,7 @@ func TestLintBlueprint(t *testing.T) {
 				{Name: "Compliance", Description: "package required-by-compliance required by policy is not present"},
 				{Name: "Compliance", Description: "service enabled-required-by-compliance required as enabled by policy is not present"},
 				{Name: "Compliance", Description: "service masked-required-by-compliance required as masked by policy is not present"},
+				{Name: "Compliance", Description: "FIPS required 'true' by policy but not set"},
 			},
 		},
 		{
@@ -1527,6 +1528,9 @@ func TestLintBlueprint(t *testing.T) {
 						Masked: &[]string{
 							"masked-required-by-compliance",
 						},
+					},
+					Fips: &v1.FIPS{
+						Enabled: common.ToPtr(true),
 					},
 				},
 			},
@@ -1649,6 +1653,7 @@ func TestFixupBlueprint(t *testing.T) {
 				{Name: "Compliance", Description: "package required-by-compliance required by policy is not present"},
 				{Name: "Compliance", Description: "service enabled-required-by-compliance required as enabled by policy is not present"},
 				{Name: "Compliance", Description: "service masked-required-by-compliance required as masked by policy is not present"},
+				{Name: "Compliance", Description: "FIPS required 'true' by policy but not set"},
 			},
 		},
 		{
