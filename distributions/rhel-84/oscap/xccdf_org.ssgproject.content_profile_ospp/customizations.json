@@ -21,6 +21,9 @@
       "mountpoint": "/var/tmp"
     }
   ],
+  "fips": {
+    "enabled": true
+  },
   "kernel": {
     "append": "audit_backlog_limit=8192 audit=1 slub_debug=P page_poison=1 vsyscall=none pti=on random.trust_cpu=on"
   },

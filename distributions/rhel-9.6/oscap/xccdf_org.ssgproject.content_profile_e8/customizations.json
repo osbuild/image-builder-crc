@@ -11,8 +11,7 @@
     "rear",
     "rsyslog",
     "firewalld",
-    "fapolicyd",
-    "audit"
+    "fapolicyd"
   ],
   "services": {
     "enabled": [
@@ -23,6 +22,7 @@
     ],
     "masked": [
       "squid",
+      "telnet",
       "avahi-daemon"
     ]
   }

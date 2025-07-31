@@ -1,11 +1,14 @@
 {
+  "fips": {
+    "enabled": true
+  },
   "kernel": {
     "append": ""
   },
   "openscap": {
     "profile_description": "This draft profile contains configuration checks for Red Hat Enterprise Linux 10 that align to the Australian Cyber Security Centre (ACSC) Information Security Manual (ISM).  The ISM uses a risk-based approach to cyber security. This profile provides a guide to aligning Red Hat Enterprise Linux security controls with the ISM, which can be used to select controls specific to an organisation's security posture and risk profile.  A copy of the ISM can be found at the ACSC website:  https://www.cyber.gov.au/ism",
     "profile_id": "xccdf_org.ssgproject.content_profile_ism_o",
-    "profile_name": "Australian Cyber Security Centre (ACSC) ISM Official - Base"
+    "profile_name": "DRAFT - Australian Cyber Security Centre (ACSC) ISM Official - Base"
   },
   "packages": [
     "aide",
@@ -13,14 +16,12 @@
     "libdnf-plugin-subscription-manager",
     "subscription-manager",
     "opensc",
-    "pcsc-lite-ccid",
     "pcsc-lite",
     "rsyslog",
     "firewalld",
     "fapolicyd",
     "chrony",
-    "usbguard",
-    "audit"
+    "usbguard"
   ],
   "services": {
     "enabled": [
@@ -35,6 +36,7 @@
     "masked": [
       "snmpd",
       "squid",
+      "telnet",
       "avahi-daemon"
     ]
   }

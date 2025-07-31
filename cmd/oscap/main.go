@@ -44,6 +44,7 @@ type Customizations struct {
 	Openscap   *OpenSCAP    `json:"openscap,omitempty"`
 	Kernel     *Kernel      `json:"kernel,omitempty"`
 	Services   *Services    `json:"services,omitempty"`
+	Fips       *bool        `json:"fips,omitempty"`
 }
 
 type OpenSCAP struct {
@@ -213,6 +214,12 @@ func generateJson(dir, datastreamDistro, profileDescription, profile string) {
 
 	if len(packages) > 0 {
 		customizations.Packages = &packages
+	}
+
+	if bp.Customizations.Fips != nil {
+		customizations.Fips = &v1.FIPS{
+			Enabled: bp.Customizations.Fips,
+		}
 	}
 
 	var openscap v1.OpenSCAP

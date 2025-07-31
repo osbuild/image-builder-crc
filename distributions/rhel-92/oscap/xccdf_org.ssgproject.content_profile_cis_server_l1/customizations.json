@@ -21,7 +21,6 @@
     "firewalld",
     "nftables",
     "libselinux",
-    "cronie",
     "chrony"
   ],
   "services": {

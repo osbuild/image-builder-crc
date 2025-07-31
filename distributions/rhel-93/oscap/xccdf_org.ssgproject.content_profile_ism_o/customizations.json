@@ -1,4 +1,7 @@
 {
+  "fips": {
+    "enabled": true
+  },
   "kernel": {
     "append": ""
   },
@@ -15,8 +18,7 @@
     "firewalld",
     "fapolicyd",
     "chrony",
-    "usbguard",
-    "audit"
+    "usbguard"
   ],
   "services": {
     "enabled": [
@@ -30,6 +32,7 @@
     "masked": [
       "snmpd",
       "squid",
+      "telnet",
       "avahi-daemon"
     ]
   }

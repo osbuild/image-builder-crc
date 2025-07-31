@@ -15,7 +15,6 @@
     "firewalld",
     "nftables",
     "libselinux",
-    "cronie",
     "chrony",
     "audispd-plugins",
     "audit"

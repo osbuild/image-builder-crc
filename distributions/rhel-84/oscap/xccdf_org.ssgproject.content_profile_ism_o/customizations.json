@@ -1,4 +1,7 @@
 {
+  "fips": {
+    "enabled": true
+  },
   "kernel": {
     "append": ""
   },
@@ -28,7 +31,9 @@
     ],
     "masked": [
       "snmpd",
+      "zebra",
       "squid",
+      "telnet",
       "xinetd",
       "avahi-daemon"
     ]
