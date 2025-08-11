@@ -20,7 +20,8 @@
     "systemd-journal-remote",
     "firewalld",
     "nftables",
-    "libselinux"
+    "libselinux",
+    "cronie"
   ],
   "services": {
     "enabled": [
