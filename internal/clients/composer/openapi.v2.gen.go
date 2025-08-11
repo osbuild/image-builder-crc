@@ -97,6 +97,7 @@ const (
 	ImageTypesAzureEap7Rhui          ImageTypes = "azure-eap7-rhui"
 	ImageTypesAzureRhui              ImageTypes = "azure-rhui"
 	ImageTypesAzureSapRhui           ImageTypes = "azure-sap-rhui"
+	ImageTypesAzureSapappsRhui       ImageTypes = "azure-sapapps-rhui"
 	ImageTypesEdgeCommit             ImageTypes = "edge-commit"
 	ImageTypesEdgeContainer          ImageTypes = "edge-container"
 	ImageTypesEdgeInstaller          ImageTypes = "edge-installer"
@@ -713,6 +714,7 @@ type DepsolveRequest struct {
 	Architecture string        `json:"architecture"`
 	Blueprint    Blueprint     `json:"blueprint"`
 	Distribution string        `json:"distribution"`
+	ImageType    *ImageTypes   `json:"image_type,omitempty"`
 	Repositories *[]Repository `json:"repositories,omitempty"`
 }
 
