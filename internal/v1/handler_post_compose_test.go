@@ -1388,6 +1388,87 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 		},
+		// 1 payload and custom repository from shared epel repos
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-9.6",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+				Customizations: &v1.Customizations{
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Id: common.ToPtr(mocks.RepoSharedEpelID),
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Id: mocks.RepoSharedEpelID,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.6",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:     common.ToPtr("https://content-sources.org/api/neat/snappy/baseos"),
+							Rhsm:        common.ToPtr(false),
+							Gpgkey:      common.ToPtr(mocks.RhelGPG),
+							CheckGpg:    common.ToPtr(true),
+							IgnoreSsl:   nil,
+							Metalink:    nil,
+							Mirrorlist:  nil,
+							PackageSets: nil,
+						},
+						{
+							Baseurl:     common.ToPtr("https://content-sources.org/api/neat/snappy/appstream"),
+							Rhsm:        common.ToPtr(false),
+							Gpgkey:      common.ToPtr(mocks.RhelGPG),
+							CheckGpg:    common.ToPtr(true),
+							IgnoreSsl:   nil,
+							Metalink:    nil,
+							Mirrorlist:  nil,
+							PackageSets: nil,
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+				Customizations: &composer.Customizations{
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/snappy/epel10"),
+							Rhsm:     common.ToPtr(false),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr("some-epel-gpg-key"),
+						},
+					},
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Baseurl:  &[]string{"http://snappy-url/snappy/epel10"},
+							Name:     common.ToPtr("epel10"),
+							Enabled:  common.ToPtr(false),
+							Id:       mocks.RepoSharedEpelID,
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{"some-epel-gpg-key"},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for idx, payload := range payloads {
@@ -1737,6 +1818,9 @@ func TestComposeCustomizations(t *testing.T) {
 						{
 							Id: common.ToPtr(mocks.RepoUplID),
 						},
+						{
+							Id: common.ToPtr(mocks.RepoSharedEpelID),
+						},
 					},
 					CustomRepositories: &[]v1.CustomRepository{
 						{
@@ -1756,6 +1840,9 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 						{
 							Id: mocks.RepoUplID,
+						},
+						{
+							Id: mocks.RepoSharedEpelID,
 						},
 					},
 				},
@@ -1795,6 +1882,13 @@ func TestComposeCustomizations(t *testing.T) {
 							CheckRepoGpg: common.ToPtr(false),
 							Rhsm:         common.ToPtr(false),
 						},
+						{
+							Baseurl:      common.ToPtr("https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/"),
+							Gpgkey:       common.ToPtr("some-epel-gpg-key"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
 					},
 					CustomRepositories: &[]composer.CustomRepository{
 						{
@@ -1820,6 +1914,13 @@ func TestComposeCustomizations(t *testing.T) {
 							Name:     common.ToPtr("upload"),
 							Baseurl:  &[]string{"https://content-sources.org"},
 							Gpgkey:   &[]string{"some-gpg-key"},
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Id:       mocks.RepoSharedEpelID,
+							Name:     common.ToPtr("epel10"),
+							Baseurl:  &[]string{"https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/"},
+							Gpgkey:   &[]string{"some-epel-gpg-key"},
 							CheckGpg: common.ToPtr(true),
 						},
 					},

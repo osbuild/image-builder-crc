@@ -24,6 +24,7 @@ const (
 	RepoPLID2        = "c01c2d9c-4624-4558-9ca9-8abcc5eb4437"
 	RepoPLID3        = "d064585d-5d25-4e10-88d0-9ab4d192b21d"
 	RepoUplID        = "7fa07d5a-3df4-4c83-bfe3-79633a0ad27d"
+	RepoSharedEpelID = "5d63ec94-6c45-4e1b-a2e9-9979c1a9d4aa"
 	TemplateID       = "267232b1-d5af-467f-b6c0-2b502fa02d3d"
 	TemplateID2      = "f3203472-e8ed-4d52-8a98-0e9905e91953"
 	TemplateID3      = "71c14af2-2970-4c0d-a60c-a2ab1247cec6"
@@ -109,6 +110,20 @@ func uploadRepos(ids []string, urls []string) (res []content_sources.ApiReposito
 	return res
 }
 
+func communityRepos(ids []string, urls []string) (res []content_sources.ApiRepositoryResponse) {
+	if slices.Contains(urls, "https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/") || slices.Contains(ids, RepoSharedEpelID) {
+		res = append(res, content_sources.ApiRepositoryResponse{
+			GpgKey:   common.ToPtr("some-epel-gpg-key"),
+			Uuid:     common.ToPtr(RepoSharedEpelID),
+			Url:      common.ToPtr("https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/"),
+			Snapshot: common.ToPtr(true),
+			Name:     common.ToPtr("epel10"),
+			Origin:   common.ToPtr("community"),
+		})
+	}
+	return res
+}
+
 func snaps(uuids []string) (res []content_sources.ApiSnapshotForDate) {
 	if slices.Contains(uuids, RepoBaseID) {
 		res = append(res, content_sources.ApiSnapshotForDate{
@@ -167,6 +182,18 @@ func snaps(uuids []string) (res []content_sources.ApiSnapshotForDate) {
 				Url:            common.ToPtr("http://snappy-url/snappy/payload3"),
 			},
 			RepositoryUuid: common.ToPtr(RepoPLID3),
+		})
+	}
+
+	if slices.Contains(uuids, RepoSharedEpelID) {
+		res = append(res, content_sources.ApiSnapshotForDate{
+			IsAfter: common.ToPtr(false),
+			Match: &content_sources.ApiSnapshotResponse{
+				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath: common.ToPtr("/snappy/epel10"),
+				Url:            common.ToPtr("http://snappy-url/snappy/epel10"),
+			},
+			RepositoryUuid: common.ToPtr(RepoSharedEpelID),
 		})
 	}
 	return res
@@ -317,9 +344,10 @@ func ContentSources(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Query().Get("origin") {
 		case "red_hat":
 			repos = append(repos, rhRepos(ids, urls)...)
-		case "external,upload":
+		case "external,upload,community":
 			repos = append(repos, extRepos(ids, urls)...)
 			repos = append(repos, uploadRepos(ids, urls)...)
+			repos = append(repos, communityRepos(ids, urls)...)
 		}
 		err := json.NewEncoder(w).Encode(content_sources.ApiRepositoryCollectionResponse{
 			Data: &repos,

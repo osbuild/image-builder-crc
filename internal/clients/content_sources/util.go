@@ -20,7 +20,7 @@ func GetBaseURL(repo ApiRepositoryResponse, csReposURL *url.URL) (string, error)
 			return "", err
 		}
 		return csReposURL.JoinPath(repoURL.Path).String(), nil
-	case "external", "red_hat":
+	case "external", "red_hat", "community":
 		return *repo.Url, nil
 	}
 	return "", fmt.Errorf("unknown origin on content sources repository %s, origin: %s", *repo.Uuid, *repo.Origin)

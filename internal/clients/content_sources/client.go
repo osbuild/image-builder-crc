@@ -67,7 +67,7 @@ func (csc *ContentSourcesClient) fetchRepositories(ctx context.Context, repoURLs
 		return nil, fmt.Errorf("at least one repo url or repo id needs to be given")
 	}
 	if external {
-		queryValues.Add("origin", "external,upload")
+		queryValues.Add("origin", "external,upload,community")
 	} else {
 		queryValues.Add("origin", "red_hat")
 	}
