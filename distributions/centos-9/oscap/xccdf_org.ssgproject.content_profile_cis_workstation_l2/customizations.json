@@ -41,6 +41,7 @@
     "firewalld",
     "nftables",
     "libselinux",
+    "cronie",
     "chrony",
     "audit-libs",
     "audit"
