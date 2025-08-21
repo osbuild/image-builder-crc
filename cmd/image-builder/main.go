@@ -8,8 +8,7 @@ import (
 
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
+	fedora_identity "github.com/osbuild/community-gateway/oidc-authorizer/pkg/identity"
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
@@ -23,7 +22,7 @@ import (
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
 	echoproxy "github.com/osbuild/logging/pkg/echo"
 	"github.com/osbuild/logging/pkg/sinit"
-	"github.com/osbuild/logging/pkg/strc"
+	"github.com/redhatinsights/identity"
 )
 
 func main() {
@@ -50,14 +49,10 @@ func main() {
 		hostname = "image-builder-unknown"
 	}
 
-	stdOutLevel := "warning"
-	if config.InEphemeralClowder() {
-		stdOutLevel = "debug"
-	}
 	loggingConfig := sinit.LoggingConfig{
 		StdoutConfig: sinit.StdoutConfig{
 			Enabled: true,
-			Level:   stdOutLevel,
+			Level:   conf.LogLevel,
 			Format:  "text",
 		},
 		SplunkConfig: sinit.SplunkConfig{
@@ -83,6 +78,36 @@ func main() {
 		},
 		TracingConfig: sinit.TracingConfig{
 			Enabled: true,
+			ContextCallback: func(ctx context.Context, attrs []slog.Attr) ([]slog.Attr, error) {
+				if conf.FedoraAuth {
+					val := ctx.Value(fedora_identity.IDHeaderKey)
+					if val == nil {
+						return attrs, nil
+					}
+					id, ok := val.(*fedora_identity.Identity)
+					if !ok {
+						return attrs, nil
+					}
+
+					if id.User != "" {
+						attrs = append(attrs, slog.String("user", id.User))
+					}
+				} else {
+					id, ok := identity.Get(ctx)
+					if !ok {
+						return attrs, nil
+					}
+
+					if id.Identity.OrgID != "" {
+						attrs = append(attrs, slog.String("org_id", id.Identity.OrgID))
+					}
+					if id.Identity.User.Username != "" {
+						attrs = append(attrs, slog.String("user", id.Identity.User.Username))
+					}
+				}
+
+				return attrs, nil
+			},
 		},
 	}
 
@@ -170,26 +195,19 @@ func main() {
 		}
 	}
 
+	// middleware is defined in v1.Attach
 	echoServer := echo.New()
 	echoServer.HideBanner = true
 	echoServer.Logger = echoproxy.NewProxyFor(slog.Default())
-	echoServer.Use(echo.WrapMiddleware(strc.NewMiddlewareWithConfig(slog.Default(), strc.MiddlewareConfig{
-		Filters: []strc.Filter{
-			strc.IgnorePathPrefix("/metrics"),
-			strc.IgnorePathPrefix("/status"),
-			strc.IgnorePathPrefix("/ready"),
-		},
-	})))
+
 	if conf.GlitchTipDSN != "" {
 		echoServer.Use(sentryecho.New(sentryecho.Options{}))
 	}
-	// log stack traces into standard logger as error (instead of stdout)
-	echoServer.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogLevel: log.ERROR,
-	}))
+
 	if conf.IsDebug() {
 		echoServer.Debug = true
 	}
+
 	serverConfig := &v1.ServerConfig{
 		EchoServer:       echoServer,
 		CompClient:       compClient,
@@ -222,7 +240,7 @@ func main() {
 		panic(err)
 	}
 
-	log.Info("🚀 starting image-builder server", "listen", conf.ListenAddress)
+	slog.Info("🚀 starting image-builder server", "listen", conf.ListenAddress)
 	err = echoServer.Start(conf.ListenAddress)
 	if err != nil {
 		panic(err)
