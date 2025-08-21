@@ -18,8 +18,8 @@ func TestRedHatIdentity(t *testing.T) {
 
 	t.Run("VerifyIdentityHeaderMissing", func(t *testing.T) {
 		respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/version", nil)
-		require.Equal(t, http.StatusBadRequest, respStatusCode)
-		require.Contains(t, body, "missing x-rh-identity header")
+		require.Equal(t, http.StatusUnauthorized, respStatusCode)
+		require.Contains(t, body, "missing identity header")
 	})
 
 	t.Run("Valid authstring", func(t *testing.T) {
