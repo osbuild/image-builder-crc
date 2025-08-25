@@ -18,7 +18,8 @@
     "firewalld",
     "fapolicyd",
     "chrony",
-    "usbguard"
+    "usbguard",
+    "audit"
   ],
   "services": {
     "enabled": [
@@ -32,7 +33,6 @@
     "masked": [
       "snmpd",
       "squid",
-      "telnet",
       "avahi-daemon"
     ]
   }
