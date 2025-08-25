@@ -51,6 +51,9 @@ type ApiCreateUploadRequest struct {
 	// ChunkSize Size of the chunk
 	ChunkSize int `json:"chunk_size"`
 
+	// Resumable if true, returns an already existing upload matching the same sha256 and chunk_size
+	Resumable *bool `json:"resumable,omitempty"`
+
 	// Sha256 SHA-256 checksum of the file
 	Sha256 string `json:"sha256"`
 
