@@ -31,9 +31,7 @@
     ],
     "masked": [
       "snmpd",
-      "zebra",
       "squid",
-      "telnet",
       "xinetd",
       "avahi-daemon"
     ]
