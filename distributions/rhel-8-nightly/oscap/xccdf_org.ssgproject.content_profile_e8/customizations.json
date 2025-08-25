@@ -21,9 +21,7 @@
       "rsyslog"
     ],
     "masked": [
-      "zebra",
       "squid",
-      "telnet",
       "xinetd",
       "avahi-daemon"
     ]
