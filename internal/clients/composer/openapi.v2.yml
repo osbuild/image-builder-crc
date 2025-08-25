@@ -1006,7 +1006,6 @@ components:
         - azure
         - container
         - oci.objectstorage
-        - pulp.ostree
         - local
     AWSEC2UploadStatus:
       type: object
@@ -1215,6 +1214,7 @@ components:
         - azure-cvm
         - azure-eap7-rhui
         - azure-rhui
+        - azure-sapapps-rhui
         - azure-sap-rhui
         - edge-commit
         - edge-container
@@ -2585,6 +2585,8 @@ components:
           example: 'x86_64'
         blueprint:
           $ref: '#/components/schemas/Blueprint'
+        image_type:
+          $ref: '#/components/schemas/ImageTypes'
 
     DepsolveResponse:
       type: object
