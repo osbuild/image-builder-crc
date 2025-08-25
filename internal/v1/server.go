@@ -4,12 +4,20 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/routers"
+	legacyrouter "github.com/getkin/kin-openapi/routers/legacy"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	glog "github.com/labstack/gommon/log"
+	fedora_identity "github.com/osbuild/community-gateway/oidc-authorizer/pkg/identity"
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
@@ -19,12 +27,8 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/image-builder-crc/internal/distribution"
 	"github.com/osbuild/image-builder-crc/internal/prometheus"
-
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/routers"
-	legacyrouter "github.com/getkin/kin-openapi/routers/legacy"
-	"github.com/labstack/echo/v4"
-	fedora_identity "github.com/osbuild/community-gateway/oidc-authorizer/pkg/identity"
+	echoproxy "github.com/osbuild/logging/pkg/echo"
+	"github.com/osbuild/logging/pkg/strc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redhatinsights/identity"
 )
@@ -140,12 +144,57 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		prometheus.StatusMiddleware,
 	}
 
+	// Global middleware: extract identity early (if present)
+	s.echo.Pre(echo.WrapMiddleware(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if h := r.Header[fedora_identity.FedoraIDHeader]; len(h) > 0 && conf.FedoraAuth {
+				fedora_identity.Extractor(next).ServeHTTP(w, r)
+			} else if h := r.Header["X-Rh-Identity"]; len(h) > 0 && !conf.FedoraAuth {
+				identity.Extractor(next).ServeHTTP(w, r)
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}))
+
+	// Global middleware: extract or generate trace information
+	s.echo.Pre(strc.NewEchoV4MiddlewareWithConfig(slog.Default(), strc.MiddlewareConfig{
+		Filters: []strc.Filter{
+			strc.IgnorePathPrefix("/metrics"),
+			strc.IgnorePathPrefix("/status"),
+			strc.IgnorePathPrefix("/ready"),
+		},
+	}))
+
+	// Global middleware: add context to echo logger proxy
+	s.echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.SetLogger(echoproxy.NewProxyWithContextFor(slog.Default(), c.Request().Context()))
+			return next(c)
+		}
+	})
+
+	// Global middleware: log stack traces into standard logger as error (instead of stdout)
+	s.echo.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		LogLevel: glog.ERROR,
+	}))
+
+	// Route-based middleware:
 	var middlewares []echo.MiddlewareFunc
 
 	if s.fedoraAuth {
-		middlewares = append(middlewaresNoAuth, echo.WrapMiddleware(fedora_identity.Extractor))
+		middlewares = append(middlewaresNoAuth, echo.WrapMiddleware(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if id := r.Context().Value(fedora_identity.IDHeaderKey); id == nil {
+					http.Error(w, "Missing identity header", http.StatusBadRequest)
+					return
+				} else {
+					next.ServeHTTP(w, r)
+				}
+			})
+		}))
 	} else {
-		middlewares = append(middlewaresNoAuth, echo.WrapMiddleware(identity.Extractor), echo.WrapMiddleware(identity.BasePolicy))
+		middlewares = append(middlewaresNoAuth, echo.WrapMiddleware(identity.BasePolicy))
 	}
 
 	middlewaresNoAuth = append(middlewaresNoAuth, prometheus.PrometheusMW)
