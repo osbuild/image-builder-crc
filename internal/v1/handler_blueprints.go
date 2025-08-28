@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,12 +13,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
+	"github.com/osbuild/blueprint/pkg/blueprint"
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
 	"github.com/osbuild/image-builder-crc/internal/common"
@@ -142,6 +145,66 @@ func (u *User) MergeForUpdate(userData []User) error {
 		return err
 	}
 	return nil
+}
+
+// getPolicyCustomizations fetches policy customizations from compliance service
+// This is shared logic between extractPolicyInfo and lintOpenscap
+// Returns both the Blueprint object and the original TOML string
+func (h *Handlers) getPolicyCustomizations(ctx echo.Context, distribution Distributions, policyId string) (*blueprint.Blueprint, string, error) {
+	d, err := h.server.getDistro(ctx, distribution)
+	if err != nil {
+		return nil, "", err
+	}
+	major, minor, err := d.RHELMajorMinor()
+	if err != nil {
+		return nil, "", err
+	}
+
+	policyBp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, policyId)
+	if err != nil {
+		return nil, "", err
+	}
+	var tomlBuffer bytes.Buffer
+	encoder := toml.NewEncoder(&tomlBuffer)
+	err = encoder.Encode(policyBp)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to encode blueprint to TOML: %w", err)
+	}
+
+	return policyBp, tomlBuffer.String(), nil
+}
+
+// extractPolicyInfo extracts policy information from customizations and returns policy ID and TOML
+func (h *Handlers) extractPolicyInfo(ctx echo.Context, customizations *Customizations, distribution Distributions) (policyId string, policyToml string, err error) {
+	if customizations.Openscap == nil {
+		return "", "", nil
+	}
+
+	var compl OpenSCAPCompliance
+	if compl, err = customizations.Openscap.AsOpenSCAPCompliance(); err != nil || compl.PolicyId == uuid.Nil {
+		return "", "", nil
+	}
+
+	_, tomlString, err := h.getPolicyCustomizations(ctx, distribution, compl.PolicyId.String())
+	if err != nil {
+		return "", "", err
+	}
+
+	return compl.PolicyId.String(), tomlString, nil
+}
+
+// Helper function to save policy blueprint snapshot if compliance policy exists
+func (h *Handlers) savePolicyBlueprintSnapshot(ctx echo.Context, blueprintVersionId uuid.UUID, customizations *Customizations, distribution Distributions) error {
+	policyId, policyToml, err := h.extractPolicyInfo(ctx, customizations, distribution)
+	if err != nil {
+		return err
+	}
+
+	if policyId == "" || policyToml == "" {
+		return nil
+	}
+
+	return h.server.db.UpsertBlueprintPolicySnapshot(ctx.Request().Context(), blueprintVersionId, policyId, policyToml)
 }
 
 // Util function used to create and update Blueprint from API request (WRITE)
@@ -284,6 +347,14 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		return err
 	}
 	ctx.Logger().Infof("Inserted blueprint %s", id)
+
+	err = h.savePolicyBlueprintSnapshot(ctx, versionId, &blueprintRequest.Customizations, blueprintRequest.Distribution)
+	if err != nil {
+		ctx.Logger().Errorf("Error saving policy blueprint snapshot: %s", err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			"Failed to save policy compliance data")
+	}
+
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
 		Id: id,
 	})
@@ -319,7 +390,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		return err
 	}
 
-	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false)
+	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false, &blueprintEntry.VersionId)
 	if err != nil {
 		return err
 	}
@@ -339,13 +410,13 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	return ctx.JSON(http.StatusOK, blueprintResponse)
 }
 
-func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
+func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool, blueprintVersionId *uuid.UUID) ([]BlueprintLintItem, error) {
 	lintErrors := []BlueprintLintItem{}
 	if blueprint.Customizations.Openscap != nil {
 		var compl OpenSCAPCompliance
 		var err error
 		if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err == nil && compl.PolicyId != uuid.Nil {
-			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String())
+			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String(), blueprintVersionId)
 			if err == compliance.ErrorTailoringNotFound {
 				lintErrors = append(lintErrors, BlueprintLintItem{
 					Name:        "Compliance",
@@ -528,6 +599,14 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		return err
 	}
 	ctx.Logger().Infof("Updated blueprint %s", blueprintId)
+
+	err = h.savePolicyBlueprintSnapshot(ctx, versionId, &blueprintRequest.Customizations, blueprintRequest.Distribution)
+	if err != nil {
+		ctx.Logger().Errorf("Error saving policy blueprint snapshot: %s", err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			"Failed to save policy compliance data")
+	}
+
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
 		Id: blueprintId,
 	})
@@ -760,7 +839,7 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
-	_, err = h.lintBlueprint(ctx, &blueprint, true)
+	_, err = h.lintBlueprint(ctx, &blueprint, true, &blueprintEntry.VersionId)
 	if err != nil {
 		return err
 	}
