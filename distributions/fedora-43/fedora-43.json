@@ -1,0 +1,51 @@
+{
+  "module_platform_id": "platform:f43",
+  "oscap_name": "fedora",
+  "distribution": {
+    "name": "fedora-43",
+    "description": "Fedora Linux 43",
+    "no_package_list": true,
+    "restricted_access": true
+  },
+  "x86_64": {
+    "image_types": [
+      "aws",
+      "azure",
+      "guest-image",
+      "oci",
+      "vsphere",
+      "vsphere-ova",
+      "iot-commit"
+    ],
+    "repositories": [
+      {
+        "id": "fedora",
+        "metalink": "https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=x86_64",
+        "rhsm": false
+      },
+      {
+        "id": "updates",
+        "metalink": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=x86_64",
+        "rhsm": false
+      }
+    ]
+  },
+  "aarch64": {
+    "image_types": [
+      "aws",
+      "guest-image"
+    ],
+    "repositories": [
+      {
+        "id": "fedora",
+        "metalink": "https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=aarch64",
+        "rhsm": false
+      },
+      {
+        "id": "updates",
+        "metalink": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=aarch64",
+        "rhsm": false
+      }
+    ]
+  }
+}

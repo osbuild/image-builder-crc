@@ -861,6 +861,8 @@ func TestGetDistributions(t *testing.T) {
 				"fedora-40",
 				"fedora-41",
 				"fedora-42",
+				"fedora-43",
+				"fedora-44",
 			},
 			distros)
 	})
