@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -130,6 +131,24 @@ const (
 		SELECT COUNT(*)
 		FROM blueprints
 		WHERE blueprints.deleted = FALSE AND blueprints.org_id = $1`
+
+	sqlUpsertBlueprintPolicySnapshot = `
+		INSERT INTO blueprint_policy_snapshots(blueprint_version_id, policy_id, policy_blueprint_toml, updated_at)
+		VALUES($1, $2, $3, CURRENT_TIMESTAMP)
+		ON CONFLICT (blueprint_version_id) 
+		DO UPDATE SET 
+			policy_id = EXCLUDED.policy_id,
+			policy_blueprint_toml = EXCLUDED.policy_blueprint_toml,
+			updated_at = CURRENT_TIMESTAMP`
+
+	sqlGetBlueprintPolicySnapshot = `
+		SELECT id, blueprint_version_id, policy_id, policy_blueprint_toml, created_at, updated_at
+		FROM blueprint_policy_snapshots
+		WHERE blueprint_version_id = $1`
+
+	sqlDeleteBlueprintPolicySnapshot = `
+		DELETE FROM blueprint_policy_snapshots
+		WHERE blueprint_version_id = $1`
 )
 
 // GetLatestBlueprintVersionNumber gets the latest version number of a blueprint.
@@ -401,4 +420,54 @@ func (db *dB) GetBlueprints(ctx context.Context, orgID string, limit, offset int
 	}
 
 	return blueprints, count, nil
+}
+
+func (db *dB) UpsertBlueprintPolicySnapshot(ctx context.Context, blueprintVersionId uuid.UUID, policyId string, policyBlueprintToml string) error {
+	if len(policyBlueprintToml) == 0 {
+		return fmt.Errorf("invalid TOML format in policy blueprint data: empty content")
+	}
+	var temp interface{}
+	if err := toml.Unmarshal([]byte(policyBlueprintToml), &temp); err != nil {
+		return fmt.Errorf("invalid TOML format in policy blueprint data: %w", err)
+	}
+
+	conn, err := db.Pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	_, err = conn.Exec(ctx, sqlUpsertBlueprintPolicySnapshot, blueprintVersionId, policyId, policyBlueprintToml)
+	return err
+}
+
+func (db *dB) GetBlueprintPolicySnapshot(ctx context.Context, blueprintVersionId uuid.UUID) (*BlueprintPolicySnapshot, error) {
+	conn, err := db.Pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+
+	var snapshot BlueprintPolicySnapshot
+	row := conn.QueryRow(ctx, sqlGetBlueprintPolicySnapshot, blueprintVersionId)
+	err = row.Scan(&snapshot.Id, &snapshot.BlueprintVersionId, &snapshot.PolicyId, &snapshot.PolicyBlueprintToml, &snapshot.CreatedAt, &snapshot.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &snapshot, nil
+}
+
+func (db *dB) DeleteBlueprintPolicySnapshot(ctx context.Context, blueprintVersionId uuid.UUID) error {
+	conn, err := db.Pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	_, err = conn.Exec(ctx, sqlDeleteBlueprintPolicySnapshot, blueprintVersionId)
+	return err
 }

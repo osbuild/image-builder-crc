@@ -181,7 +181,7 @@ func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distrib
 
 func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid.UUID, distro Distributions) error {
 	var cust Customizations
-	_, err := h.lintOpenscap(ctx, &cust, true, distro, policy.String())
+	_, err := h.lintOpenscap(ctx, &cust, true, distro, policy.String(), nil)
 	if err == distribution.ErrMajorMinor {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	} else if err == compliance.ErrorTailoringNotFound {
@@ -193,23 +193,20 @@ func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid
 	return ctx.JSON(http.StatusOK, cust)
 }
 
-func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string) ([]BlueprintLintItem, error) {
+func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string, blueprintVersionId *uuid.UUID) ([]BlueprintLintItem, error) {
 	var lintErrors []BlueprintLintItem
-	var err error
 
-	d, err := h.server.getDistro(ctx, distro)
+	bp, tomlString, err := h.getPolicyCustomizations(ctx, distro, policy)
 	if err != nil {
 		return nil, err
 	}
-	major, minor, err := d.RHELMajorMinor()
-	if err != nil {
-		return nil, err
-	}
-	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, policy)
-	if err == compliance.ErrorTailoringNotFound {
-		return nil, err
-	} else if err != nil {
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+
+	if fixup && blueprintVersionId != nil {
+		err = h.server.db.UpsertBlueprintPolicySnapshot(ctx.Request().Context(), *blueprintVersionId, policy, tomlString)
+		if err != nil {
+			ctx.Logger().Errorf("Failed to save policy snapshot during fixup: blueprint_version_id=%s, policy_id=%s, error=%v",
+				*blueprintVersionId, policy, err)
+		}
 	}
 
 	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args

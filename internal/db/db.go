@@ -62,6 +62,15 @@ type BlueprintWithNoBody struct {
 	LastModifiedAt time.Time
 }
 
+type BlueprintPolicySnapshot struct {
+	Id                  uuid.UUID
+	BlueprintVersionId  uuid.UUID
+	PolicyId            string
+	PolicyBlueprintToml string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
 type DB interface {
 	InsertCompose(ctx context.Context, jobId uuid.UUID, accountNumber, email, orgId string, imageName *string, request json.RawMessage, clientId *string, blueprintVersionId *uuid.UUID) error
 	GetComposes(ctx context.Context, orgId string, since time.Duration, limit, offset int, ignoreImageTypes []string) ([]ComposeWithBlueprintVersion, int, error)
@@ -84,6 +93,10 @@ type DB interface {
 	FindBlueprints(ctx context.Context, orgID, search string, limit, offset int) ([]BlueprintWithNoBody, int, error)
 	FindBlueprintByName(ctx context.Context, orgID, nameQuery string) (*BlueprintWithNoBody, error)
 	DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID, accountNumber string) error
+
+	UpsertBlueprintPolicySnapshot(ctx context.Context, blueprintVersionId uuid.UUID, policyId string, policyBlueprintToml string) error
+	GetBlueprintPolicySnapshot(ctx context.Context, blueprintVersionId uuid.UUID) (*BlueprintPolicySnapshot, error)
+	DeleteBlueprintPolicySnapshot(ctx context.Context, blueprintVersionId uuid.UUID) error
 }
 
 const (
