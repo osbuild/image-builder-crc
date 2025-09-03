@@ -51,6 +51,11 @@ jobs:
             exit "0"
           fi
 
+      - name: check that all distributions are present in the openapi spec
+        run: |
+          sudo apt install -y python3-yaml
+          ./tools/check-distributions.py
+
       - name: Build all binaries
         run: make build
 
