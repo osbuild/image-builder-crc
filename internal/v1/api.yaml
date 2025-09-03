@@ -1192,6 +1192,7 @@ components:
         - rhel-9-nightly
         - rhel-9.6-nightly
         - rhel-9.7-nightly
+        - rhel-9.8-nightly
         - rhel-9-beta
         - rhel-90
         - rhel-91
@@ -1204,6 +1205,7 @@ components:
         - rhel-10-nightly
         - rhel-10.0-nightly
         - rhel-10.1-nightly
+        - rhel-10.2-nightly
         - rhel-10-beta
         - rhel-10.0
         - centos-9
