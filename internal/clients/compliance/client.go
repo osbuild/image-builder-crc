@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -44,8 +45,8 @@ func NewClient(conf ComplianceClientConfig) *ComplianceClient {
 	}
 }
 
-func (cc *ComplianceClient) request(ctx context.Context, method, url string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+func (cc *ComplianceClient) request(ctx context.Context, method, url string, body io.ReadSeeker) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +61,7 @@ func (cc *ComplianceClient) request(ctx context.Context, method, url string) (*h
 	return strc.NewTracingDoer(cc.client).Do(req)
 }
 
+// Use custom types because OpenAPI has version 3.1 and oapi-codegen doesn't support it yet
 type v2PolicyResponse struct {
 	Data v2PolicyData `json:"data"`
 }
@@ -70,8 +72,16 @@ type v2PolicyData struct {
 	OSMajorVersion int    `json:"os_major_version"`
 }
 
+type v2TailoringsResponse struct {
+	Data []json.RawMessage `json:"data"`
+}
+
+type v2TailoringData struct {
+	OSMinorVersion int `json:"os_minor_version"`
+}
+
 func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, majorVersion, minorVersion int, policyID string) (*PolicyData, error) {
-	policiesResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s", cc.url, policyID))
+	policiesResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s", cc.url, policyID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +105,7 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 		return nil, ErrorMajorVersion
 	}
 
-	tailoringFileResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s/tailorings/%d/tailoring_file.json", cc.url, policyID, minorVersion))
+	tailoringFileResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s/tailorings/%d/tailoring_file.json", cc.url, policyID, minorVersion), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +136,40 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 }
 
 func (cc *ComplianceClient) PolicyCustomizations(ctx context.Context, majorVersion, minorVersion int, policyID string) (*blueprint.Blueprint, error) {
-	blueprintResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s/tailorings/%d/tailoring_file.toml", cc.url, policyID, minorVersion))
+	// First check if the tailorings exist for the policy - this endpoint returns 200 OK with an empty array for `data` field if there are no tailorings
+	tailoringsGetResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s/tailorings?filter=os_minor_version=%d", cc.url, policyID, minorVersion), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tailoringsGetResp.Body.Close()
+
+	var tailoringsResponse v2TailoringsResponse
+	err = json.NewDecoder(tailoringsGetResp.Body).Decode(&tailoringsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if tailoringsGetResp.StatusCode == http.StatusOK && len(tailoringsResponse.Data) == 0 {
+		// If there are no tailorings for the policy, we need to create one, otherwise the request for tailoring file will return 404
+		jsonBody, err := json.Marshal(v2TailoringData{OSMinorVersion: minorVersion})
+		if err != nil {
+			return nil, err
+		}
+
+		tailoringsPostResp, err := cc.request(ctx, "POST", fmt.Sprintf("%s/policies/%s/tailorings", cc.url, policyID), bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, err
+		}
+		defer tailoringsPostResp.Body.Close()
+
+		if tailoringsPostResp.StatusCode == http.StatusUnauthorized || tailoringsPostResp.StatusCode == http.StatusForbidden {
+			return nil, ErrorAuth
+		} else if tailoringsPostResp.StatusCode != http.StatusCreated {
+			return nil, ErrorNotOk
+		}
+	}
+
+	blueprintResp, err := cc.request(ctx, "GET", fmt.Sprintf("%s/policies/%s/tailorings/%d/tailoring_file.toml", cc.url, policyID, minorVersion), nil)
 	if err != nil {
 		return nil, err
 	}
