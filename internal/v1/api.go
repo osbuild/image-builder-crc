@@ -82,6 +82,7 @@ const (
 	Rhel100        Distributions = "rhel-10.0"
 	Rhel100Nightly Distributions = "rhel-10.0-nightly"
 	Rhel101Nightly Distributions = "rhel-10.1-nightly"
+	Rhel102Nightly Distributions = "rhel-10.2-nightly"
 	Rhel10Beta     Distributions = "rhel-10-beta"
 	Rhel10Nightly  Distributions = "rhel-10-nightly"
 	Rhel8          Distributions = "rhel-8"
@@ -103,6 +104,7 @@ const (
 	Rhel96         Distributions = "rhel-9.6"
 	Rhel96Nightly  Distributions = "rhel-9.6-nightly"
 	Rhel97Nightly  Distributions = "rhel-9.7-nightly"
+	Rhel98Nightly  Distributions = "rhel-9.8-nightly"
 	Rhel9Beta      Distributions = "rhel-9-beta"
 	Rhel9Nightly   Distributions = "rhel-9-nightly"
 )
