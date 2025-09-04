@@ -85,10 +85,10 @@ func (csc *ContentSourcesClient) fetchRepositories(ctx context.Context, repoURLs
 		if resp.StatusCode != http.StatusUnauthorized {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				return nil, fmt.Errorf("unable to fetch repositories, got %v response, body: %s", resp.StatusCode, body)
+				return nil, fmt.Errorf("unable to fetch repositories from %s, got %v response, body: %s", csReposURL.String(), resp.StatusCode, body)
 			}
 		}
-		return nil, fmt.Errorf("unable to fetch repositories, got %v response", resp.StatusCode)
+		return nil, fmt.Errorf("unable to fetch repositories from %s, got %v response", csReposURL.String(), resp.StatusCode)
 	}
 
 	var repos *ApiRepositoryCollectionResponse
