@@ -151,8 +151,8 @@ github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32/go.mod h1:CecYUdLQNeKEkEC0DOejBTaVxs8Xbr30tRtgOIpbuKo=
 github.com/osbuild/images v0.182.0 h1:atlLjJJVVhq7nOW5OYXPI3+e6uRYO/YkSnEFgOowwjE=
 github.com/osbuild/images v0.182.0/go.mod h1:qbGjthiOmiZr1xCJEYMHv5oPNXXcxkJyvj7dky4/ibw=
-github.com/osbuild/logging v0.0.5 h1:62oqlGdERK0aP7PdXJjxUPfQUjhmNJJTlVx9fnSJzIM=
-github.com/osbuild/logging v0.0.5/go.mod h1:wsk/8k4FK+VsPAB0GN8iLIcRGrqHDF49uZRq55MrZI0=
+github.com/osbuild/logging v0.0.6 h1:JKDBrAjD0cqhacHGaaoYVCIiORkAN7aAa5SI6ABjaaw=
+github.com/osbuild/logging v0.0.6/go.mod h1:wsk/8k4FK+VsPAB0GN8iLIcRGrqHDF49uZRq55MrZI0=
 github.com/perimeterx/marshmallow v1.1.5 h1:a2LALqQ1BlHM8PZblsDdidgv1mWi1DgC2UmX50IvK2s=
 github.com/perimeterx/marshmallow v1.1.5/go.mod h1:dsXbUu8CRzfYP5a87xpp0xq9S3u0Vchtcl8we9tYaXw=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
