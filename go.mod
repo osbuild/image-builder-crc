@@ -6,7 +6,6 @@ require (
 	github.com/BurntSushi/toml v1.5.1-0.20250403130103-3d3abc24416a
 	github.com/Unleash/unleash-client-go/v4 v4.5.0
 	github.com/getkin/kin-openapi v0.133.0
-	github.com/getsentry/sentry-go/echo v0.35.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.7.5
@@ -17,7 +16,7 @@ require (
 	github.com/osbuild/blueprint v1.13.0
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32
 	github.com/osbuild/images v0.182.0
-	github.com/osbuild/logging v0.0.6
+	github.com/osbuild/logging v0.0.7
 	github.com/prometheus/client_golang v1.23.0
 	github.com/redhatinsights/app-common-go v1.6.8
 	github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1

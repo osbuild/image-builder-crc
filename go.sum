@@ -42,8 +42,6 @@ github.com/getkin/kin-openapi v0.133.0 h1:pJdmNohVIJ97r4AUFtEXRXwESr8b0bD721u/Tz
 github.com/getkin/kin-openapi v0.133.0/go.mod h1:boAciF6cXk5FhPqe/NQeBTeenbjqU4LhWBf09ILVvWE=
 github.com/getsentry/sentry-go v0.35.1 h1:iopow6UVLE2aXu46xKVIs8Z9D/YZkJrHkgozrxa+tOQ=
 github.com/getsentry/sentry-go v0.35.1/go.mod h1:C55omcY9ChRQIUcVcGcs+Zdy4ZpQGvNJ7JYHIoSWOtE=
-github.com/getsentry/sentry-go/echo v0.35.1 h1:MIhSUyo7cpCdcw0/lIeAw5fukrDt3x9G7qbiyjbVllI=
-github.com/getsentry/sentry-go/echo v0.35.1/go.mod h1:IjdEzgvwlP2/7A32tWk75UmSUsBqvKFdpkN6WhB1e6M=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=
 github.com/go-errors/errors v1.4.2/go.mod h1:sIVyrIiJhuEF+Pj9Ebtd6P/rEYROXFi3BopGUQ5a5Og=
 github.com/go-openapi/jsonpointer v0.21.1 h1:whnzv/pNXtK2FbX/W9yJfRmE2gsmkfahjMKB0fZvcic=
@@ -151,8 +149,8 @@ github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32/go.mod h1:CecYUdLQNeKEkEC0DOejBTaVxs8Xbr30tRtgOIpbuKo=
 github.com/osbuild/images v0.182.0 h1:atlLjJJVVhq7nOW5OYXPI3+e6uRYO/YkSnEFgOowwjE=
 github.com/osbuild/images v0.182.0/go.mod h1:qbGjthiOmiZr1xCJEYMHv5oPNXXcxkJyvj7dky4/ibw=
-github.com/osbuild/logging v0.0.6 h1:JKDBrAjD0cqhacHGaaoYVCIiORkAN7aAa5SI6ABjaaw=
-github.com/osbuild/logging v0.0.6/go.mod h1:wsk/8k4FK+VsPAB0GN8iLIcRGrqHDF49uZRq55MrZI0=
+github.com/osbuild/logging v0.0.7 h1:Z4jdc+nk7aMKso0OCrVD3QMd4bXWXs7w45b02N0asrM=
+github.com/osbuild/logging v0.0.7/go.mod h1:wsk/8k4FK+VsPAB0GN8iLIcRGrqHDF49uZRq55MrZI0=
 github.com/perimeterx/marshmallow v1.1.5 h1:a2LALqQ1BlHM8PZblsDdidgv1mWi1DgC2UmX50IvK2s=
 github.com/perimeterx/marshmallow v1.1.5/go.mod h1:dsXbUu8CRzfYP5a87xpp0xq9S3u0Vchtcl8we9tYaXw=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
