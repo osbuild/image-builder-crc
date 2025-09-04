@@ -17,7 +17,7 @@ require (
 	github.com/osbuild/blueprint v1.13.0
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32
 	github.com/osbuild/images v0.182.0
-	github.com/osbuild/logging v0.0.5
+	github.com/osbuild/logging v0.0.6
 	github.com/prometheus/client_golang v1.23.0
 	github.com/redhatinsights/app-common-go v1.6.8
 	github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1
