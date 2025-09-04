@@ -149,12 +149,7 @@ func (u *User) MergeForUpdate(userData []User) error {
 
 // Helper function to build service snapshots if compliance policy exists
 func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Customizations, distribution Distributions) (*db.ServiceSnapshots, error) {
-	slog.DebugContext(ctx.Request().Context(), "buildServiceSnapshots called",
-		"has_openscap", customizations.Openscap != nil,
-		"distribution", distribution)
-
 	if customizations.Openscap == nil {
-		slog.DebugContext(ctx.Request().Context(), "no OpenSCAP customization found, returning nil")
 		return nil, nil
 	}
 
@@ -165,13 +160,8 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 		return nil, nil
 	}
 	if compl.PolicyId == uuid.Nil {
-		slog.DebugContext(ctx.Request().Context(), "compliance reported no policy id")
 		return nil, nil
 	}
-
-	slog.DebugContext(ctx.Request().Context(), "OpenSCAP compliance found",
-
-		"policy_id", compl.PolicyId.String())
 
 	d, err := h.server.getDistro(ctx, distribution)
 	if err != nil {
@@ -206,7 +196,6 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 
 	// Check for empty or minimal TOML content
 	if policyToml == "" || len(strings.TrimSpace(policyToml)) == 0 {
-		slog.InfoContext(ctx.Request().Context(), "TOML content is empty, returning nil")
 		return nil, nil
 	}
 
@@ -223,8 +212,6 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 		"rhel_major", major,
 		"rhel_minor", minor,
 		"toml_size", len(policyToml))
-
-	slog.InfoContext(ctx.Request().Context(), "buildServiceSnapshots completed successfully")
 
 	return serviceSnapshots, nil
 }
@@ -389,7 +376,7 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 		return err
 	}
-	slog.InfoContext(ctx.Request().Context(), "inserted blueprint with service snapshots",
+	slog.DebugContext(ctx.Request().Context(), "inserted blueprint with service snapshots",
 		"id", id)
 
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
@@ -402,9 +389,6 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	if err != nil {
 		return err
 	}
-
-	slog.DebugContext(ctx.Request().Context(), "fetching blueprint",
-		"id", id)
 	if params.Version != nil && *params.Version <= 0 {
 		if *params.Version != -1 {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid version number")
@@ -475,9 +459,6 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	if err != nil {
 		return err
 	}
-
-	slog.DebugContext(ctx.Request().Context(), "fetching blueprint for export",
-		"id", id)
 	blueprintEntry, err := h.server.db.GetBlueprint(ctx.Request().Context(), id, userID.OrgID(), nil)
 	if err != nil {
 		if errors.Is(err, db.ErrBlueprintNotFound) {
@@ -655,9 +636,6 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		}
 		return err
 	}
-	slog.InfoContext(ctx.Request().Context(), "updated blueprint with service snapshots",
-		"blueprint_id", blueprintId)
-
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
 		Id: blueprintId,
 	})
@@ -917,8 +895,7 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 	desc := common.FromPtr(blueprintRequest.Description)
-
-	slog.InfoContext(ctx.Request().Context(), "starting buildServiceSnapshots during fixup",
+	slog.DebugContext(ctx.Request().Context(), "starting buildServiceSnapshots during fixup",
 		"blueprint_id", blueprintEntry.Id,
 		"distribution", blueprintRequest.Distribution,
 		"has_openscap", blueprintRequest.Customizations.Openscap != nil)
@@ -930,10 +907,6 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 			"error", err.Error())
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots during fixup")
 	}
-
-	slog.InfoContext(ctx.Request().Context(), "successfully built service snapshots during fixup",
-		"blueprint_id", blueprintEntry.Id,
-		"snapshots_is_nil", serviceSnapshots == nil)
 
 	var serviceSnapshotsJSON json.RawMessage
 	if serviceSnapshots != nil {
@@ -953,8 +926,6 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		}
 		return err
 	}
-	slog.InfoContext(ctx.Request().Context(), "updated blueprint via fixup",
-		"blueprint_id", blueprintEntry.Id)
 
 	return ctx.NoContent(http.StatusCreated)
 }
