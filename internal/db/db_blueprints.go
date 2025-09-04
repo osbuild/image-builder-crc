@@ -23,8 +23,8 @@ const (
 		VALUES($1, $2, $3, $4, $5, $6)`
 
 	sqlInsertVersion = `
-		INSERT INTO blueprint_versions(id, blueprint_id, version, body)
-		VALUES($1, $2, $3, $4)`
+		INSERT INTO blueprint_versions(id, blueprint_id, version, body, service_snapshots)
+		VALUES($1, $2, $3, $4, $5)`
 
 	sqlLatestBlueprintVersion = `
 		SELECT MAX(blueprint_versions.version)
@@ -58,7 +58,7 @@ const (
 		AND ($5::text[] is NULL OR composes.request->'image_requests'->0->>'image_type' <> ALL($5))`
 
 	sqlGetBlueprint = `
-		SELECT blueprints.id, blueprint_versions.id, blueprints.name, blueprints.description, blueprint_versions.version, blueprint_versions.body, blueprints.metadata
+		SELECT blueprints.id, blueprint_versions.id, blueprints.name, blueprints.description, blueprint_versions.version, blueprint_versions.body, blueprints.metadata, blueprint_versions.service_snapshots
 		FROM blueprints INNER JOIN blueprint_versions ON blueprint_versions.blueprint_id = blueprints.id
 		WHERE blueprints.deleted = FALSE AND blueprints.id = $1 AND blueprints.org_id = $2
 			AND ($3::int is NULL OR blueprint_versions.version = $3)
@@ -70,12 +70,13 @@ const (
 		WHERE deleted = FALSE AND id = $1 AND org_id = $2`
 
 	sqlUpdateBlueprintVersion = `
-		INSERT INTO blueprint_versions (id, blueprint_id, version, body)
+		INSERT INTO blueprint_versions (id, blueprint_id, version, body, service_snapshots)
 		SELECT 
 			$1,
 			$2,
 			MAX(version) + 1, 
-			$3
+			$3,
+			$4
 		FROM 
 			blueprint_versions
 		WHERE 
@@ -85,7 +86,7 @@ const (
 			FROM blueprints
 			WHERE deleted = FALSE
 			AND id = $2
-			AND org_id = $4
+			AND org_id = $5
         );`
 
 	sqlDeleteBlueprintComposes = `
@@ -180,7 +181,7 @@ func (db *dB) GetBlueprintComposes(ctx context.Context, orgId string, blueprintI
 	var resultBlueprint BlueprintEntry
 	row := conn.QueryRow(ctx, sqlGetBlueprint, blueprintId, orgId, nil)
 	err = row.Scan(&resultBlueprint.Id, &resultBlueprint.VersionId, &resultBlueprint.Name, &resultBlueprint.Description,
-		&resultBlueprint.Version, &resultBlueprint.Body, &resultBlueprint.Metadata)
+		&resultBlueprint.Version, &resultBlueprint.Body, &resultBlueprint.Metadata, &resultBlueprint.ServiceSnapshots)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrBlueprintNotFound
@@ -212,7 +213,7 @@ func (db *dB) GetBlueprintComposes(ctx context.Context, orgId string, blueprintI
 	return composes, nil
 }
 
-func (db *dB) InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.UUID, orgID, accountNumber, name, description string, body json.RawMessage, metadata json.RawMessage) error {
+func (db *dB) InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.UUID, orgID, accountNumber, name, description string, body json.RawMessage, metadata json.RawMessage, serviceSnapshots json.RawMessage) error {
 	conn, err := db.Pool.Acquire(ctx)
 	if err != nil {
 		return err
@@ -228,7 +229,7 @@ func (db *dB) InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.
 			return fmt.Errorf("failed to insert blueprint: %w, expected 1, returned %d", ErrAffectedRowsMismatch, tag.RowsAffected())
 		}
 
-		tag, txErr = tx.Exec(ctx, sqlInsertVersion, versionId, id, 1, body)
+		tag, txErr = tx.Exec(ctx, sqlInsertVersion, versionId, id, 1, body, serviceSnapshots)
 		if txErr != nil {
 			return txErr
 		}
@@ -249,7 +250,7 @@ func (db *dB) GetBlueprint(ctx context.Context, id uuid.UUID, orgID string, vers
 
 	var result BlueprintEntry
 	row := conn.QueryRow(ctx, sqlGetBlueprint, id, orgID, version)
-	err = row.Scan(&result.Id, &result.VersionId, &result.Name, &result.Description, &result.Version, &result.Body, &result.Metadata)
+	err = row.Scan(&result.Id, &result.VersionId, &result.Name, &result.Description, &result.Version, &result.Body, &result.Metadata, &result.ServiceSnapshots)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrBlueprintNotFound
@@ -257,10 +258,10 @@ func (db *dB) GetBlueprint(ctx context.Context, id uuid.UUID, orgID string, vers
 		return nil, err
 	}
 
-	return &result, err
+	return &result, nil
 }
 
-func (db *dB) UpdateBlueprint(ctx context.Context, id uuid.UUID, blueprintId uuid.UUID, orgId string, name string, description string, body json.RawMessage) error {
+func (db *dB) UpdateBlueprint(ctx context.Context, id uuid.UUID, blueprintId uuid.UUID, orgId string, name string, description string, body json.RawMessage, serviceSnapshots json.RawMessage) error {
 	conn, err := db.Pool.Acquire(ctx)
 	if err != nil {
 		return err
@@ -281,7 +282,7 @@ func (db *dB) UpdateBlueprint(ctx context.Context, id uuid.UUID, blueprintId uui
 			return fmt.Errorf("blueprint not updated: %w, expected 1, returned %d", ErrAffectedRowsMismatch, tag.RowsAffected())
 		}
 
-		tag, txErr = tx.Exec(ctx, sqlUpdateBlueprintVersion, id, blueprintId, body, orgId)
+		tag, txErr = tx.Exec(ctx, sqlUpdateBlueprintVersion, id, blueprintId, body, serviceSnapshots, orgId)
 		if txErr != nil {
 			return txErr
 		}

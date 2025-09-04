@@ -369,7 +369,7 @@ func TestGetComposes(t *testing.T) {
 
 	bpId := uuid.New()
 	versionId := uuid.New()
-	err = srv.DB.InsertBlueprint(ctx, bpId, versionId, "000000", "500000", "bpName", "desc", json.RawMessage("{}"), json.RawMessage("{}"))
+	err = srv.DB.InsertBlueprint(ctx, bpId, versionId, "000000", "500000", "bpName", "desc", json.RawMessage("{}"), json.RawMessage("{}"), nil)
 	require.NoError(t, err)
 
 	err = srv.DB.InsertCompose(ctx, id4, "500000", "user100000@test.test", "000000", &imageName, json.RawMessage(`{"image_requests": [{"image_type": "edge-installer"}]}`), &clientId, &versionId)

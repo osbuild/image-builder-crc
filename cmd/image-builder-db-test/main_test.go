@@ -43,7 +43,7 @@ func testInsertCompose(ctx context.Context, t *testing.T) {
 
 	tutils.MigrateTern(ctx, t)
 
-	err = d.InsertBlueprint(ctx, blueprintId, versionId, ORGID1, ANR1, "blueprint", "blueprint desc", []byte("{}"), []byte("{}"))
+	err = d.InsertBlueprint(ctx, blueprintId, versionId, ORGID1, ANR1, "blueprint", "blueprint desc", []byte("{}"), []byte("{}"), nil)
 	require.NoError(t, err)
 
 	// test
@@ -318,7 +318,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 
 	id := uuid.New()
 	versionId := uuid.New()
-	err = d.InsertBlueprint(ctx, id, versionId, ORGID1, ANR1, name1, description1, bodyJson1, []byte("{}"))
+	err = d.InsertBlueprint(ctx, id, versionId, ORGID1, ANR1, name1, description1, bodyJson1, []byte("{}"), nil)
 	require.NoError(t, err)
 
 	entry, err := d.GetBlueprint(ctx, id, ORGID1, nil)
@@ -352,7 +352,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	require.NoError(t, err)
 
 	newVersionId := uuid.New()
-	err = d.UpdateBlueprint(ctx, newVersionId, id, ORGID1, name2, description2, bodyJson2)
+	err = d.UpdateBlueprint(ctx, newVersionId, id, ORGID1, name2, description2, bodyJson2, nil)
 	require.NoError(t, err)
 	entryUpdated, err := d.GetBlueprint(ctx, id, ORGID1, nil)
 	require.NoError(t, err)
@@ -390,7 +390,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	bodyJson3, err := json.Marshal(body3)
 	require.NoError(t, err)
 	newBlueprintId := uuid.New()
-	err = d.UpdateBlueprint(ctx, newBlueprintId, id, ORGID2, name3, description3, bodyJson3)
+	err = d.UpdateBlueprint(ctx, newBlueprintId, id, ORGID2, name3, description3, bodyJson3, nil)
 	require.Error(t, err)
 	entryAfterInvalidUpdate, err := d.GetBlueprint(ctx, id, ORGID1, nil)
 	require.NoError(t, err)
@@ -407,11 +407,11 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	newestBlueprintName := "new name"
 
 	// Fail to insert blueprint with the same name
-	err = d.InsertBlueprint(ctx, newestBlueprintId, newestBlueprintVersionId, ORGID1, ANR1, newestBlueprintName, "desc", bodyJson1, []byte("{}"))
+	err = d.InsertBlueprint(ctx, newestBlueprintId, newestBlueprintVersionId, ORGID1, ANR1, newestBlueprintName, "desc", bodyJson1, []byte("{}"), nil)
 	require.Error(t, err)
 
 	newestBlueprintName = "New name 2"
-	err = d.InsertBlueprint(ctx, newestBlueprintId, newestBlueprintVersionId, ORGID1, ANR1, newestBlueprintName, "desc", bodyJson1, []byte("{}"))
+	err = d.InsertBlueprint(ctx, newestBlueprintId, newestBlueprintVersionId, ORGID1, ANR1, newestBlueprintName, "desc", bodyJson1, []byte("{}"), nil)
 	require.NoError(t, err)
 	entries, bpCount, err := d.GetBlueprints(ctx, ORGID1, 100, 0)
 	require.NoError(t, err)
@@ -419,7 +419,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	require.Equal(t, entries[0].Name, newestBlueprintName)
 	require.Equal(t, entries[1].Version, 2)
 
-	err = d.InsertBlueprint(ctx, uuid.New(), uuid.New(), ORGID1, ANR1, "unique name", "unique desc", bodyJson1, []byte("{}"))
+	err = d.InsertBlueprint(ctx, uuid.New(), uuid.New(), ORGID1, ANR1, "unique name", "unique desc", bodyJson1, []byte("{}"), nil)
 	entries, count, err := d.FindBlueprints(ctx, ORGID1, "", 100, 0)
 	require.NoError(t, err)
 	require.Equal(t, 3, count)
@@ -460,7 +460,7 @@ func testGetBlueprintComposes(ctx context.Context, t *testing.T) {
 
 	id := uuid.New()
 	versionId := uuid.New()
-	err = d.InsertBlueprint(ctx, id, versionId, ORGID1, ANR1, "name", "desc", []byte("{}"), []byte("{}"))
+	err = d.InsertBlueprint(ctx, id, versionId, ORGID1, ANR1, "name", "desc", []byte("{}"), []byte("{}"), nil)
 	require.NoError(t, err)
 
 	// get latest version
@@ -469,7 +469,7 @@ func testGetBlueprintComposes(ctx context.Context, t *testing.T) {
 	require.Equal(t, 1, version)
 
 	version2Id := uuid.New()
-	err = d.UpdateBlueprint(ctx, version2Id, id, ORGID1, "name", "desc2", []byte("{}"))
+	err = d.UpdateBlueprint(ctx, version2Id, id, ORGID1, "name", "desc2", []byte("{}"), nil)
 	require.NoError(t, err)
 
 	clientId := "ui"
