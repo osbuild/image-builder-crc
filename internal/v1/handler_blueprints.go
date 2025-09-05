@@ -5,13 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -144,6 +147,75 @@ func (u *User) MergeForUpdate(userData []User) error {
 	return nil
 }
 
+// Helper function to build service snapshots if compliance policy exists
+func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Customizations, distribution Distributions) (*db.ServiceSnapshots, error) {
+	if customizations.Openscap == nil {
+		return nil, nil
+	}
+
+	var compl OpenSCAPCompliance
+	compl, err := customizations.Openscap.AsOpenSCAPCompliance()
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error in AsOpenSCAPCompliance", "error", err.Error())
+		return nil, nil
+	}
+	if compl.PolicyId == uuid.Nil {
+		return nil, nil
+	}
+
+	d, err := h.server.getDistro(ctx, distribution)
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error getting distro", "error", err.Error())
+		return nil, err
+	}
+
+	major, minor, err := d.RHELMajorMinor()
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error getting RHEL major/minor", "error", err)
+		return nil, err
+	}
+
+	policyBp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error getting policy customizations",
+			"error", err.Error(), "major", major, "minor", minor, "policy_id", compl.PolicyId.String())
+		return nil, err
+	}
+
+	if policyBp == nil {
+		return nil, nil
+	}
+
+	policyTomlBytes, err := toml.Marshal(policyBp)
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error marshaling blueprint to TOML", "error", err.Error())
+		return nil, fmt.Errorf("failed to encode blueprint to TOML: %w", err)
+	}
+
+	policyToml := string(policyTomlBytes)
+
+	// Check for empty or minimal TOML content
+	if policyToml == "" || len(strings.TrimSpace(policyToml)) == 0 {
+		return nil, nil
+	}
+
+	serviceSnapshots := &db.ServiceSnapshots{
+		Compliance: &db.ComplianceSnapshot{
+			PolicyId:        compl.PolicyId,
+			PolicyBlueprint: policyToml,
+		},
+	}
+
+	slog.DebugContext(ctx.Request().Context(), "built compliance snapshot",
+		"policy_id", compl.PolicyId,
+		"distribution", distribution,
+		"rhel_major", major,
+		"rhel_minor", minor,
+		"toml_size", len(policyToml))
+
+	return serviceSnapshots, nil
+}
+
 // Util function used to create and update Blueprint from API request (WRITE)
 func BlueprintFromAPI(cbr CreateBlueprintRequest) (BlueprintBody, error) {
 	bb := BlueprintBody{
@@ -237,7 +309,11 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 
 	id := uuid.New()
 	versionId := uuid.New()
-	ctx.Logger().Infof("Inserting blueprint: %s (%s), for orgID: %s and account: %s", blueprintRequest.Name, id, userID.OrgID(), userID.AccountNumber())
+	slog.DebugContext(ctx.Request().Context(), "Inserting blueprint",
+		"name", blueprintRequest.Name,
+		"id", id,
+		"org_id", userID.OrgID(),
+		"account", userID.AccountNumber())
 	desc := ""
 	if blueprintRequest.Description != nil {
 		desc = *blueprintRequest.Description
@@ -268,9 +344,26 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		return err
 	}
 
-	err = h.server.db.InsertBlueprint(ctx.Request().Context(), id, versionId, userID.OrgID(), userID.AccountNumber(), blueprintRequest.Name, desc, body, metadata)
+	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, blueprintRequest.Distribution)
 	if err != nil {
-		ctx.Logger().Errorf("Error inserting id into db: %s", err.Error())
+		slog.ErrorContext(ctx.Request().Context(), "error building service snapshots",
+			"blueprint_id", id,
+			"error", err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots")
+	}
+
+	var serviceSnapshotsJSON json.RawMessage
+	if serviceSnapshots != nil {
+		serviceSnapshotsJSON, err = json.Marshal(serviceSnapshots)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal service snapshots")
+		}
+	}
+
+	err = h.server.db.InsertBlueprint(ctx.Request().Context(), id, versionId, userID.OrgID(), userID.AccountNumber(), blueprintRequest.Name, desc, body, metadata, serviceSnapshotsJSON)
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error inserting blueprint with service snapshots into db",
+			"error", err.Error())
 
 		var e *pgconn.PgError
 		if errors.As(err, &e) && e.Code == pgerrcode.UniqueViolation {
@@ -283,7 +376,9 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 		return err
 	}
-	ctx.Logger().Infof("Inserted blueprint %s", id)
+	slog.DebugContext(ctx.Request().Context(), "inserted blueprint with service snapshots",
+		"id", id)
+
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
 		Id: id,
 	})
@@ -294,8 +389,6 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	if err != nil {
 		return err
 	}
-
-	ctx.Logger().Infof("Fetching blueprint %s", id)
 	if params.Version != nil && *params.Version <= 0 {
 		if *params.Version != -1 {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid version number")
@@ -366,8 +459,6 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	if err != nil {
 		return err
 	}
-
-	ctx.Logger().Infof("Fetching blueprint %s", id)
 	blueprintEntry, err := h.server.db.GetBlueprint(ctx.Request().Context(), id, userID.OrgID(), nil)
 	if err != nil {
 		if errors.Is(err, db.ErrBlueprintNotFound) {
@@ -428,7 +519,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	}
 
 	if exportedRepositoriesResp.Body == nil {
-		ctx.Logger().Warnf("Unable to export custom repositories, empty body")
+		slog.WarnContext(ctx.Request().Context(), "unable to export custom repositories, empty body")
 		return ctx.JSON(http.StatusOK, blueprintExportResponse)
 	}
 
@@ -519,15 +610,32 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 	if blueprintRequest.Description != nil {
 		desc = *blueprintRequest.Description
 	}
-	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), versionId, blueprintId, userID.OrgID(), blueprintRequest.Name, desc, body)
+
+	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, blueprintRequest.Distribution)
 	if err != nil {
-		ctx.Logger().Errorf("Error updating blueprint in db: %v", err)
+		slog.ErrorContext(ctx.Request().Context(), "error building service snapshots",
+			"blueprint_id", blueprintId,
+			"error", err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots")
+	}
+
+	var serviceSnapshotsJSON json.RawMessage
+	if serviceSnapshots != nil {
+		serviceSnapshotsJSON, err = json.Marshal(serviceSnapshots)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal service snapshots")
+		}
+	}
+
+	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), versionId, blueprintId, userID.OrgID(), blueprintRequest.Name, desc, body, serviceSnapshotsJSON)
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error updating blueprint with service snapshots in db",
+			"error", err)
 		if errors.Is(err, db.ErrBlueprintNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
 		return err
 	}
-	ctx.Logger().Infof("Updated blueprint %s", blueprintId)
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
 		Id: blueprintId,
 	})
@@ -681,7 +789,7 @@ func (h *Handlers) GetBlueprintComposes(ctx echo.Context, blueprintId openapi_ty
 	composes, err := h.server.db.GetBlueprintComposes(ctx.Request().Context(), userID.OrgID(), blueprintId, params.BlueprintVersion, since, limit, offset, ignoreImageTypeStrings)
 	if err != nil {
 		if errors.Is(err, db.ErrBlueprintNotFound) {
-			return echo.NewHTTPError(http.StatusNotFound)
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
 		return err
 	}
@@ -787,14 +895,37 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 	desc := common.FromPtr(blueprintRequest.Description)
+	slog.DebugContext(ctx.Request().Context(), "starting buildServiceSnapshots during fixup",
+		"blueprint_id", blueprintEntry.Id,
+		"distribution", blueprintRequest.Distribution,
+		"has_openscap", blueprintRequest.Customizations.Openscap != nil)
 
-	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), uuid.New(), blueprintEntry.Id, userID.OrgID(), blueprintRequest.Name, desc, body)
+	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, blueprintRequest.Distribution)
 	if err != nil {
-		ctx.Logger().Errorf("Error updating blueprint in db: %v", err)
+		slog.ErrorContext(ctx.Request().Context(), "error building service snapshots during fixup",
+			"blueprint_id", blueprintEntry.Id,
+			"error", err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots during fixup")
+	}
+
+	var serviceSnapshotsJSON json.RawMessage
+	if serviceSnapshots != nil {
+		serviceSnapshotsJSON, err = json.Marshal(serviceSnapshots)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal service snapshots")
+		}
+	}
+
+	versionId := uuid.New()
+	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), versionId, blueprintEntry.Id, userID.OrgID(), blueprintRequest.Name, desc, body, serviceSnapshotsJSON)
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error updating blueprint in db during fixup",
+			"error", err)
 		if errors.Is(err, db.ErrBlueprintNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
 		return err
 	}
+
 	return ctx.NoContent(http.StatusCreated)
 }
