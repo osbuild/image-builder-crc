@@ -140,15 +140,11 @@ func Attach(conf *ServerConfig) (*Server, error) {
 	s.echo.Binder = binder{}
 	s.echo.HTTPErrorHandler = s.HTTPErrorHandler
 
-	middlewaresNoAuth := []echo.MiddlewareFunc{
-		prometheus.StatusMiddleware,
-	}
-
-	// Global middleware: extract identity early in a pre-middleware (if present)
-	// Identity must be extracted before any other middleware that performs any logging
-	// to ensure identity information is available in the logs. The strc middleware
-	// is one such example.
-	s.echo.Pre(echo.WrapMiddleware(func(next http.Handler) http.Handler {
+	// Middleware: extract identity early in a pre-middleware (if present)
+	// Identity must be extracted before any other middleware that performs any
+	// logging to ensure identity information is available in the logs. The strc
+	// middleware is one such example.
+	extractIdentityMiddleware := echo.WrapMiddleware(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if h := r.Header[fedora_identity.FedoraIDHeader]; len(h) > 0 && conf.FedoraAuth {
 				fedora_identity.Extractor(next).ServeHTTP(w, r)
@@ -158,40 +154,55 @@ func Attach(conf *ServerConfig) (*Server, error) {
 				next.ServeHTTP(w, r)
 			}
 		})
-	}))
+	})
 
-	// Global middleware: extract or generate trace information
-	s.echo.Pre(strc.NewEchoV4MiddlewareWithConfig(slog.Default(), strc.MiddlewareConfig{
-		Filters: []strc.Filter{
-			strc.IgnorePathPrefix("/metrics"),
-			strc.IgnorePathPrefix("/status"),
-			strc.IgnorePathPrefix("/ready"),
-		},
-	}))
-
-	// Global middleware: log stack traces into standard logger as error (instead of stdout)
-	s.echo.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogLevel: glog.ERROR,
-	}))
-
-	// Route-based middleware:
-	var middlewares []echo.MiddlewareFunc
-
-	if s.fedoraAuth {
-		middlewares = append(middlewaresNoAuth, func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
-				if id := c.Request().Context().Value(fedora_identity.IDHeaderKey); id == nil {
-					return echo.NewHTTPError(http.StatusBadRequest, "Missing identity header")
-				}
-				return next(c)
+	// Middleware: enforce identity presence for authenticated routes
+	enforceIdentityMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if id := c.Request().Context().Value(fedora_identity.IDHeaderKey); id == nil {
+				return echo.NewHTTPError(http.StatusBadRequest, "Missing identity header")
 			}
-		})
-	} else {
-		middlewares = append(middlewaresNoAuth, echo.WrapMiddleware(identity.BasePolicy))
+			return next(c)
+		}
 	}
 
-	middlewaresNoAuth = append(middlewaresNoAuth, prometheus.PrometheusMW)
-	middlewares = append(middlewares, s.noAssociateAccounts, s.ValidateRequest, prometheus.PrometheusMW)
+	// Middleware: log stack traces into standard logger as error (instead of stdout)
+	recoverMiddleware := middleware.RecoverWithConfig(middleware.RecoverConfig{
+		LogLevel: glog.ERROR,
+	})
+
+	// Middleware: structured logging and tracing
+	// XXX: split into individual logging and tracing middlewares
+	tracingLoggingMiddleware := strc.NewEchoV4MiddlewareWithConfig(slog.Default(),
+		strc.MiddlewareConfig{})
+
+	middlewares := []echo.MiddlewareFunc{
+		prometheus.StatusMiddleware,
+		extractIdentityMiddleware,
+		tracingLoggingMiddleware,
+		recoverMiddleware,
+	}
+
+	middlewaresNoAuth := []echo.MiddlewareFunc{
+		prometheus.StatusMiddleware,
+	}
+
+	// Add identity middleware depending on the authentication mode
+	if s.fedoraAuth {
+		middlewares = append(middlewares, enforceIdentityMiddleware)
+	} else {
+		middlewares = append(middlewares, echo.WrapMiddleware(identity.BasePolicy))
+	}
+
+	middlewares = append(middlewares,
+		s.noAssociateAccounts,
+		s.ValidateRequest,
+		prometheus.PrometheusMW,
+	)
+
+	middlewaresNoAuth = append(middlewaresNoAuth,
+		prometheus.PrometheusMW,
+	)
 
 	RegisterHandlers(s.echo.Group(fmt.Sprintf("%s/v%s", RoutePrefix(), majorVersion), middlewares...), &h)
 	RegisterHandlers(s.echo.Group(fmt.Sprintf("%s/v%s", RoutePrefix(), spec.Info.Version), middlewares...), &h)
