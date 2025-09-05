@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	fedora_identity "github.com/osbuild/community-gateway/oidc-authorizer/pkg/identity"
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
@@ -199,10 +198,6 @@ func main() {
 	echoServer := echo.New()
 	echoServer.HideBanner = true
 	echoServer.Logger = echoproxy.NewProxyFor(slog.Default())
-
-	if conf.GlitchTipDSN != "" {
-		echoServer.Use(sentryecho.New(sentryecho.Options{}))
-	}
 
 	if conf.IsDebug() {
 		echoServer.Debug = true
