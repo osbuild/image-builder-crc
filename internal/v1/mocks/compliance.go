@@ -77,6 +77,39 @@ func tailorings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func tailoringsEmptyData(w http.ResponseWriter, r *http.Request) {
+	if tutils.AuthString0 != r.Header.Get("x-rh-identity") {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	responseData := `{
+		"data": [],
+		"meta": {
+			"total": 0,
+			"filter": "os_minor_version=1",
+			"limit": 10,
+			"offset": 0
+		},
+		"links": {
+			"first": "/api/compliance/v2/policies/725ffbed-c00a-429f-8fa1-f762b3db9e9c/tailorings?filter=os_minor_version%3D1&limit=10&offset=0",
+			"last": "/api/compliance/v2/policies/725ffbed-c00a-429f-8fa1-f762b3db9e9c/tailorings?filter=os_minor_version%3D1&limit=10&offset=0"
+		}
+	}`
+	_, _ = w.Write([]byte(responseData))
+	w.WriteHeader(http.StatusOK)
+}
+
+func tailoringsCreated(w http.ResponseWriter, r *http.Request) {
+	if tutils.AuthString0 != r.Header.Get("x-rh-identity") {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write([]byte(`{"data": {}}`))
+}
+
 func tailoredBlueprint(w http.ResponseWriter, r *http.Request) {
 	if tutils.AuthString0 != r.Header.Get("x-rh-identity") {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -149,6 +182,8 @@ func tailoredBlueprint(w http.ResponseWriter, r *http.Request) {
 func Compliance() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /policies/{id}", policies)
+	mux.HandleFunc("GET /policies/{id}/tailorings", tailoringsEmptyData)
+	mux.HandleFunc("POST /policies/{id}/tailorings", tailoringsCreated)
 	mux.HandleFunc("GET /policies/{id}/tailorings/{minv}/tailoring_file.json", tailorings)
 	mux.HandleFunc("GET /policies/{id}/tailorings/{minv}/tailoring_file.toml", tailoredBlueprint)
 	return mux
