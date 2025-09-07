@@ -162,7 +162,7 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 	}
 
 	var cust Customizations
-	_, err = h.lintOpenscap(ctx, &cust, true, distribution, compl.PolicyId.String())
+	_, _, err = h.lintOpenscap(ctx, &cust, true, distribution, compl.PolicyId.String(), nil)
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error getting policy customizations via lintOpenscap",
 			"error", err.Error(), "distribution", distribution, "policy_id", compl.PolicyId.String())
@@ -385,7 +385,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		return err
 	}
 
-	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false)
+	lintErrors, lintWarnings, err := h.lintBlueprint(ctx, blueprintEntry, false)
 	if err != nil {
 		return err
 	}
@@ -398,33 +398,71 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		Distribution:   blueprint.Distribution,
 		Customizations: blueprint.Customizations,
 		Lint: BlueprintLint{
-			Errors: lintErrors,
+			Errors:   lintErrors,
+			Warnings: lintWarnings,
 		},
 	}
 
 	return ctx.JSON(http.StatusOK, blueprintResponse)
 }
 
-func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
+func (h *Handlers) lintBlueprint(ctx echo.Context, bpe *db.BlueprintEntry, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem, error) {
 	lintErrors := []BlueprintLintItem{}
-	if blueprint.Customizations.Openscap != nil {
-		var compl OpenSCAPCompliance
-		var err error
-		if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err == nil && compl.PolicyId != uuid.Nil {
-			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String())
-			if err == compliance.ErrorTailoringNotFound {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: "Compliance policy does not have a definition for the latest minor version",
-				})
-			} else if err != nil {
-				return nil, err
-			} else {
-				lintErrors = append(lintErrors, errs...)
-			}
-		}
+	lintWarnings := []BlueprintLintItem{}
+
+	bpBody, err := BlueprintFromEntry(bpe)
+	if err != nil {
+		return nil, nil, err
 	}
-	return lintErrors, nil
+
+	if bpBody.Customizations.Openscap == nil {
+		return lintErrors, lintWarnings, nil
+	}
+
+	compl, err := bpBody.Customizations.Openscap.AsOpenSCAPCompliance()
+	if err != nil || compl.PolicyId == uuid.Nil {
+		return lintErrors, lintWarnings, nil
+	}
+
+	snapshotCustomizations := h.extractSnapshotCustomizations(bpe)
+
+	errs, warns, err := h.lintOpenscap(ctx, &bpBody.Customizations, fixup, bpBody.Distribution, compl.PolicyId.String(), snapshotCustomizations)
+	if err == compliance.ErrorTailoringNotFound {
+		lintErrors = append(lintErrors, BlueprintLintItem{
+			Name:        "Compliance",
+			Description: "Compliance policy does not have a definition for the latest minor version",
+		})
+	} else if err != nil {
+		return nil, nil, err
+	} else {
+		lintErrors = append(lintErrors, errs...)
+		lintWarnings = append(lintWarnings, warns...)
+	}
+
+	return lintErrors, lintWarnings, nil
+}
+
+// Helper function to extract saved policy from service snapshots
+func (h *Handlers) extractSnapshotCustomizations(bpe *db.BlueprintEntry) *Customizations {
+	if len(bpe.ServiceSnapshots) == 0 {
+		return nil
+	}
+
+	var snapshots db.ServiceSnapshots
+	if err := json.Unmarshal(bpe.ServiceSnapshots, &snapshots); err != nil {
+		return nil
+	}
+
+	if snapshots.Compliance == nil || len(snapshots.Compliance.PolicyCustomizations) == 0 {
+		return nil
+	}
+
+	var savedCust Customizations
+	if err := json.Unmarshal(snapshots.Compliance.PolicyCustomizations, &savedCust); err != nil {
+		return nil
+	}
+
+	return &savedCust
 }
 
 func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) error {
@@ -841,9 +879,15 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
-	_, err = h.lintBlueprint(ctx, &blueprint, true)
-	if err != nil {
-		return err
+	if blueprint.Customizations.Openscap != nil {
+		compl, err := blueprint.Customizations.Openscap.AsOpenSCAPCompliance()
+		if err == nil && compl.PolicyId != uuid.Nil {
+			snapshotCustomizations := h.extractSnapshotCustomizations(blueprintEntry)
+			_, _, err = h.lintOpenscap(ctx, &blueprint.Customizations, true, blueprint.Distribution, compl.PolicyId.String(), snapshotCustomizations)
+			if err != nil && err != compliance.ErrorTailoringNotFound {
+				return err
+			}
+		}
 	}
 
 	var md BlueprintMetadata
