@@ -162,7 +162,7 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 	}
 
 	var cust Customizations
-	_, err = h.lintOpenscap(ctx, &cust, true, distribution, compl.PolicyId.String())
+	_, err = h.lintOpenscap(ctx, &cust, true, distribution, compl.PolicyId.String(), nil)
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error getting policy customizations via lintOpenscap",
 			"error", err.Error(), "distribution", distribution, "policy_id", compl.PolicyId.String())
@@ -351,6 +351,7 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 		return err
 	}
+	slog.DebugContext(ctx.Request().Context(), "inserted blueprint with service snapshots", "id", id)
 	return ctx.JSON(http.StatusCreated, ComposeResponse{
 		Id: id,
 	})
@@ -385,7 +386,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		return err
 	}
 
-	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false)
+	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false, blueprintEntry)
 	if err != nil {
 		return err
 	}
@@ -405,13 +406,13 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	return ctx.JSON(http.StatusOK, blueprintResponse)
 }
 
-func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
+func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool, blueprintEntry *db.BlueprintEntry) ([]BlueprintLintItem, error) {
 	lintErrors := []BlueprintLintItem{}
 	if blueprint.Customizations.Openscap != nil {
 		var compl OpenSCAPCompliance
 		var err error
 		if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err == nil && compl.PolicyId != uuid.Nil {
-			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String())
+			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String(), &blueprintEntry.Id)
 			if err == compliance.ErrorTailoringNotFound {
 				lintErrors = append(lintErrors, BlueprintLintItem{
 					Name:        "Compliance",
@@ -841,7 +842,7 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
-	_, err = h.lintBlueprint(ctx, &blueprint, true)
+	_, err = h.lintBlueprint(ctx, &blueprint, true, blueprintEntry)
 	if err != nil {
 		return err
 	}
