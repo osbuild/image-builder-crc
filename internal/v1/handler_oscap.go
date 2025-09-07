@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/osbuild/blueprint/pkg/blueprint"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/common"
@@ -181,7 +182,7 @@ func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distrib
 
 func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid.UUID, distro Distributions) error {
 	var cust Customizations
-	_, err := h.lintOpenscap(ctx, &cust, true, distro, policy.String())
+	_, err := h.lintOpenscap(ctx, &cust, true, distro, policy.String(), nil)
 	if err == distribution.ErrMajorMinor {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	} else if err == compliance.ErrorTailoringNotFound {
@@ -193,7 +194,7 @@ func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid
 	return ctx.JSON(http.StatusOK, cust)
 }
 
-func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string) ([]BlueprintLintItem, error) {
+func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string, savedPolicy *Customizations) ([]BlueprintLintItem, error) {
 	var lintErrors []BlueprintLintItem
 	var err error
 
@@ -212,37 +213,52 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	h.checkPolicyAdditions(bp, savedPolicy, cust, fixup, &lintErrors)
+	h.checkPolicyRemovals(bp, savedPolicy, &lintErrors)
+
+	return lintErrors, nil
+}
+
+// checkPolicyAdditions checks for items required by current policy that are missing from blueprint
+func (h *Handlers) checkPolicyAdditions(bp *blueprint.Blueprint, savedSnapshot *Customizations, cust *Customizations, fixup bool, lintErrors *[]BlueprintLintItem) {
+
 	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args
 	for _, pkg := range bp.GetPackagesEx(false) {
 		if cust.Packages == nil || !slices.Contains(*cust.Packages, pkg) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("package %s required by policy is not present", pkg),
-			})
-			if fixup {
-				cust.Packages = common.ToPtr(append(common.FromPtr(cust.Packages), pkg))
+			if savedSnapshot == nil || savedSnapshot.Packages == nil || !slices.Contains(*savedSnapshot.Packages, pkg) {
+				*lintErrors = append(*lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("package %s required by policy is not present", pkg),
+				})
+				if fixup {
+					cust.Packages = common.ToPtr(append(common.FromPtr(cust.Packages), pkg))
+				}
 			}
 		}
 	}
 
 	// some policies (ansi minimal) only require some extra packages
 	if bp.Customizations == nil {
-		return lintErrors, nil
+		return
 	}
 
 	for _, fsc := range bp.Customizations.GetFilesystems() {
 		if cust.Filesystem == nil || !slices.ContainsFunc(*cust.Filesystem, func(fs Filesystem) bool {
 			return fs.Mountpoint == fsc.Mountpoint
 		}) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint),
-			})
-			if fixup {
-				cust.Filesystem = common.ToPtr(append(common.FromPtr(cust.Filesystem), Filesystem{
-					Mountpoint: fsc.Mountpoint,
-					MinSize:    fsc.MinSize,
-				}))
+			if savedSnapshot == nil || savedSnapshot.Filesystem == nil || !slices.ContainsFunc(*savedSnapshot.Filesystem, func(fs Filesystem) bool {
+				return fs.Mountpoint == fsc.Mountpoint
+			}) {
+				*lintErrors = append(*lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint),
+				})
+				if fixup {
+					cust.Filesystem = common.ToPtr(append(common.FromPtr(cust.Filesystem), Filesystem{
+						Mountpoint: fsc.Mountpoint,
+						MinSize:    fsc.MinSize,
+					}))
+				}
 			}
 		}
 	}
@@ -250,81 +266,204 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 	if services := bp.Customizations.GetServices(); services != nil {
 		for _, e := range services.Enabled {
 			if cust.Services == nil || cust.Services.Enabled == nil || !slices.Contains(*cust.Services.Enabled, e) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("service %s required as enabled by policy is not present", e),
-				})
-				if fixup {
-					cust.Services = common.ToPtr(common.FromPtr(cust.Services))
-					cust.Services.Enabled = common.ToPtr(append(common.FromPtr(cust.Services.Enabled), e))
+				if savedSnapshot == nil || savedSnapshot.Services == nil || savedSnapshot.Services.Enabled == nil || !slices.Contains(*savedSnapshot.Services.Enabled, e) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("service %s required as enabled by policy is not present", e),
+					})
+					if fixup {
+						cust.Services = common.ToPtr(common.FromPtr(cust.Services))
+						cust.Services.Enabled = common.ToPtr(append(common.FromPtr(cust.Services.Enabled), e))
+					}
 				}
 			}
 		}
 		for _, m := range services.Masked {
 			if cust.Services == nil || cust.Services.Masked == nil || !slices.Contains(*cust.Services.Masked, m) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("service %s required as masked by policy is not present", m),
-				})
-				if fixup {
-					cust.Services = common.ToPtr(common.FromPtr(cust.Services))
-					cust.Services.Masked = common.ToPtr(append(common.FromPtr(cust.Services.Masked), m))
+				if savedSnapshot == nil || savedSnapshot.Services == nil || savedSnapshot.Services.Masked == nil || !slices.Contains(*savedSnapshot.Services.Masked, m) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("service %s required as masked by policy is not present", m),
+					})
+					if fixup {
+						cust.Services = common.ToPtr(common.FromPtr(cust.Services))
+						cust.Services.Masked = common.ToPtr(append(common.FromPtr(cust.Services.Masked), m))
+					}
 				}
 			}
 		}
 		for _, d := range services.Disabled {
 			if cust.Services == nil || cust.Services.Disabled == nil || !slices.Contains(*cust.Services.Disabled, d) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("service %s required as disabled by policy is not present", d),
-				})
-				if fixup {
-					cust.Services = common.ToPtr(common.FromPtr(cust.Services))
-					cust.Services.Disabled = common.ToPtr(append(common.FromPtr(cust.Services.Disabled), d))
+				if savedSnapshot == nil || savedSnapshot.Services == nil || savedSnapshot.Services.Disabled == nil || !slices.Contains(*savedSnapshot.Services.Disabled, d) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("service %s required as disabled by policy is not present", d),
+					})
+					if fixup {
+						cust.Services = common.ToPtr(common.FromPtr(cust.Services))
+						cust.Services.Disabled = common.ToPtr(append(common.FromPtr(cust.Services.Disabled), d))
+					}
 				}
 			}
 		}
 	}
 
 	if kernel := bp.Customizations.Kernel; kernel != nil {
-		if kernel.Name != "" && (cust.Kernel == nil || *cust.Kernel.Name != kernel.Name) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("kernel name %s required by policy not set", kernel.Name),
-			})
-			if fixup {
-				cust.Kernel = common.ToPtr(common.FromPtr(cust.Kernel))
-				cust.Kernel.Name = common.ToPtr(kernel.Name)
+		if kernel.Name != "" { // only enforce when policy specifies a non-empty name
+			if cust.Kernel == nil || cust.Kernel.Name == nil || *cust.Kernel.Name != kernel.Name {
+				if savedSnapshot == nil || savedSnapshot.Kernel == nil || savedSnapshot.Kernel.Name == nil || *savedSnapshot.Kernel.Name != kernel.Name {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("kernel name %s required by policy not set", kernel.Name),
+					})
+					if fixup {
+						cust.Kernel = common.ToPtr(common.FromPtr(cust.Kernel))
+						cust.Kernel.Name = common.ToPtr(kernel.Name)
+					}
+				}
 			}
 		}
-		kernelcmd := strings.Split(kernel.Append, " ")
+		kernelcmd := strings.Fields(kernel.Append)
 		for _, kcmd := range kernelcmd {
-			if cust.Kernel == nil || !strings.Contains(*cust.Kernel.Append, kcmd) {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("kernel command line parameter '%s' required by policy not set", kcmd),
-				})
+			if kcmd == "" {
+				continue
 			}
-			if fixup {
-				cust.Kernel = common.ToPtr(common.FromPtr(cust.Kernel))
-				cust.Kernel.Append = common.ToPtr(fmt.Sprintf("%s %s", common.FromPtr(cust.Kernel.Append), kcmd))
-			}
-		}
-	}
-
-	if fips := bp.Customizations.FIPS; fips != nil {
-		if *fips && (cust.Fips == nil || cust.Fips.Enabled == nil) {
-			lintErrors = append(lintErrors, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("FIPS required '%t' by policy but not set", *fips),
-			})
-			if fixup {
-				cust.Fips = &FIPS{
-					Enabled: fips,
+			if cust.Kernel == nil || cust.Kernel.Append == nil || !strings.Contains(*cust.Kernel.Append, kcmd) {
+				if savedSnapshot == nil || savedSnapshot.Kernel == nil || savedSnapshot.Kernel.Append == nil || !strings.Contains(*savedSnapshot.Kernel.Append, kcmd) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("kernel command line parameter '%s' required by policy not set", kcmd),
+					})
+					if fixup {
+						cust.Kernel = common.ToPtr(common.FromPtr(cust.Kernel))
+						cust.Kernel.Append = common.ToPtr(fmt.Sprintf("%s %s", common.FromPtr(cust.Kernel.Append), kcmd))
+					}
 				}
 			}
 		}
 	}
 
-	return lintErrors, nil
+	if fips := bp.Customizations.FIPS; fips != nil {
+		if cust.Fips == nil || cust.Fips.Enabled == nil || !*cust.Fips.Enabled {
+			if savedSnapshot == nil || savedSnapshot.Fips == nil || savedSnapshot.Fips.Enabled == nil || !*savedSnapshot.Fips.Enabled {
+				*lintErrors = append(*lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("FIPS required '%t' by policy but not set", *fips),
+				})
+				if fixup {
+					cust.Fips = &FIPS{
+						Enabled: fips,
+					}
+				}
+			}
+		}
+	}
+}
+
+// checkPolicyRemovals checks for items present in saved snapshot that are no longer required by current policy.
+func (h *Handlers) checkPolicyRemovals(bp *blueprint.Blueprint, savedSnapshot *Customizations, lintErrors *[]BlueprintLintItem) {
+
+	if savedSnapshot == nil {
+		return
+	}
+
+	// Check packages
+	if savedSnapshot.Packages != nil {
+		for _, pkg := range *savedSnapshot.Packages {
+			if !slices.Contains(bp.GetPackagesEx(false), pkg) {
+				*lintErrors = append(*lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("package %s is no longer required by policy", pkg),
+				})
+			}
+		}
+	}
+
+	if bp.Customizations == nil {
+		return
+	}
+
+	// Check filesystems
+	if savedSnapshot.Filesystem != nil {
+		for _, fs := range *savedSnapshot.Filesystem {
+			if !slices.ContainsFunc(bp.Customizations.GetFilesystems(), func(fsc blueprint.FilesystemCustomization) bool {
+				return fsc.Mountpoint == fs.Mountpoint
+			}) {
+				*lintErrors = append(*lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("mountpoint %s is no longer required by policy", fs.Mountpoint),
+				})
+			}
+		}
+	}
+
+	// Check services
+	if savedSnapshot.Services != nil {
+		policyServices := bp.Customizations.GetServices()
+		if savedSnapshot.Services.Enabled != nil {
+			for _, e := range *savedSnapshot.Services.Enabled {
+				if policyServices == nil || !slices.Contains(policyServices.Enabled, e) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("service %s is no longer required as enabled by policy", e),
+					})
+				}
+			}
+		}
+		if savedSnapshot.Services.Disabled != nil {
+			for _, d := range *savedSnapshot.Services.Disabled {
+				if policyServices == nil || !slices.Contains(policyServices.Disabled, d) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("service %s is no longer required as disabled by policy", d),
+					})
+				}
+			}
+		}
+		if savedSnapshot.Services.Masked != nil {
+			for _, m := range *savedSnapshot.Services.Masked {
+				if policyServices == nil || !slices.Contains(policyServices.Masked, m) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("service %s is no longer required as masked by policy", m),
+					})
+				}
+			}
+		}
+	}
+
+	// Check kernel
+	if savedSnapshot.Kernel != nil {
+		policyKernel := bp.Customizations.Kernel
+		if savedSnapshot.Kernel.Name != nil {
+			if policyKernel == nil || policyKernel.Name != *savedSnapshot.Kernel.Name {
+				*lintErrors = append(*lintErrors, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("kernel name %s is no longer required by policy", *savedSnapshot.Kernel.Name),
+				})
+			}
+		}
+		if savedSnapshot.Kernel.Append != nil {
+			blueprintKernelcmd := strings.Split(*savedSnapshot.Kernel.Append, " ")
+			for _, kcmd := range blueprintKernelcmd {
+				if policyKernel == nil || !strings.Contains(policyKernel.Append, kcmd) {
+					*lintErrors = append(*lintErrors, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("kernel command line parameter '%s' is no longer required by policy", kcmd),
+					})
+				}
+			}
+		}
+	}
+
+	// Check FIPS
+	if savedSnapshot.Fips != nil && savedSnapshot.Fips.Enabled != nil && *savedSnapshot.Fips.Enabled {
+		policyFips := bp.Customizations.FIPS
+		if policyFips == nil || !*policyFips {
+			*lintErrors = append(*lintErrors, BlueprintLintItem{
+				Name:        "Compliance",
+				Description: "FIPS is no longer required by policy",
+			})
+		}
+	}
 }
