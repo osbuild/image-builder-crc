@@ -45,13 +45,14 @@ type CloneEntry struct {
 }
 
 type BlueprintEntry struct {
-	Id          uuid.UUID
-	VersionId   uuid.UUID
-	Version     int
-	Body        json.RawMessage
-	Name        string
-	Description string
-	Metadata    json.RawMessage
+	Id               uuid.UUID
+	VersionId        uuid.UUID
+	Version          int
+	Body             json.RawMessage
+	Name             string
+	Description      string
+	Metadata         json.RawMessage
+	ServiceSnapshots json.RawMessage
 }
 
 type BlueprintWithNoBody struct {
@@ -60,6 +61,15 @@ type BlueprintWithNoBody struct {
 	Name           string
 	Description    string
 	LastModifiedAt time.Time
+}
+
+type ServiceSnapshots struct {
+	Compliance *ComplianceSnapshot `json:"compliance,omitempty"`
+}
+
+type ComplianceSnapshot struct {
+	PolicyId             uuid.UUID       `json:"policy_id"`
+	PolicyCustomizations json.RawMessage `json:"policy_customizations"`
 }
 
 type DB interface {
@@ -77,9 +87,9 @@ type DB interface {
 	GetClonesForCompose(ctx context.Context, composeId uuid.UUID, orgId string, limit, offset int) ([]CloneEntry, int, error)
 	GetClone(ctx context.Context, id uuid.UUID, orgId string) (*CloneEntry, error)
 
-	InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.UUID, orgID, accountNumber, name, description string, body json.RawMessage, metadata json.RawMessage) error
+	InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.UUID, orgID, accountNumber, name, description string, body json.RawMessage, metadata json.RawMessage, serviceSnapshots json.RawMessage) error
 	GetBlueprint(ctx context.Context, id uuid.UUID, orgID string, version *int) (*BlueprintEntry, error)
-	UpdateBlueprint(ctx context.Context, id uuid.UUID, blueprintId uuid.UUID, orgId string, name string, description string, body json.RawMessage) error
+	UpdateBlueprint(ctx context.Context, id uuid.UUID, blueprintId uuid.UUID, orgId string, name string, description string, body json.RawMessage, serviceSnapshots json.RawMessage) error
 	GetBlueprints(ctx context.Context, orgID string, limit, offset int) ([]BlueprintWithNoBody, int, error)
 	FindBlueprints(ctx context.Context, orgID, search string, limit, offset int) ([]BlueprintWithNoBody, int, error)
 	FindBlueprintByName(ctx context.Context, orgID, nameQuery string) (*BlueprintWithNoBody, error)
