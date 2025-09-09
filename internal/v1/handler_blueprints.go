@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -411,7 +412,18 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	repoUUIDs := []string{}
 	if blueprint.Customizations.CustomRepositories != nil {
 		for _, repo := range *blueprint.Customizations.CustomRepositories {
-			repoUUIDs = append(repoUUIDs, repo.Id)
+			includeRepo := true
+			if repo.Baseurl != nil {
+				for _, baseUrl := range *repo.Baseurl {
+					if strings.Contains(baseUrl, "epel") {
+						// EPEL repos should be excluded from export
+						includeRepo = false
+					}
+				}
+				if includeRepo {
+					repoUUIDs = append(repoUUIDs, repo.Id)
+				}
+			}
 		}
 	}
 
