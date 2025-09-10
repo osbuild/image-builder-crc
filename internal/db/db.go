@@ -83,7 +83,7 @@ type DB interface {
 	GetBlueprints(ctx context.Context, orgID string, limit, offset int) ([]BlueprintWithNoBody, int, error)
 	FindBlueprints(ctx context.Context, orgID, search string, limit, offset int) ([]BlueprintWithNoBody, int, error)
 	FindBlueprintByName(ctx context.Context, orgID, nameQuery string) (*BlueprintWithNoBody, error)
-	DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID, accountNumber string) error
+	DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID string) error
 }
 
 const (

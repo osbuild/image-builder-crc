@@ -444,7 +444,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 
-	err = d.DeleteBlueprint(ctx, id, ORGID1, ANR1)
+	err = d.DeleteBlueprint(ctx, id, ORGID1)
 	require.NoError(t, err)
 
 	_, count, err = d.GetComposes(ctx, ORGID1, (time.Hour * 24 * 14), 100, 0, nil)
