@@ -95,7 +95,7 @@ const (
 		WHERE composes.blueprint_version_id = blueprint_versions.id
 		AND composes.org_id=$1 AND blueprint_versions.blueprint_id=$2`
 
-	sqlDeleteBlueprint = `UPDATE blueprints SET deleted = TRUE, name = id WHERE deleted = FALSE AND id = $1 AND org_id = $2 AND account_number = $3`
+	sqlDeleteBlueprint = `UPDATE blueprints SET deleted = TRUE, name = id WHERE deleted = FALSE AND id = $1 AND org_id = $2`
 
 	sqlGetBlueprints = `
 		SELECT blueprints.id, blueprints.name, blueprints.description, MAX(blueprint_versions.version) as version, MAX(blueprint_versions.created_at) as last_modified_at
@@ -294,7 +294,7 @@ func (db *dB) UpdateBlueprint(ctx context.Context, id uuid.UUID, blueprintId uui
 	return err
 }
 
-func (db *dB) DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID, accountNumber string) error {
+func (db *dB) DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID string) error {
 	conn, err := db.Pool.Acquire(ctx)
 	if err != nil {
 		return err
@@ -306,7 +306,7 @@ func (db *dB) DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID, accountN
 		return fmt.Errorf("marking blueprint(%s) composes as deleted failed: %w", id, err)
 	}
 
-	tag, err := conn.Exec(ctx, sqlDeleteBlueprint, id, orgID, accountNumber)
+	tag, err := conn.Exec(ctx, sqlDeleteBlueprint, id, orgID)
 	if err != nil {
 		return err
 	}

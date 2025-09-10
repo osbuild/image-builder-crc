@@ -47,6 +47,7 @@ func makeTestServer(t *testing.T, apiSrv *string) (dbase db.DB, srvURL string, s
 		DistributionsDir: "../../distributions",
 		CSReposURL:       "https://content-sources.org",
 	})
+
 	return srv.DB, srv.URL, func(t *testing.T) {
 		srv.Shutdown(t)
 	}
@@ -1621,7 +1622,7 @@ func TestLintBlueprint(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(body), &result))
 		require.ElementsMatch(t, c.lintErrors, result.Lint.Errors)
 
-		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000", "000000"))
+		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000"))
 	}
 }
 
@@ -1693,6 +1694,6 @@ func TestFixupBlueprint(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(body), &result))
 		require.Empty(t, result.Lint.Errors)
 
-		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000", "000000"))
+		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000"))
 	}
 }

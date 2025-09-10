@@ -728,7 +728,7 @@ func (h *Handlers) DeleteBlueprint(ctx echo.Context, blueprintId openapi_types.U
 		return err
 	}
 
-	err = h.server.db.DeleteBlueprint(ctx.Request().Context(), blueprintId, userID.OrgID(), userID.AccountNumber())
+	err = h.server.db.DeleteBlueprint(ctx.Request().Context(), blueprintId, userID.OrgID())
 	if err != nil {
 		if errors.Is(err, db.ErrBlueprintNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound)
