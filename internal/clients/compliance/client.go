@@ -126,6 +126,10 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		// if the policy had no customizations, the json endpoint returns empty body (unlike toml endpoint)
+		// but we need to return empty json object for osbuild autotailoring
+		tailoringData, _ = json.Marshal("{}")
 	}
 
 	return &PolicyData{
