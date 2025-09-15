@@ -183,9 +183,13 @@ type ApiPackageSourcesResponse struct {
 
 // ApiPopularRepositoriesCollectionResponse defines model for api.PopularRepositoriesCollectionResponse.
 type ApiPopularRepositoriesCollectionResponse struct {
-	Data  *[]ApiPopularRepositoryResponse `json:"data,omitempty"`
-	Links *ApiLinks                       `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata            `json:"meta,omitempty"`
+	Data *[]ApiPopularRepositoryResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiPopularRepositoryResponse defines model for api.PopularRepositoryResponse.
@@ -217,9 +221,13 @@ type ApiPopularRepositoryResponse struct {
 
 // ApiPublicRepositoryCollectionResponse defines model for api.PublicRepositoryCollectionResponse.
 type ApiPublicRepositoryCollectionResponse struct {
-	Data  *[]ApiPublicRepositoryResponse `json:"data,omitempty"`
-	Links *ApiLinks                      `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata           `json:"meta,omitempty"`
+	Data *[]ApiPublicRepositoryResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiPublicRepositoryResponse defines model for api.PublicRepositoryResponse.
@@ -252,9 +260,13 @@ type ApiPublicRepositoryResponse struct {
 // ApiRepositoryCollectionResponse defines model for api.RepositoryCollectionResponse.
 type ApiRepositoryCollectionResponse struct {
 	// Data Requested Data
-	Data  *[]ApiRepositoryResponse `json:"data,omitempty"`
-	Links *ApiLinks                `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata     `json:"meta,omitempty"`
+	Data *[]ApiRepositoryResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiRepositoryEnvironment defines model for api.RepositoryEnvironment.
@@ -275,9 +287,13 @@ type ApiRepositoryEnvironment struct {
 // ApiRepositoryEnvironmentCollectionResponse defines model for api.RepositoryEnvironmentCollectionResponse.
 type ApiRepositoryEnvironmentCollectionResponse struct {
 	// Data List of environments
-	Data  *[]ApiRepositoryEnvironment `json:"data,omitempty"`
-	Links *ApiLinks                   `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata        `json:"meta,omitempty"`
+	Data *[]ApiRepositoryEnvironment `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiRepositoryExportRequest defines model for api.RepositoryExportRequest.
@@ -352,9 +368,13 @@ type ApiRepositoryImportResponse struct {
 	LastIntrospectionStatus *string `json:"last_introspection_status,omitempty"`
 
 	// LastIntrospectionTime Timestamp of last attempted introspection
-	LastIntrospectionTime *string              `json:"last_introspection_time,omitempty"`
-	LastSnapshot          *ApiSnapshotResponse `json:"last_snapshot,omitempty"`
-	LastSnapshotTask      *ApiTaskInfoResponse `json:"last_snapshot_task,omitempty"`
+	LastIntrospectionTime *string `json:"last_introspection_time,omitempty"`
+
+	// LastSnapshot Latest Snapshot taken
+	LastSnapshot *ApiSnapshotResponse `json:"last_snapshot,omitempty"`
+
+	// LastSnapshotTask Last snapshot task response (contains last snapshot status)
+	LastSnapshotTask *ApiTaskInfoResponse `json:"last_snapshot_task,omitempty"`
 
 	// LastSnapshotTaskUuid UUID of the last snapshot task
 	LastSnapshotTaskUuid *string `json:"last_snapshot_task_uuid,omitempty"`
@@ -432,9 +452,13 @@ type ApiRepositoryPackageGroup struct {
 // ApiRepositoryPackageGroupCollectionResponse defines model for api.RepositoryPackageGroupCollectionResponse.
 type ApiRepositoryPackageGroupCollectionResponse struct {
 	// Data List of package groups
-	Data  *[]ApiRepositoryPackageGroup `json:"data,omitempty"`
-	Links *ApiLinks                    `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata         `json:"meta,omitempty"`
+	Data *[]ApiRepositoryPackageGroup `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiRepositoryParameterResponse defines model for api.RepositoryParameterResponse.
@@ -512,9 +536,13 @@ type ApiRepositoryResponse struct {
 	LastIntrospectionStatus *string `json:"last_introspection_status,omitempty"`
 
 	// LastIntrospectionTime Timestamp of last attempted introspection
-	LastIntrospectionTime *string              `json:"last_introspection_time,omitempty"`
-	LastSnapshot          *ApiSnapshotResponse `json:"last_snapshot,omitempty"`
-	LastSnapshotTask      *ApiTaskInfoResponse `json:"last_snapshot_task,omitempty"`
+	LastIntrospectionTime *string `json:"last_introspection_time,omitempty"`
+
+	// LastSnapshot Latest Snapshot taken
+	LastSnapshot *ApiSnapshotResponse `json:"last_snapshot,omitempty"`
+
+	// LastSnapshotTask Last snapshot task response (contains last snapshot status)
+	LastSnapshotTask *ApiTaskInfoResponse `json:"last_snapshot_task,omitempty"`
 
 	// LastSnapshotTaskUuid UUID of the last snapshot task
 	LastSnapshotTaskUuid *string `json:"last_snapshot_task_uuid,omitempty"`
@@ -592,9 +620,13 @@ type ApiRepositoryRpm struct {
 // ApiRepositoryRpmCollectionResponse defines model for api.RepositoryRpmCollectionResponse.
 type ApiRepositoryRpmCollectionResponse struct {
 	// Data List of rpms
-	Data  *[]ApiRepositoryRpm  `json:"data,omitempty"`
-	Links *ApiLinks            `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata `json:"meta,omitempty"`
+	Data *[]ApiRepositoryRpm `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiRepositoryUpdateRequest defines model for api.RepositoryUpdateRequest.
@@ -644,9 +676,14 @@ type ApiRepositoryValidationRequest struct {
 
 // ApiRepositoryValidationResponse defines model for api.RepositoryValidationResponse.
 type ApiRepositoryValidationResponse struct {
+	// GpgKey Validation response for the GPG Key
 	GpgKey *ApiGenericAttributeValidationResponse `json:"gpg_key,omitempty"`
-	Name   *ApiGenericAttributeValidationResponse `json:"name,omitempty"`
-	Url    *ApiUrlValidationResponse              `json:"url,omitempty"`
+
+	// Name Validation response for repository name
+	Name *ApiGenericAttributeValidationResponse `json:"name,omitempty"`
+
+	// Url Validation response for repository url
+	Url *ApiUrlValidationResponse `json:"url,omitempty"`
 }
 
 // ApiResponseMetadata defines model for api.ResponseMetadata.
@@ -745,9 +782,13 @@ type ApiSearchSnapshotModuleStreamsRequest struct {
 // ApiSnapshotCollectionResponse defines model for api.SnapshotCollectionResponse.
 type ApiSnapshotCollectionResponse struct {
 	// Data Requested Data
-	Data  *[]ApiSnapshotResponse `json:"data,omitempty"`
-	Links *ApiLinks              `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata   `json:"meta,omitempty"`
+	Data *[]ApiSnapshotResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiSnapshotErrata defines model for api.SnapshotErrata.
@@ -787,16 +828,22 @@ type ApiSnapshotErrata struct {
 // ApiSnapshotErrataCollectionResponse defines model for api.SnapshotErrataCollectionResponse.
 type ApiSnapshotErrataCollectionResponse struct {
 	// Data List of errata
-	Data  *[]ApiSnapshotErrata `json:"data,omitempty"`
-	Links *ApiLinks            `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata `json:"meta,omitempty"`
+	Data *[]ApiSnapshotErrata `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiSnapshotForDate defines model for api.SnapshotForDate.
 type ApiSnapshotForDate struct {
 	// IsAfter Is the snapshot after the specified date
-	IsAfter *bool                `json:"is_after,omitempty"`
-	Match   *ApiSnapshotResponse `json:"match,omitempty"`
+	IsAfter *bool `json:"is_after,omitempty"`
+
+	// Match This is the snapshot (if found)
+	Match *ApiSnapshotResponse `json:"match,omitempty"`
 
 	// RepositoryUuid Repository uuid for associated snapshot
 	RepositoryUuid *string `json:"repository_uuid,omitempty"`
@@ -805,16 +852,16 @@ type ApiSnapshotForDate struct {
 // ApiSnapshotResponse defines model for api.SnapshotResponse.
 type ApiSnapshotResponse struct {
 	// AddedCounts Count of each content type
-	AddedCounts *map[string]int `json:"added_counts,omitempty"`
+	AddedCounts *map[string]int64 `json:"added_counts,omitempty"`
 
 	// ContentCounts Count of each content type
-	ContentCounts *map[string]int `json:"content_counts,omitempty"`
+	ContentCounts *map[string]int64 `json:"content_counts,omitempty"`
 
 	// CreatedAt Datetime the snapshot was created
 	CreatedAt *string `json:"created_at,omitempty"`
 
 	// RemovedCounts Count of each content type
-	RemovedCounts *map[string]int `json:"removed_counts,omitempty"`
+	RemovedCounts *map[string]int64 `json:"removed_counts,omitempty"`
 
 	// RepositoryName Name of repository the snapshot belongs to
 	RepositoryName *string `json:"repository_name,omitempty"`
@@ -854,9 +901,13 @@ type ApiSnapshotRpm struct {
 // ApiSnapshotRpmCollectionResponse defines model for api.SnapshotRpmCollectionResponse.
 type ApiSnapshotRpmCollectionResponse struct {
 	// Data List of rpms
-	Data  *[]ApiSnapshotRpm    `json:"data,omitempty"`
-	Links *ApiLinks            `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata `json:"meta,omitempty"`
+	Data *[]ApiSnapshotRpm `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiSnapshotSearchRpmRequest defines model for api.SnapshotSearchRpmRequest.
@@ -901,9 +952,13 @@ type ApiStream struct {
 // ApiTaskInfoCollectionResponse defines model for api.TaskInfoCollectionResponse.
 type ApiTaskInfoCollectionResponse struct {
 	// Data Requested Data
-	Data  *[]ApiTaskInfoResponse `json:"data,omitempty"`
-	Links *ApiLinks              `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata   `json:"meta,omitempty"`
+	Data *[]ApiTaskInfoResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiTaskInfoResponse defines model for api.TaskInfoResponse.
@@ -948,9 +1003,13 @@ type ApiTaskInfoResponse struct {
 // ApiTemplateCollectionResponse defines model for api.TemplateCollectionResponse.
 type ApiTemplateCollectionResponse struct {
 	// Data Requested Data
-	Data  *[]ApiTemplateResponse `json:"data,omitempty"`
-	Links *ApiLinks              `json:"links,omitempty"`
-	Meta  *ApiResponseMetadata   `json:"meta,omitempty"`
+	Data *[]ApiTemplateResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
 }
 
 // ApiTemplateRequest defines model for api.TemplateRequest.
@@ -995,8 +1054,10 @@ type ApiTemplateResponse struct {
 	Description *string `json:"description,omitempty"`
 
 	// LastUpdateSnapshotError Error of last update_latest_snapshot task that updated the template
-	LastUpdateSnapshotError *string              `json:"last_update_snapshot_error,omitempty"`
-	LastUpdateTask          *ApiTaskInfoResponse `json:"last_update_task,omitempty"`
+	LastUpdateSnapshotError *string `json:"last_update_snapshot_error,omitempty"`
+
+	// LastUpdateTask Response of last update_template_content task that updated the template
+	LastUpdateTask *ApiTaskInfoResponse `json:"last_update_task,omitempty"`
 
 	// LastUpdateTaskUuid UUID of the last update_template_content task that updated the template
 	LastUpdateTaskUuid *string `json:"last_update_task_uuid,omitempty"`
