@@ -306,10 +306,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -368,10 +378,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -423,10 +443,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -462,10 +492,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -593,10 +633,20 @@
                         "type": "string"
                     },
                     "last_snapshot": {
-                        "$ref": "#/components/schemas/api.SnapshotResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.SnapshotResponse"
+                            }
+                        ],
+                        "description": "Latest Snapshot taken"
                     },
                     "last_snapshot_task": {
-                        "$ref": "#/components/schemas/api.TaskInfoResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.TaskInfoResponse"
+                            }
+                        ],
+                        "description": "Last snapshot task response (contains last snapshot status)"
                     },
                     "last_snapshot_task_uuid": {
                         "description": "UUID of the last snapshot task",
@@ -718,10 +768,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -858,10 +918,20 @@
                         "type": "string"
                     },
                     "last_snapshot": {
-                        "$ref": "#/components/schemas/api.SnapshotResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.SnapshotResponse"
+                            }
+                        ],
+                        "description": "Latest Snapshot taken"
                     },
                     "last_snapshot_task": {
-                        "$ref": "#/components/schemas/api.TaskInfoResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.TaskInfoResponse"
+                            }
+                        ],
+                        "description": "Last snapshot task response (contains last snapshot status)"
                     },
                     "last_snapshot_task_uuid": {
                         "description": "UUID of the last snapshot task",
@@ -975,10 +1045,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -1056,13 +1136,28 @@
             "api.RepositoryValidationResponse": {
                 "properties": {
                     "gpg_key": {
-                        "$ref": "#/components/schemas/api.GenericAttributeValidationResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.GenericAttributeValidationResponse"
+                            }
+                        ],
+                        "description": "Validation response for the GPG Key"
                     },
                     "name": {
-                        "$ref": "#/components/schemas/api.GenericAttributeValidationResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.GenericAttributeValidationResponse"
+                            }
+                        ],
+                        "description": "Validation response for repository name"
                     },
                     "url": {
-                        "$ref": "#/components/schemas/api.UrlValidationResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.UrlValidationResponse"
+                            }
+                        ],
+                        "description": "Validation response for repository url"
                     }
                 },
                 "type": "object"
@@ -1241,10 +1336,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -1310,10 +1415,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -1325,7 +1440,12 @@
                         "type": "boolean"
                     },
                     "match": {
-                        "$ref": "#/components/schemas/api.SnapshotResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.SnapshotResponse"
+                            }
+                        ],
+                        "description": "This is the snapshot (if found)"
                     },
                     "repository_uuid": {
                         "description": "Repository uuid for associated snapshot",
@@ -1338,6 +1458,7 @@
                 "properties": {
                     "added_counts": {
                         "additionalProperties": {
+                            "format": "int64",
                             "type": "integer"
                         },
                         "description": "Count of each content type",
@@ -1345,6 +1466,7 @@
                     },
                     "content_counts": {
                         "additionalProperties": {
+                            "format": "int64",
                             "type": "integer"
                         },
                         "description": "Count of each content type",
@@ -1356,6 +1478,7 @@
                     },
                     "removed_counts": {
                         "additionalProperties": {
+                            "format": "int64",
                             "type": "integer"
                         },
                         "description": "Count of each content type",
@@ -1422,10 +1545,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -1503,10 +1636,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -1580,10 +1723,20 @@
                         "type": "array"
                     },
                     "links": {
-                        "$ref": "#/components/schemas/api.Links"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
                     },
                     "meta": {
-                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Metadata about the request"
                     }
                 },
                 "type": "object"
@@ -1657,7 +1810,12 @@
                         "type": "string"
                     },
                     "last_update_task": {
-                        "$ref": "#/components/schemas/api.TaskInfoResponse"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.TaskInfoResponse"
+                            }
+                        ],
+                        "description": "Response of last update_template_content task that updated the template"
                     },
                     "last_update_task_uuid": {
                         "description": "UUID of the last update_template_content task that updated the template",
