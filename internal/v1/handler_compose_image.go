@@ -694,41 +694,12 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 			return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, "Unable to parse upload request options as Azure options")
 		}
 
-		if (uo.SourceId == nil && (uo.TenantId == nil || uo.SubscriptionId == nil)) ||
-			(uo.SourceId != nil && (uo.TenantId != nil || uo.SubscriptionId != nil)) {
-			return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, "Request must contain either (1) a source id, and no tenant or subscription ids or (2) tenant and subscription ids, and no source id.")
+		if uo.TenantId == nil || uo.SubscriptionId == nil {
+			return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, "Request must contain tenant and subscription ids.")
 		}
 
-		var tenantId string
-		var subscriptionId string
-
-		if uo.SourceId == nil {
-			tenantId = *uo.TenantId
-			subscriptionId = *uo.SubscriptionId
-		}
-
-		if uo.SourceId != nil {
-			resp, err := h.server.pClient.GetUploadInfo(ctx.Request().Context(), *uo.SourceId)
-			if err != nil {
-				ctx.Logger().Error(err)
-				return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to request source: %s", *uo.SourceId))
-			}
-			defer closeBody(ctx, resp.Body)
-
-			var uploadInfo provisioning.V1SourceUploadInfoResponse
-			err = json.NewDecoder(resp.Body).Decode(&uploadInfo)
-			if err != nil {
-				return uploadOptions, "", echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to resolve source: %s", *uo.SourceId))
-			}
-
-			if uploadInfo.Azure == nil || uploadInfo.Azure.TenantId == nil || uploadInfo.Azure.SubscriptionId == nil {
-				return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an Azure tenant id or subscription id. ", *uo.SourceId))
-			}
-
-			ctx.Logger().Info(fmt.Sprintf("Resolved source %s to tenant id %s and subscription id %s", *uo.SourceId, *uploadInfo.Azure.TenantId, *uploadInfo.Azure.SubscriptionId))
-			tenantId = *uploadInfo.Azure.TenantId
-			subscriptionId = *uploadInfo.Azure.SubscriptionId
-		}
+		tenantId := *uo.TenantId
+		subscriptionId := *uo.SubscriptionId
 
 		var hyperVGen *composer.AzureUploadOptionsHyperVGeneration
 		if uo.HyperVGeneration != nil {

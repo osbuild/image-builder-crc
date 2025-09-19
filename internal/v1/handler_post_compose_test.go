@@ -92,12 +92,9 @@ func TestValidateComposeRequest(t *testing.T) {
 		require.Contains(t, body, "Expected at least one source or account to share the image with")
 	})
 
-	azureRequest := func(source_id, subscription_id, tenant_id string) v1.ImageRequest {
+	azureRequest := func(subscription_id, tenant_id string) v1.ImageRequest {
 		options := make(map[string]string)
 		options["resource_group"] = "group"
-		if source_id != "" {
-			options["source_id"] = source_id
-		}
 		if subscription_id != "" {
 			options["subscription_id"] = subscription_id
 		}
@@ -128,12 +125,9 @@ func TestValidateComposeRequest(t *testing.T) {
 		name    string
 		request v1.ImageRequest
 	}{
-		{name: "AzureInvalid1", request: azureRequest("", "", "")},
-		{name: "AzureInvalid2", request: azureRequest("", "1", "")},
-		{name: "AzureInvalid3", request: azureRequest("", "", "1")},
-		{name: "AzureInvalid4", request: azureRequest("1", "1", "")},
-		{name: "AzureInvalid5", request: azureRequest("1", "", "1")},
-		{name: "AzureInvalid6", request: azureRequest("1", "1", "1")},
+		{name: "AzureInvalid1", request: azureRequest("", "")},
+		{name: "AzureInvalid2", request: azureRequest("1", "")},
+		{name: "AzureInvalid3", request: azureRequest("", "1")},
 	}
 
 	for _, tc := range azureTests {
@@ -145,7 +139,7 @@ func TestValidateComposeRequest(t *testing.T) {
 			}
 			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
 			require.Equal(t, http.StatusBadRequest, respStatusCode)
-			require.Contains(t, body, "Request must contain either (1) a source id, and no tenant or subscription ids or (2) tenant and subscription ids, and no source id.")
+			require.Contains(t, body, "Request must contain tenant and subscription ids.")
 		})
 	}
 
@@ -1564,12 +1558,6 @@ func TestComposeCustomizations(t *testing.T) {
 		ImageName:        common.ToPtr("azure-image"),
 		HyperVGeneration: common.ToPtr(v1.V2),
 	}))
-	var auo2 v1.UploadRequest_Options
-	require.NoError(t, auo2.FromAzureUploadRequestOptions(v1.AzureUploadRequestOptions{
-		ResourceGroup: "group",
-		SourceId:      common.ToPtr("2"),
-		ImageName:     common.ToPtr("azure-image"),
-	}))
 
 	var openscap v1.OpenSCAP
 	require.NoError(t, openscap.FromOpenSCAPProfile(v1.OpenSCAPProfile{
@@ -2115,68 +2103,6 @@ func TestComposeCustomizations(t *testing.T) {
 						SubscriptionId:   "id",
 						TenantId:         "tenant",
 						HyperVGeneration: common.ToPtr(composer.V2),
-					}),
-				},
-			},
-		},
-		// Test Azure with SourceId
-		{
-			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "centos-9",
-				ImageRequests: []v1.ImageRequest{
-					{
-						Architecture: "x86_64",
-						ImageType:    v1.ImageTypesAzure,
-						Ostree: &v1.OSTree{
-							Ref:    common.ToPtr("test/edge/ref"),
-							Url:    common.ToPtr("https://ostree.srv/"),
-							Parent: common.ToPtr("test/edge/ref2"),
-						},
-						UploadRequest: v1.UploadRequest{
-							Type:    v1.UploadTypesAzure,
-							Options: auo2,
-						},
-					},
-				},
-			},
-			composerRequest: composer.ComposeRequest{
-				Distribution:   "centos-9",
-				Customizations: nil,
-				ImageRequest: &composer.ImageRequest{
-					Architecture: "x86_64",
-					ImageType:    composer.ImageTypesAzure,
-					Ostree: &composer.OSTree{
-						Ref:    common.ToPtr("test/edge/ref"),
-						Url:    common.ToPtr("https://ostree.srv/"),
-						Parent: common.ToPtr("test/edge/ref2"),
-					},
-					Repositories: []composer.Repository{
-						{
-							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-							Rhsm:        common.ToPtr(false),
-							Gpgkey:      common.ToPtr(mocks.CentosGPG),
-							CheckGpg:    common.ToPtr(true),
-						},
-						{
-							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/"),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-							Rhsm:        common.ToPtr(false),
-							Gpgkey:      common.ToPtr(mocks.CentosGPG),
-							CheckGpg:    common.ToPtr(true),
-						},
-					},
-					UploadOptions: makeUploadOptions(t, composer.AzureUploadOptions{
-						ImageName:      common.ToPtr("azure-image"),
-						ResourceGroup:  "group",
-						SubscriptionId: "id",
-						TenantId:       "tenant",
 					}),
 				},
 			},
