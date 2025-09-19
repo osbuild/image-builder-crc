@@ -241,18 +241,12 @@ type AzureUploadRequestOptions struct {
 	// ResourceGroup Name of the resource group where the image should be uploaded.
 	ResourceGroup string `json:"resource_group"`
 
-	// SourceId ID of the source that will be used to resolve the tenant and subscription IDs.
-	// Do not provide a tenant_id or subscription_id when providing a source_id.
-	SourceId *string `json:"source_id,omitempty"`
-
 	// SubscriptionId ID of subscription where the image should be uploaded.
-	// When providing a subscription_id, also be sure to provide a tenant_id and do not include a source_id.
 	SubscriptionId *string `json:"subscription_id,omitempty"`
 
 	// TenantId ID of the tenant where the image should be uploaded. This link explains how
 	// to find it in the Azure Portal:
 	// https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-how-to-find-tenant
-	// When providing a tenant_id, also be sure to provide a subscription_id and do not include a source_id.
 	TenantId *string `json:"tenant_id,omitempty"`
 }
 
