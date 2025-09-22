@@ -128,8 +128,8 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 		}
 	} else {
 		// if the policy had no customizations, the json endpoint returns empty body (unlike toml endpoint)
-		// but we need to return empty json object for osbuild autotailoring
-		tailoringData, _ = json.Marshal("{}")
+		// that tells us no tailoring should be applied
+		tailoringData = nil
 	}
 
 	return &PolicyData{

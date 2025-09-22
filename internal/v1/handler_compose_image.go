@@ -930,24 +930,32 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				return nil, err
 			}
 
-			res.Openscap = &composer.OpenSCAP{
-				ProfileId: pdata.ProfileID,
-				PolicyId:  &policy.PolicyId,
-				JsonTailoring: &composer.OpenSCAPJSONTailoring{
+			if pdata.TailoringData != nil {
+				res.Openscap = &composer.OpenSCAP{
 					ProfileId: pdata.ProfileID,
-					Filepath:  "/etc/osbuild/openscap-tailoring.json",
-				},
-			}
-			res.Directories = &[]composer.Directory{
-				{
-					Path: "/etc/osbuild",
-				},
-			}
-			res.Files = &[]composer.File{
-				{
-					Path: "/etc/osbuild/openscap-tailoring.json",
-					Data: common.ToPtr(string(pdata.TailoringData)),
-				},
+					PolicyId:  &policy.PolicyId,
+					JsonTailoring: &composer.OpenSCAPJSONTailoring{
+						ProfileId: pdata.ProfileID,
+						Filepath:  "/etc/osbuild/openscap-tailoring.json",
+					},
+				}
+				res.Directories = &[]composer.Directory{
+					{
+						Path: "/etc/osbuild",
+					},
+				}
+				res.Files = &[]composer.File{
+					{
+						Path: "/etc/osbuild/openscap-tailoring.json",
+						Data: common.ToPtr(string(pdata.TailoringData)),
+					},
+				}
+			} else {
+				res.Openscap = &composer.OpenSCAP{
+					ProfileId:     pdata.ProfileID,
+					PolicyId:      &policy.PolicyId,
+					JsonTailoring: nil,
+				}
 			}
 		}
 	}
