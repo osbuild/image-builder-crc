@@ -1567,6 +1567,10 @@ func TestComposeCustomizations(t *testing.T) {
 	require.NoError(t, openscapTailoring.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
 		PolicyId: uuid.MustParse(mocks.PolicyID),
 	}))
+	var openscapNoTailoring v1.OpenSCAP
+	require.NoError(t, openscapNoTailoring.FromOpenSCAPCompliance(v1.OpenSCAPCompliance{
+		PolicyId: uuid.MustParse(mocks.NoTailoringPolicyID),
+	}))
 
 	var fileGroup v1.File_Group
 	require.NoError(t, fileGroup.FromFileGroup1(v1.FileGroup1(1000)))
@@ -2718,6 +2722,56 @@ func TestComposeCustomizations(t *testing.T) {
 							Path: "/etc/osbuild/openscap-tailoring.json",
 							Data: common.ToPtr("{ \"data\": \"some-tailoring-data\"}"),
 						},
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// openscap without tailoring
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					Openscap: &openscapNoTailoring,
+				},
+				Distribution: "rhel-8",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-8.10",
+				Customizations: &composer.Customizations{
+					Openscap: &composer.OpenSCAP{
+						ProfileId:     "openscap-ref-id",
+						PolicyId:      common.ToPtr(uuid.MustParse(mocks.NoTailoringPolicyID)),
+						JsonTailoring: nil,
 					},
 				},
 				ImageRequest: &composer.ImageRequest{
