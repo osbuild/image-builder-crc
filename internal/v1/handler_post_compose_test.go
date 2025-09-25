@@ -426,8 +426,14 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusTeapot)
-		s := "deliberately returning !201 during tests"
-		err := json.NewEncoder(w).Encode(s)
+
+		serviceError := composer.Error{
+			Code:    "50000",
+			Id:      "50000",
+			Reason:  "deliberately returning !201 during tests",
+			Details: "details!",
+		}
+		err := json.NewEncoder(w).Encode(serviceError)
 		require.NoError(t, err)
 	}))
 	defer apiSrv.Close()
@@ -455,7 +461,7 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 	}
 	respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
 	require.Equal(t, http.StatusInternalServerError, respStatusCode)
-	require.Contains(t, body, "Failed posting compose request to osbuild-composer")
+	require.Contains(t, body, "Failed posting compose request to osbuild-composer. deliberately returning !201 during tests: details")
 }
 
 func TestComposeImageErrorResolvingOSTree(t *testing.T) {
