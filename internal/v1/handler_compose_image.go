@@ -173,6 +173,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			if err := json.Unmarshal(body, &serviceStat); err != nil {
 				return ComposeResponse{}, httpError
 			}
+			httpError.Message = fmt.Sprintf("Failed posting compose request to osbuild-composer. %s: %s", serviceStat.Reason, serviceStat.Details)
 			if serviceStat.Id == "10" {
 				httpError.Message = "Error resolving OSTree repo"
 				httpError.Code = http.StatusBadRequest
