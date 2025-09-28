@@ -769,6 +769,27 @@ paths:
           description: successful update
         404:
           description: blueprint was not found
+  /experimental/blueprints/{id}/ignore-warnings:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        example: '123e4567-e89b-12d3-a456-426655440000'
+        required: true
+        description: UUID of a blueprint
+    post:
+      summary: Ignore blueprint compliance warnings
+      operationId: ignoreBlueprintWarnings
+      description: |
+        Ignore compliance warnings by saving the current blueprint state as the new baseline.
+        This will prevent the same warnings from appearing in future linting checks.
+      responses:
+        201:
+          description: warnings successfully ignored
+        404:
+          description: blueprint was not found
 
 components:
   schemas:

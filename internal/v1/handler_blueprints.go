@@ -946,3 +946,118 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 
 	return ctx.NoContent(http.StatusCreated)
 }
+
+func (h *Handlers) IgnoreBlueprintWarnings(ctx echo.Context, id openapi_types.UUID) error {
+	userID, err := h.server.getIdentity(ctx)
+	if err != nil {
+		return err
+	}
+
+	blueprintEntry, err := h.server.db.GetBlueprint(ctx.Request().Context(), id, userID.OrgID(), nil)
+	if err != nil {
+		if errors.Is(err, db.ErrBlueprintNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return err
+	}
+
+	blueprint, err := BlueprintFromEntry(
+		blueprintEntry,
+		WithRedactedPasswords(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Only proceed if this blueprint has compliance configured
+	if blueprint.Customizations.Openscap == nil {
+		slog.InfoContext(ctx.Request().Context(), "ignoring warnings skipped - no compliance configured",
+			"blueprint_id", blueprintEntry.Id)
+		return ctx.NoContent(http.StatusCreated)
+	}
+
+	compl, err := blueprint.Customizations.Openscap.AsOpenSCAPCompliance()
+	if err != nil || compl.PolicyId == uuid.Nil {
+		slog.InfoContext(ctx.Request().Context(), "ignoring warnings skipped - invalid compliance config",
+			"blueprint_id", blueprintEntry.Id,
+			"error", err)
+		return ctx.NoContent(http.StatusCreated)
+	}
+
+	// Get current policy customizations to save as the baseline for future comparisons
+	d, err := h.server.getDistro(ctx, blueprint.Distribution)
+	if err != nil {
+		return err
+	}
+	major, minor, err := d.RHELMajorMinor()
+	if err != nil {
+		return err
+	}
+
+	// Get the current policy requirements (for validation only)
+	_, err = h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
+	if err != nil {
+		return err
+	}
+
+	// Convert current policy customizations to JSON for storage
+	var policyCustomizations Customizations
+	_, _, err = h.lintOpenscap(ctx, &policyCustomizations, true, blueprint.Distribution, compl.PolicyId.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	policyCustomizationsJSON, err := json.Marshal(policyCustomizations)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal policy customizations")
+	}
+
+	// Create service snapshots with current policy requirements
+	serviceSnapshots := &db.ServiceSnapshots{
+		Compliance: &db.ComplianceSnapshot{
+			PolicyId:             compl.PolicyId,
+			PolicyCustomizations: json.RawMessage(policyCustomizationsJSON),
+		},
+	}
+
+	serviceSnapshotsJSON, err := json.Marshal(serviceSnapshots)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal service snapshots")
+	}
+
+	var md BlueprintMetadata
+	if len(blueprintEntry.Metadata) > 0 {
+		err = json.Unmarshal(blueprintEntry.Metadata, &md)
+		if err != nil {
+			return err
+		}
+	}
+
+	blueprintRequest := CreateBlueprintRequest{
+		Name:           blueprintEntry.Name,
+		Description:    &blueprintEntry.Description,
+		Metadata:       &md,
+		Distribution:   blueprint.Distribution,
+		ImageRequests:  blueprint.ImageRequests,
+		Customizations: blueprint.Customizations,
+	}
+
+	body, err := json.Marshal(blueprintRequest)
+	if err != nil {
+		return err
+	}
+	desc := common.FromPtr(blueprintRequest.Description)
+
+	versionId := uuid.New()
+	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), versionId, blueprintEntry.Id, userID.OrgID(), blueprintRequest.Name, desc, body, serviceSnapshotsJSON)
+	if err != nil {
+		slog.ErrorContext(ctx.Request().Context(), "error updating blueprint in db during ignore warnings",
+			"error", err)
+		if errors.Is(err, db.ErrBlueprintNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return err
+	}
+
+	return ctx.NoContent(http.StatusCreated)
+}
