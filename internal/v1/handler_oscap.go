@@ -21,6 +21,8 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/distribution"
 )
 
+// LintContext removed. Callers decide how to handle tailoring-not-found.
+
 func OscapProfiles(distribution Distributions) (DistributionProfileResponse, error) {
 	switch distribution {
 	case Rhel8:
@@ -204,15 +206,6 @@ func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid
 func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup bool, distro Distributions, prevCust *Customizations) ([]BlueprintLintItem, []BlueprintLintItem, error) {
 	var err error
 
-	d, err := h.server.getDistro(ctx, distro)
-	if err != nil {
-		return nil, nil, err
-	}
-	major, minor, err := d.RHELMajorMinor()
-	if err != nil {
-		return nil, nil, err
-	}
-
 	if bpBody.Openscap == nil {
 		return []BlueprintLintItem{}, []BlueprintLintItem{}, nil
 	}
@@ -222,12 +215,36 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup 
 		return []BlueprintLintItem{}, []BlueprintLintItem{}, nil
 	}
 
+	d, err := h.server.getDistro(ctx, distro)
+	if err != nil {
+		return nil, nil, err
+	}
+	major, minor, err := d.RHELMajorMinor()
+	if err != nil {
+		return nil, nil, err
+	}
+	// Validate policy major version matches distribution before fetching TOML customizations.
+	// This makes failures deterministic regardless of which minor "rhel-9" symlinks to.
+	if _, err := h.server.complianceClient.PolicyDataForMinorVersion(ctx.Request().Context(), major, minor, compl.PolicyId.String()); err != nil {
+		if err == compliance.ErrorMajorVersion {
+			return nil, nil, err
+		}
+	}
 	policyBP, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
+
 	if err == compliance.ErrorTailoringNotFound {
-		return nil, nil, compliance.ErrorTailoringNotFound
+		if fixup {
+			//typically 500 or endpoint-specific handling
+			return nil, nil, err
+		}
+		return []BlueprintLintItem{{
+			Name:        "Compliance",
+			Description: "Compliance policy does not have a definition for the latest minor version",
+		}}, nil, nil
 	}
 	if err != nil {
-		return nil, nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+		// Bubble raw error for caller to map (e.g., ErrMajorMinor → 400, else 500)
+		return nil, nil, err
 	}
 
 	var allErrors []BlueprintLintItem
