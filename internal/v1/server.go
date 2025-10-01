@@ -172,14 +172,11 @@ func Attach(conf *ServerConfig) (*Server, error) {
 	})
 
 	// Middleware: structured logging and tracing
-	// XXX: split into individual logging and tracing middlewares
-	tracingLoggingMiddleware := strc.NewEchoV4MiddlewareWithConfig(slog.Default(),
-		strc.MiddlewareConfig{})
-
 	middlewares := []echo.MiddlewareFunc{
 		prometheus.StatusMiddleware,
 		extractIdentityMiddleware,
-		tracingLoggingMiddleware,
+		strc.EchoRequestLogger(slog.Default(), strc.MiddlewareConfig{}),
+		strc.EchoContextSetLogger(slog.Default()),
 		recoverMiddleware,
 	}
 
