@@ -193,7 +193,7 @@ func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid
 	_, _, err := h.lintOpenscap(ctx, &cust, true, distro, nil)
 	if err == distribution.ErrMajorMinor {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
-	} else if err == compliance.ErrorTailoringNotFound {
+	} else if err == compliance.ErrorTailoringNotFound || err == compliance.ErrorMajorVersion || err == compliance.ErrorPolicyNotFound {
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	} else if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid
 	return ctx.JSON(http.StatusOK, cust)
 }
 
-func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup bool, distro Distributions, prevCust *Customizations) ([]BlueprintLintItem, []BlueprintLintItem, error) {
+func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup bool, distro Distributions, snapshotCust *Customizations) ([]BlueprintLintItem, []BlueprintLintItem, error) {
 	var err error
 
 	if bpBody.Openscap == nil {
@@ -243,7 +243,6 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup 
 		}}, nil, nil
 	}
 	if err != nil {
-		// Bubble raw error for caller to map (e.g., ErrMajorMinor → 400, else 500)
 		return nil, nil, err
 	}
 
@@ -251,26 +250,21 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup 
 	var allWarnings []BlueprintLintItem
 
 	// Collect errors and warnings from all lint functions (they now return instead of mutating)
-	if errs, warns := lintPackages(policyBP, prevCust, bpBody, fixup); len(errs) > 0 || len(warns) > 0 {
-		allErrors = append(allErrors, errs...)
-		allWarnings = append(allWarnings, warns...)
-	}
-	if errs, warns := lintFilesystems(policyBP, prevCust, bpBody, fixup); len(errs) > 0 || len(warns) > 0 {
-		allErrors = append(allErrors, errs...)
-		allWarnings = append(allWarnings, warns...)
-	}
-	if errs, warns := lintServices(policyBP, prevCust, bpBody, fixup); len(errs) > 0 || len(warns) > 0 {
-		allErrors = append(allErrors, errs...)
-		allWarnings = append(allWarnings, warns...)
-	}
-	if errs, warns := lintKernel(policyBP, prevCust, bpBody, fixup); len(errs) > 0 || len(warns) > 0 {
-		allErrors = append(allErrors, errs...)
-		allWarnings = append(allWarnings, warns...)
-	}
-	if errs, warns := lintFIPS(policyBP, prevCust, bpBody, fixup); len(errs) > 0 || len(warns) > 0 {
-		allErrors = append(allErrors, errs...)
-		allWarnings = append(allWarnings, warns...)
-	}
+	errs, warns := lintPackages(policyBP, snapshotCust, bpBody, fixup)
+	allErrors = append(allErrors, errs...)
+	allWarnings = append(allWarnings, warns...)
+	errs, warns = lintFilesystems(policyBP, snapshotCust, bpBody, fixup)
+	allErrors = append(allErrors, errs...)
+	allWarnings = append(allWarnings, warns...)
+	errs, warns = lintServices(policyBP, snapshotCust, bpBody, fixup)
+	allErrors = append(allErrors, errs...)
+	allWarnings = append(allWarnings, warns...)
+	errs, warns = lintKernel(policyBP, snapshotCust, bpBody, fixup)
+	allErrors = append(allErrors, errs...)
+	allWarnings = append(allWarnings, warns...)
+	errs, warns = lintFIPS(policyBP, snapshotCust, bpBody, fixup)
+	allErrors = append(allErrors, errs...)
+	allWarnings = append(allWarnings, warns...)
 
 	return allErrors, allWarnings, nil
 }
@@ -278,7 +272,7 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup 
 // lintPackages validates package compliance by performing two comparisons:
 // 1. ERRORS: Packages required by current policy but missing from current blueprint
 // 2. WARNINGS: Packages that were required by policy in snapshot but no longer required
-func lintPackages(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
+func lintPackages(policyBP *blueprint.Blueprint, snapshotCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
 	var errs []BlueprintLintItem
 	var warns []BlueprintLintItem
 
@@ -295,8 +289,8 @@ func lintPackages(policyBP *blueprint.Blueprint, prevCust, currentCust *Customiz
 	}
 
 	// Warnings: packages from saved policy no longer required
-	if prevCust != nil && prevCust.Packages != nil {
-		for _, pkg := range *prevCust.Packages {
+	if snapshotCust != nil && snapshotCust.Packages != nil {
+		for _, pkg := range *snapshotCust.Packages {
 			if !slices.Contains(policyBP.GetPackagesEx(false), pkg) {
 				warns = append(warns, BlueprintLintItem{
 					Name:        "Compliance",
@@ -309,7 +303,7 @@ func lintPackages(policyBP *blueprint.Blueprint, prevCust, currentCust *Customiz
 	return errs, warns
 }
 
-func lintFilesystems(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
+func lintFilesystems(policyBP *blueprint.Blueprint, snapshotCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
 	var errs []BlueprintLintItem
 	var warns []BlueprintLintItem
 
@@ -332,12 +326,12 @@ func lintFilesystems(policyBP *blueprint.Blueprint, prevCust, currentCust *Custo
 	}
 
 	// Warnings: filesystems in saved policy no longer required
-	if prevCust != nil && prevCust.Filesystem != nil {
+	if snapshotCust != nil && snapshotCust.Filesystem != nil {
 		var policyFilesystems []blueprint.FilesystemCustomization
 		if policyBP.Customizations != nil {
 			policyFilesystems = policyBP.Customizations.GetFilesystems()
 		}
-		for _, fs := range *prevCust.Filesystem {
+		for _, fs := range *snapshotCust.Filesystem {
 			if !slices.ContainsFunc(policyFilesystems, func(fsc blueprint.FilesystemCustomization) bool { return fsc.Mountpoint == fs.Mountpoint }) {
 				warns = append(warns, BlueprintLintItem{
 					Name:        "Compliance",
@@ -350,7 +344,7 @@ func lintFilesystems(policyBP *blueprint.Blueprint, prevCust, currentCust *Custo
 	return errs, warns
 }
 
-func lintServices(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
+func lintServices(policyBP *blueprint.Blueprint, snapshotCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
 	var errs []BlueprintLintItem
 	var warns []BlueprintLintItem
 
@@ -395,7 +389,7 @@ func lintServices(policyBP *blueprint.Blueprint, prevCust, currentCust *Customiz
 	}
 
 	// Warnings: services from saved policy no longer required by current policy
-	if prevCust == nil || prevCust.Services == nil {
+	if snapshotCust == nil || snapshotCust.Services == nil {
 		return errs, warns
 	}
 
@@ -404,19 +398,19 @@ func lintServices(policyBP *blueprint.Blueprint, prevCust, currentCust *Customiz
 		policyServices = policyBP.Customizations.GetServices()
 	}
 
-	checkErrs, checkWarns := checkObsoleteServices(prevCust.Services.Enabled, "enabled", func(service string) bool {
+	checkErrs, checkWarns := checkObsoleteServices(snapshotCust.Services.Enabled, "enabled", func(service string) bool {
 		return policyServices != nil && slices.Contains(policyServices.Enabled, service)
 	})
 	errs = append(errs, checkErrs...)
 	warns = append(warns, checkWarns...)
 
-	checkErrs, checkWarns = checkObsoleteServices(prevCust.Services.Disabled, "disabled", func(service string) bool {
+	checkErrs, checkWarns = checkObsoleteServices(snapshotCust.Services.Disabled, "disabled", func(service string) bool {
 		return policyServices != nil && slices.Contains(policyServices.Disabled, service)
 	})
 	errs = append(errs, checkErrs...)
 	warns = append(warns, checkWarns...)
 
-	checkErrs, checkWarns = checkObsoleteServices(prevCust.Services.Masked, "masked", func(service string) bool {
+	checkErrs, checkWarns = checkObsoleteServices(snapshotCust.Services.Masked, "masked", func(service string) bool {
 		return policyServices != nil && slices.Contains(policyServices.Masked, service)
 	})
 	errs = append(errs, checkErrs...)
@@ -441,7 +435,7 @@ func checkObsoleteServices(services *[]string, serviceType string, isStillRequir
 	return nil, warns
 }
 
-func lintKernel(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
+func lintKernel(policyBP *blueprint.Blueprint, snapshotCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
 	var errs []BlueprintLintItem
 	var warns []BlueprintLintItem
 
@@ -478,21 +472,21 @@ func lintKernel(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizat
 	}
 
 	// Warnings from saved policy
-	if prevCust != nil && prevCust.Kernel != nil {
+	if snapshotCust != nil && snapshotCust.Kernel != nil {
 		var policyKernel *blueprint.KernelCustomization
 		if policyBP.Customizations != nil {
 			policyKernel = policyBP.Customizations.Kernel
 		}
-		if prevCust.Kernel.Name != nil {
-			if policyKernel == nil || policyKernel.Name != *prevCust.Kernel.Name {
+		if snapshotCust.Kernel.Name != nil {
+			if policyKernel == nil || policyKernel.Name != *snapshotCust.Kernel.Name {
 				warns = append(warns, BlueprintLintItem{
 					Name:        "Compliance",
-					Description: fmt.Sprintf("kernel name %s is no longer required by policy", *prevCust.Kernel.Name),
+					Description: fmt.Sprintf("kernel name %s is no longer required by policy", *snapshotCust.Kernel.Name),
 				})
 			}
 		}
-		if prevCust.Kernel.Append != nil {
-			for _, kcmd := range strings.Fields(*prevCust.Kernel.Append) {
+		if snapshotCust.Kernel.Append != nil {
+			for _, kcmd := range strings.Fields(*snapshotCust.Kernel.Append) {
 				if kcmd == "" {
 					continue
 				}
@@ -509,11 +503,10 @@ func lintKernel(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizat
 	return errs, warns
 }
 
-func lintFIPS(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
+func lintFIPS(policyBP *blueprint.Blueprint, snapshotCust, currentCust *Customizations, fixup bool) ([]BlueprintLintItem, []BlueprintLintItem) {
 	var errs []BlueprintLintItem
 	var warns []BlueprintLintItem
 
-	// If policy doesn't define FIPS, nothing to do
 	if policyBP.Customizations == nil || policyBP.Customizations.FIPS == nil {
 		return nil, nil
 	}
@@ -533,7 +526,7 @@ func lintFIPS(policyBP *blueprint.Blueprint, prevCust, currentCust *Customizatio
 	}
 
 	// Warnings: saved policy had FIPS enabled previously but not now
-	if prevCust != nil && prevCust.Fips != nil && prevCust.Fips.Enabled != nil && *prevCust.Fips.Enabled {
+	if snapshotCust != nil && snapshotCust.Fips != nil && snapshotCust.Fips.Enabled != nil && *snapshotCust.Fips.Enabled {
 		if fips == nil || !*fips {
 			warns = append(warns, BlueprintLintItem{
 				Name:        "Compliance",

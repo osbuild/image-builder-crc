@@ -412,17 +412,17 @@ func (h *Handlers) lintBlueprint(ctx echo.Context, bpe *db.BlueprintEntry, fixup
 		return nil, nil, err
 	}
 
-	var allErrors []BlueprintLintItem
-	var allWarnings []BlueprintLintItem
-	snapshotCustomizations := extractSnapshotCustomizations(bpe)
+	var lintErrors []BlueprintLintItem
+	var lintWarnings []BlueprintLintItem
+	snapshotCust := extractSnapshotCustomizations(bpe)
 
-	if errors, warnings, err := h.lintOpenscap(ctx, &bpBody.Customizations, fixup, bpBody.Distribution, snapshotCustomizations); err != nil {
+	if errors, warnings, err := h.lintOpenscap(ctx, &bpBody.Customizations, fixup, bpBody.Distribution, snapshotCust); err != nil {
 		return nil, nil, err
 	} else {
-		allErrors = append(allErrors, errors...)
-		allWarnings = append(allWarnings, warnings...)
+		lintErrors = append(lintErrors, errors...)
+		lintWarnings = append(lintWarnings, warnings...)
 	}
-	return allErrors, allWarnings, nil
+	return lintErrors, lintWarnings, nil
 }
 
 // extractSnapshotCustomizations extracts saved policy customizations from service snapshots.
@@ -539,12 +539,14 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) error {
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
+		fmt.Printf("UpdateBlueprint identity error: %v\n", err)
 		return err
 	}
 
 	var blueprintRequest CreateBlueprintRequest
 	err = ctx.Bind(&blueprintRequest)
 	if err != nil {
+		fmt.Printf("UpdateBlueprint bind error: %v\n", err)
 		return err
 	}
 
@@ -567,6 +569,7 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		}
 		eb, err := BlueprintFromEntry(be)
 		if err != nil {
+			fmt.Printf("UpdateBlueprint BlueprintFromEntry error: %v\n", err)
 			return err
 		}
 
@@ -597,6 +600,7 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 
 	body, err := json.Marshal(blueprint)
 	if err != nil {
+		fmt.Printf("UpdateBlueprint marshal body error: %v\n", err)
 		return err
 	}
 
@@ -627,6 +631,7 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 
 	err = h.server.db.UpdateBlueprint(ctx.Request().Context(), versionId, blueprintId, userID.OrgID(), blueprintRequest.Name, desc, body, serviceSnapshotsJSON)
 	if err != nil {
+		fmt.Printf("UpdateBlueprint DB error: %v\n", err)
 		slog.ErrorContext(ctx.Request().Context(), "error updating blueprint with service snapshots in db",
 			"error", err)
 		if errors.Is(err, db.ErrBlueprintNotFound) {
