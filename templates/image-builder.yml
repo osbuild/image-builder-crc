@@ -261,7 +261,7 @@ objects:
 
 parameters:
   - name: IMAGE
-    value: quay.io/redhat-services-prod/insights-management-tenant/insights-image-builder/image-builder-backend
+    value: quay.io/redhat-services-prod/insights-management-tenant/insights-image-builder/image-builder
     required: true
   - name: IMAGE_TAG
     required: true
