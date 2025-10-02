@@ -175,6 +175,7 @@ func Attach(conf *ServerConfig) (*Server, error) {
 	middlewares := []echo.MiddlewareFunc{
 		prometheus.StatusMiddleware,
 		extractIdentityMiddleware,
+		strc.EchoTraceExtractor(),
 		strc.EchoRequestLogger(slog.Default(), strc.MiddlewareConfig{}),
 		strc.EchoContextSetLogger(slog.Default()),
 		recoverMiddleware,
