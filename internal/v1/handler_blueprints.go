@@ -19,7 +19,6 @@ import (
 	"github.com/labstack/echo/v4"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
@@ -162,7 +161,7 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 	}
 
 	var cust Customizations
-	_, err = h.lintOpenscap(ctx, &cust, true, distribution, compl.PolicyId.String())
+	_, err = h.lintOpenscap(ctx, &cust, true, distribution)
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error getting policy customizations via lintOpenscap",
 			"error", err.Error(), "distribution", distribution, "policy_id", compl.PolicyId.String())
@@ -407,22 +406,10 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 
 func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
 	lintErrors := []BlueprintLintItem{}
-	if blueprint.Customizations.Openscap != nil {
-		var compl OpenSCAPCompliance
-		var err error
-		if compl, err = blueprint.Customizations.Openscap.AsOpenSCAPCompliance(); err == nil && compl.PolicyId != uuid.Nil {
-			errs, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution, compl.PolicyId.String())
-			if err == compliance.ErrorTailoringNotFound {
-				lintErrors = append(lintErrors, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: "Compliance policy does not have a definition for the latest minor version",
-				})
-			} else if err != nil {
-				return nil, err
-			} else {
-				lintErrors = append(lintErrors, errs...)
-			}
-		}
+	if errors, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution); err != nil {
+		return nil, err
+	} else {
+		lintErrors = append(lintErrors, errors...)
 	}
 	return lintErrors, nil
 }
