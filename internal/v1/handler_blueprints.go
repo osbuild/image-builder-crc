@@ -859,7 +859,9 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
-	_, _, err = h.lintBlueprint(ctx, blueprintEntry, true)
+	// Apply fixup by calling lintOpenscap directly and capturing the modified customizations
+	snapshotCustomizations := extractSnapshotCustomizations(blueprintEntry)
+	_, _, err = h.lintOpenscap(ctx, &blueprint.Customizations, true, blueprint.Distribution, snapshotCustomizations)
 	if err != nil {
 		return err
 	}
