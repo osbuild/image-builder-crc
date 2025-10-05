@@ -181,15 +181,29 @@ func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distrib
 
 func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid.UUID, distro Distributions) error {
 	var cust Customizations
-	_, err := h.lintOpenscap(ctx, &cust, true, distro)
-	if err == distribution.ErrMajorMinor {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	} else if err == compliance.ErrorTailoringNotFound {
-		return echo.NewHTTPError(http.StatusNotFound, err)
-	} else if err != nil {
+	// Create OpenSCAP object with the policy ID from URL parameter
+	var openscap OpenSCAP
+	err := openscap.FromOpenSCAPCompliance(OpenSCAPCompliance{
+		PolicyId: policy,
+	})
+	if err != nil {
 		return err
 	}
+	cust.Openscap = &openscap
+	_, err = h.lintOpenscap(ctx, &cust, true, distro)
+	if err != nil {
+		switch err {
+		case distribution.ErrMajorMinor:
+			return echo.NewHTTPError(http.StatusBadRequest, err)
+		case compliance.ErrorTailoringNotFound, compliance.ErrorMajorVersion:
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		default:
+			return err
+		}
+	}
 
+	// Clear OpenSCAP from response - we only want the customizations, not the policy reference
+	cust.Openscap = nil
 	return ctx.JSON(http.StatusOK, cust)
 }
 
