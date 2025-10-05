@@ -181,7 +181,7 @@ func (h *Handlers) GetOscapCustomizations(ctx echo.Context, distribution Distrib
 
 func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid.UUID, distro Distributions) error {
 	var cust Customizations
-	_, err := h.lintOpenscap(ctx, &cust, true, distro, policy.String())
+	_, err := h.lintOpenscap(ctx, &cust, true, distro)
 	if err == distribution.ErrMajorMinor {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	} else if err == compliance.ErrorTailoringNotFound {
@@ -193,9 +193,18 @@ func (h *Handlers) GetOscapCustomizationsForPolicy(ctx echo.Context, policy uuid
 	return ctx.JSON(http.StatusOK, cust)
 }
 
-func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions, policy string) ([]BlueprintLintItem, error) {
+func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bool, distro Distributions) ([]BlueprintLintItem, error) {
 	var lintErrors []BlueprintLintItem
 	var err error
+
+	if cust.Openscap == nil {
+		return []BlueprintLintItem{}, nil
+	}
+
+	compl, err := cust.Openscap.AsOpenSCAPCompliance()
+	if err != nil || compl.PolicyId == uuid.Nil {
+		return []BlueprintLintItem{}, nil
+	}
 
 	d, err := h.server.getDistro(ctx, distro)
 	if err != nil {
@@ -205,11 +214,28 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, cust *Customizations, fixup bo
 	if err != nil {
 		return nil, err
 	}
-	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, policy)
+
+	// Validate policy major version matches distribution before fetching TOML customizations.
+	// This makes failures deterministic regardless of which minor "rhel-9" symlinks to.
+	if _, err := h.server.complianceClient.PolicyDataForMinorVersion(ctx.Request().Context(), major, minor, compl.PolicyId.String()); err != nil {
+		if err == compliance.ErrorMajorVersion {
+			return nil, err
+		}
+	}
+
+	bp, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
 	if err == compliance.ErrorTailoringNotFound {
+		if fixup {
+			//typically 500 or endpoint-specific handling
+			return nil, err
+		}
+		return []BlueprintLintItem{{
+			Name:        "Compliance",
+			Description: "Compliance policy does not have a definition for the latest minor version",
+		}}, nil
+	}
+	if err != nil {
 		return nil, err
-	} else if err != nil {
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	// make sure all packages are present, all partitions, all enabled/disabled services, all kernel args
