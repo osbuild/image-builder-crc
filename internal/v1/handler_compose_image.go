@@ -1173,14 +1173,21 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	// if openscap and subscription customizations are set, otherwise
 	// the insights-client doesn't register properly
 	if cust.Subscription != nil && cust.Subscription.Insights && cust.Openscap != nil {
-		if res.Services == nil {
-			res.Services = &composer.Services{}
+		major, _, err := d.RHELMajorMinor()
+		if err != nil {
+			return nil, err
 		}
-		if res.Services.Enabled == nil {
-			res.Services.Enabled = &[]string{}
-		}
-		if !slices.Contains(*res.Services.Enabled, "rhcd") {
-			*res.Services.Enabled = append(*res.Services.Enabled, "rhcd")
+		// Since RHEL 10, there is no rhcd service.
+		if major < 10 {
+			if res.Services == nil {
+				res.Services = &composer.Services{}
+			}
+			if res.Services.Enabled == nil {
+				res.Services.Enabled = &[]string{}
+			}
+			if !slices.Contains(*res.Services.Enabled, "rhcd") {
+				*res.Services.Enabled = append(*res.Services.Enabled, "rhcd")
+			}
 		}
 	}
 
