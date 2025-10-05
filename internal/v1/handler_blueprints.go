@@ -150,17 +150,14 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 		return nil, nil
 	}
 
-	var compl OpenSCAPCompliance
 	compl, err := customizations.Openscap.AsOpenSCAPCompliance()
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error in AsOpenSCAPCompliance", "error", err.Error())
 		return nil, err
 	}
-	if compl.PolicyId == uuid.Nil {
-		return nil, nil
-	}
 
 	var cust Customizations
+	cust.Openscap = customizations.Openscap
 	_, err = h.lintOpenscap(ctx, &cust, true, distribution)
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error getting policy customizations via lintOpenscap",
