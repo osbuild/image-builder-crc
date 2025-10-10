@@ -142,6 +142,7 @@ const (
 	ImageTypesGuestImage        ImageTypes = "guest-image"
 	ImageTypesImageInstaller    ImageTypes = "image-installer"
 	ImageTypesOci               ImageTypes = "oci"
+	ImageTypesPxeTarXz          ImageTypes = "pxe-tar-xz"
 	ImageTypesRhelEdgeCommit    ImageTypes = "rhel-edge-commit"
 	ImageTypesRhelEdgeInstaller ImageTypes = "rhel-edge-installer"
 	ImageTypesVhd               ImageTypes = "vhd"

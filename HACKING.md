@@ -32,3 +32,13 @@ file to generate a package list.
 
 If the repository requires a client tls key/cert you can supply them with
 `--key` and `--cert`.
+
+## Updating ./distributions
+
+The files in `./distributions` are updated manually. When a new RHEL minor
+release becomes generally available (GA), the previous release's directory is
+copied and all references to the release version are updated. The symlink for
+the major release is updated to point to the latest minor release.
+
+Note that the repository keys do not change between minor releases and do not
+require updating.
