@@ -939,6 +939,9 @@ type ApiStream struct {
 	// Name Name of the module
 	Name *string `json:"name,omitempty"`
 
+	// PackageNames List of package names in the module stream
+	PackageNames *[]string `json:"package_names,omitempty"`
+
 	// Profiles Module profile data
 	Profiles *map[string][]string `json:"profiles,omitempty"`
 

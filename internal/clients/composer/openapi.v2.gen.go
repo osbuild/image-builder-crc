@@ -114,6 +114,7 @@ const (
 	ImageTypesLiveInstaller          ImageTypes = "live-installer"
 	ImageTypesMinimalRaw             ImageTypes = "minimal-raw"
 	ImageTypesOci                    ImageTypes = "oci"
+	ImageTypesPxeTarXz               ImageTypes = "pxe-tar-xz"
 	ImageTypesVsphere                ImageTypes = "vsphere"
 	ImageTypesVsphereOva             ImageTypes = "vsphere-ova"
 	ImageTypesWsl                    ImageTypes = "wsl"
