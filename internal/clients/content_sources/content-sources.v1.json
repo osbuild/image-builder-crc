@@ -1605,6 +1605,13 @@
                         "description": "Name of the module",
                         "type": "string"
                     },
+                    "package_names": {
+                        "description": "List of package names in the module stream",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
                     "profiles": {
                         "additionalProperties": {
                             "items": {
