@@ -290,10 +290,11 @@ type BlueprintItem struct {
 	Version        int                `json:"version"`
 }
 
-// BlueprintLint Linting errors in the current blueprint, these might need to be resolved before the
-// blueprint can be used to build images again.
+// BlueprintLint Linting errors and warnings in the current blueprint. Errors might need to be resolved before the
+// blueprint can be used to build images again. Warnings provide information about policy changes.
 type BlueprintLint struct {
-	Errors []BlueprintLintItem `json:"errors"`
+	Errors   []BlueprintLintItem `json:"errors"`
+	Warnings []BlueprintLintItem `json:"warnings"`
 }
 
 // BlueprintLintItem defines model for BlueprintLintItem.
@@ -324,8 +325,8 @@ type BlueprintResponse struct {
 	// ImageRequests Array of image requests. Having more image requests in a single blueprint is currently not supported.
 	ImageRequests []ImageRequest `json:"image_requests"`
 
-	// Lint Linting errors in the current blueprint, these might need to be resolved before the
-	// blueprint can be used to build images again.
+	// Lint Linting errors and warnings in the current blueprint. Errors might need to be resolved before the
+	// blueprint can be used to build images again. Warnings provide information about policy changes.
 	Lint BlueprintLint `json:"lint"`
 	Name string        `json:"name"`
 }
