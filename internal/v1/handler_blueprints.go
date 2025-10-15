@@ -19,6 +19,7 @@ import (
 	"github.com/labstack/echo/v4"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
+	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
@@ -156,9 +157,16 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 		return nil, err
 	}
 
-	var cust Customizations
-	cust.Openscap = customizations.Openscap
-	_, err = h.lintOpenscap(ctx, &cust, true, distribution)
+	// create empty customizations with only openscap because
+	// we need to store only that in the db.ServiceSnapshot that
+	// we return (and that gets mutated by fixup=true)
+	cust := Customizations{
+		Openscap: customizations.Openscap,
+	}
+	_, _, err = h.lintAndFixupOpenscap(ctx, &cust, LinterOptionFixup, distribution, nil)
+	if err == compliance.ErrorTailoringNotFound {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error getting policy customizations via lintOpenscap",
 			"error", err.Error(), "distribution", distribution, "policy_id", compl.PolicyId.String())
@@ -380,9 +388,10 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	if err != nil {
 		return err
 	}
+	snapshotCust := extractSnapshotCustomizations(blueprintEntry)
 
-	lintErrors, err := h.lintBlueprint(ctx, &blueprint, false)
-	if err != nil {
+	lintErrors, lintWarnings, err := h.lintAndFixupOpenscap(ctx, &blueprint.Customizations, LinterOptionNoFixup, blueprint.Distribution, snapshotCust)
+	if err != nil && err != compliance.ErrorTailoringNotFound {
 		return err
 	}
 
@@ -394,21 +403,35 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		Distribution:   blueprint.Distribution,
 		Customizations: blueprint.Customizations,
 		Lint: BlueprintLint{
-			Errors: lintErrors,
+			Errors:   lintErrors,
+			Warnings: lintWarnings,
 		},
 	}
 
 	return ctx.JSON(http.StatusOK, blueprintResponse)
 }
 
-func (h *Handlers) lintBlueprint(ctx echo.Context, blueprint *BlueprintBody, fixup bool) ([]BlueprintLintItem, error) {
-	lintErrors := []BlueprintLintItem{}
-	if errors, err := h.lintOpenscap(ctx, &blueprint.Customizations, fixup, blueprint.Distribution); err != nil {
-		return nil, err
-	} else {
-		lintErrors = append(lintErrors, errors...)
+// extractSnapshotCustomizations extracts saved policy customizations from a blueprint entry's service snapshots
+func extractSnapshotCustomizations(blueprintEntry *db.BlueprintEntry) *Customizations {
+	if blueprintEntry == nil || len(blueprintEntry.ServiceSnapshots) == 0 {
+		return nil
 	}
-	return lintErrors, nil
+
+	var serviceSnapshots db.ServiceSnapshots
+	if err := json.Unmarshal(blueprintEntry.ServiceSnapshots, &serviceSnapshots); err != nil {
+		return nil
+	}
+
+	if serviceSnapshots.Compliance == nil || len(serviceSnapshots.Compliance.PolicyCustomizations) == 0 {
+		return nil
+	}
+
+	var customizations Customizations
+	if err := json.Unmarshal(serviceSnapshots.Compliance.PolicyCustomizations, &customizations); err != nil {
+		return nil
+	}
+
+	return &customizations
 }
 
 func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) error {
@@ -825,7 +848,11 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
-	_, err = h.lintBlueprint(ctx, &blueprint, true)
+	snapshotCustomizations := extractSnapshotCustomizations(blueprintEntry)
+	_, _, err = h.lintAndFixupOpenscap(ctx, &blueprint.Customizations, LinterOptionFixup, blueprint.Distribution, snapshotCustomizations)
+	if err == compliance.ErrorTailoringNotFound {
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	}
 	if err != nil {
 		return err
 	}

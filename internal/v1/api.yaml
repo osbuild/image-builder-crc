@@ -1151,11 +1151,16 @@ components:
     BlueprintLint:
       required:
         - errors
+        - warnings
       description: |
-        Linting errors in the current blueprint, these might need to be resolved before the
-        blueprint can be used to build images again.
+        Linting errors and warnings in the current blueprint. Errors might need to be resolved before the
+        blueprint can be used to build images again. Warnings provide information about policy changes.
       properties:
         errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlueprintLintItem'
+        warnings:
           type: array
           items:
             $ref: '#/components/schemas/BlueprintLintItem'
