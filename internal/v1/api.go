@@ -290,10 +290,11 @@ type BlueprintItem struct {
 	Version        int                `json:"version"`
 }
 
-// BlueprintLint Linting errors in the current blueprint, these might need to be resolved before the
-// blueprint can be used to build images again.
+// BlueprintLint Linting errors and warnings in the current blueprint. Errors might need to be resolved before the
+// blueprint can be used to build images again. Warnings provide information about policy changes.
 type BlueprintLint struct {
-	Errors []BlueprintLintItem `json:"errors"`
+	Errors   []BlueprintLintItem `json:"errors"`
+	Warnings []BlueprintLintItem `json:"warnings"`
 }
 
 // BlueprintLintItem defines model for BlueprintLintItem.
@@ -324,8 +325,8 @@ type BlueprintResponse struct {
 	// ImageRequests Array of image requests. Having more image requests in a single blueprint is currently not supported.
 	ImageRequests []ImageRequest `json:"image_requests"`
 
-	// Lint Linting errors in the current blueprint, these might need to be resolved before the
-	// blueprint can be used to build images again.
+	// Lint Linting errors and warnings in the current blueprint. Errors might need to be resolved before the
+	// blueprint can be used to build images again. Warnings provide information about policy changes.
 	Lint BlueprintLint `json:"lint"`
 	Name string        `json:"name"`
 }
@@ -2024,6 +2025,9 @@ type ServerInterface interface {
 	// Apply linter fixes to blueprint
 	// (POST /experimental/blueprints/{id}/fixup)
 	FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
+	// Ignore blueprint compliance warnings
+	// (POST /experimental/blueprints/{id}/ignore-warnings)
+	IgnoreBlueprintWarnings(ctx echo.Context, id openapi_types.UUID) error
 	// List recommended packages.
 	// (POST /experimental/recommendations)
 	RecommendPackage(ctx echo.Context) error
@@ -2429,6 +2433,22 @@ func (w *ServerInterfaceWrapper) FixupBlueprint(ctx echo.Context) error {
 	return err
 }
 
+// IgnoreBlueprintWarnings converts echo context to params.
+func (w *ServerInterfaceWrapper) IgnoreBlueprintWarnings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.IgnoreBlueprintWarnings(ctx, id)
+	return err
+}
+
 // RecommendPackage converts echo context to params.
 func (w *ServerInterfaceWrapper) RecommendPackage(ctx echo.Context) error {
 	var err error
@@ -2613,6 +2633,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/composes/:composeId/metadata", wrapper.GetComposeMetadata)
 	router.GET(baseURL+"/distributions", wrapper.GetDistributions)
 	router.POST(baseURL+"/experimental/blueprints/:id/fixup", wrapper.FixupBlueprint)
+	router.POST(baseURL+"/experimental/blueprints/:id/ignore-warnings", wrapper.IgnoreBlueprintWarnings)
 	router.POST(baseURL+"/experimental/recommendations", wrapper.RecommendPackage)
 	router.GET(baseURL+"/oscap/:distribution/profiles", wrapper.GetOscapProfiles)
 	router.GET(baseURL+"/oscap/:distribution/:profile/customizations", wrapper.GetOscapCustomizations)
