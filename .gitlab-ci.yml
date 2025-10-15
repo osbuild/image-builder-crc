@@ -33,13 +33,9 @@ test:
   script:
     - schutzbot/ci_details.sh
     - schutzbot/deploy.sh
-    - test/cases/api.sh ${PROVIDER}
-  parallel:
-    matrix:
-      - PROVIDER:
-          - aws
-        RUNNER:
-          - aws/rhel-8.10-ga-x86_64
+    - test/cases/api.sh
+  variables:
+    RUNNER: aws/rhel-8.10-ga-x86_64
 
 finish:
   stage: finish
