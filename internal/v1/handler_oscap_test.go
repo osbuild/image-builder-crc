@@ -16,7 +16,8 @@ func TestPackages_Additions_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Packages: common.ToPtr([]string{"pkg-existing"})}
 
-	errs, warns := lintPackages(policyBP, nil, current, false)
+	errs := lintPackagesE(policyBP, current, false)
+	warns := lintPackagesW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -31,7 +32,8 @@ func TestPackages_Additions_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Packages: common.ToPtr([]string{"pkg-existing"})}
 
-	errs, warns := lintPackages(policyBP, nil, current, true)
+	errs := lintPackagesE(policyBP, current, true)
+	warns := lintPackagesW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.ElementsMatch(t,
@@ -46,7 +48,8 @@ func TestPackages_Removals_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Packages: common.ToPtr([]string{"pkg-keep", "pkg-obsolete"})}
 	current := &Customizations{Packages: common.ToPtr([]string{"pkg-keep"})}
 
-	errs, warns := lintPackages(policyBP, snapshot, current, false)
+	errs := lintPackagesE(policyBP, current, false)
+	warns := lintPackagesW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -64,7 +67,8 @@ func TestServices_EnabledAdditions_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Services: &Services{Enabled: common.ToPtr([]string{"svc-existing"})}}
 
-	errs, warns := lintServices(policyBP, nil, current, false)
+	errs := lintServicesE(policyBP, current, false)
+	warns := lintServicesW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -83,7 +87,8 @@ func TestServices_EnabledAdditions_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Services: &Services{Enabled: common.ToPtr([]string{"svc-existing"})}}
 
-	errs, warns := lintServices(policyBP, nil, current, true)
+	errs := lintServicesE(policyBP, current, true)
+	warns := lintServicesW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.ElementsMatch(t,
@@ -104,7 +109,8 @@ func TestServices_EnabledRemovals_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Services: &Services{Enabled: common.ToPtr([]string{"svc-keep", "svc-obsolete"})}}
 	current := &Customizations{Services: &Services{Enabled: common.ToPtr([]string{"svc-keep"})}}
 
-	errs, warns := lintServices(policyBP, snapshot, current, false)
+	errs := lintServicesE(policyBP, current, false)
+	warns := lintServicesW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -122,7 +128,8 @@ func TestServices_DisabledAdditions_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Services: &Services{Disabled: common.ToPtr([]string{"svc-existing"})}}
 
-	errs, warns := lintServices(policyBP, nil, current, false)
+	errs := lintServicesE(policyBP, current, false)
+	warns := lintServicesW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -141,7 +148,8 @@ func TestServices_DisabledAdditions_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Services: &Services{Disabled: common.ToPtr([]string{"svc-existing"})}}
 
-	errs, warns := lintServices(policyBP, nil, current, true)
+	errs := lintServicesE(policyBP, current, true)
+	warns := lintServicesW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.ElementsMatch(t,
@@ -162,7 +170,8 @@ func TestServices_DisabledRemovals_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Services: &Services{Disabled: common.ToPtr([]string{"svc-keep", "svc-obsolete"})}}
 	current := &Customizations{Services: &Services{Disabled: common.ToPtr([]string{"svc-keep"})}}
 
-	errs, warns := lintServices(policyBP, snapshot, current, false)
+	errs := lintServicesE(policyBP, current, false)
+	warns := lintServicesW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -180,7 +189,8 @@ func TestServices_MaskedAdditions_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Services: &Services{Masked: common.ToPtr([]string{"svc-existing"})}}
 
-	errs, warns := lintServices(policyBP, nil, current, false)
+	errs := lintServicesE(policyBP, current, false)
+	warns := lintServicesW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -199,7 +209,8 @@ func TestServices_MaskedAdditions_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Services: &Services{Masked: common.ToPtr([]string{"svc-existing"})}}
 
-	errs, warns := lintServices(policyBP, nil, current, true)
+	errs := lintServicesE(policyBP, current, true)
+	warns := lintServicesW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.ElementsMatch(t,
@@ -220,7 +231,8 @@ func TestServices_MaskedRemovals_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Services: &Services{Masked: common.ToPtr([]string{"svc-keep", "svc-obsolete"})}}
 	current := &Customizations{Services: &Services{Masked: common.ToPtr([]string{"svc-keep"})}}
 
-	errs, warns := lintServices(policyBP, snapshot, current, false)
+	errs := lintServicesE(policyBP, current, false)
+	warns := lintServicesW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -239,7 +251,8 @@ func TestFilesystems_Additions_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Filesystem: common.ToPtr([]Filesystem{{Mountpoint: "/existing", MinSize: 500}})}
 
-	errs, warns := lintFilesystems(policyBP, nil, current, false)
+	errs := lintFilesystemsE(policyBP, current, false)
+	warns := lintFilesystemsW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -259,7 +272,8 @@ func TestFilesystems_Additions_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Filesystem: common.ToPtr([]Filesystem{{Mountpoint: "/existing", MinSize: 500}})}
 
-	errs, warns := lintFilesystems(policyBP, nil, current, true)
+	errs := lintFilesystemsE(policyBP, current, true)
+	warns := lintFilesystemsW(policyBP, nil)
 
 	require.Empty(t, errs)
 	require.Empty(t, warns)
@@ -298,7 +312,8 @@ func TestFilesystems_Removals_FromSnapshot_Warns(t *testing.T) {
 	})}
 	current := &Customizations{Filesystem: common.ToPtr([]Filesystem{{Mountpoint: "/var/log", MinSize: 1000}})}
 
-	errs, warns := lintFilesystems(policyBP, snapshot, current, false)
+	errs := lintFilesystemsE(policyBP, current, false)
+	warns := lintFilesystemsW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -316,7 +331,8 @@ func TestKernel_NameAddition_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Kernel: &Kernel{Name: common.ToPtr("kernel-standard")}}
 
-	errs, warns := lintKernel(policyBP, nil, current, false)
+	errs := lintKernelE(policyBP, current, false)
+	warns := lintKernelW(policyBP, nil)
 	require.Len(t, errs, 1)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -334,7 +350,8 @@ func TestKernel_NameAddition_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Kernel: &Kernel{Name: common.ToPtr("kernel-standard")}}
 
-	errs, warns := lintKernel(policyBP, nil, current, true)
+	errs := lintKernelE(policyBP, current, true)
+	warns := lintKernelW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.NotNil(t, current.Kernel.Name)
@@ -352,7 +369,8 @@ func TestKernel_AppendAddition_NoFixup_Errors(t *testing.T) {
 	}
 	current := &Customizations{Kernel: &Kernel{Append: common.ToPtr("quiet splash")}}
 
-	errs, warns := lintKernel(policyBP, nil, current, false)
+	errs := lintKernelE(policyBP, current, false)
+	warns := lintKernelW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -371,7 +389,8 @@ func TestKernel_AppendAddition_Fixup_ResolvesErrors(t *testing.T) {
 	}
 	current := &Customizations{Kernel: &Kernel{Append: common.ToPtr("quiet splash")}}
 
-	errs, warns := lintKernel(policyBP, nil, current, true)
+	errs := lintKernelE(policyBP, current, true)
+	warns := lintKernelW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.NotNil(t, current.Kernel.Append)
@@ -391,7 +410,8 @@ func TestKernel_NameRemoval_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Kernel: &Kernel{Name: common.ToPtr("kernel-obsolete")}}
 	current := &Customizations{Kernel: &Kernel{Name: common.ToPtr("kernel-standard")}}
 
-	errs, warns := lintKernel(policyBP, snapshot, current, false)
+	errs := lintKernelE(policyBP, current, false)
+	warns := lintKernelW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -410,7 +430,8 @@ func TestKernel_AppendRemoval_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Kernel: &Kernel{Append: common.ToPtr("audit=1 obsolete=1")}}
 	current := &Customizations{Kernel: &Kernel{Append: common.ToPtr("audit=1")}}
 
-	errs, warns := lintKernel(policyBP, snapshot, current, false)
+	errs := lintKernelE(policyBP, current, false)
+	warns := lintKernelW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -428,7 +449,8 @@ func TestFIPS_EnabledAddition_NoFixup_Errors(t *testing.T) {
 	fipsFalse := false
 	current := &Customizations{Fips: &FIPS{Enabled: &fipsFalse}}
 
-	errs, warns := lintFIPS(policyBP, nil, current, false)
+	errs := lintFIPSE(policyBP, current, false)
+	warns := lintFIPSW(policyBP, nil)
 	require.Len(t, errs, 1)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -446,7 +468,8 @@ func TestFIPS_EnabledAddition_Fixup_ResolvesErrors(t *testing.T) {
 	fipsFalse := false
 	current := &Customizations{Fips: &FIPS{Enabled: &fipsFalse}}
 
-	errs, warns := lintFIPS(policyBP, nil, current, true)
+	errs := lintFIPSE(policyBP, current, true)
+	warns := lintFIPSW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.NotNil(t, current.Fips)
@@ -464,7 +487,8 @@ func TestFIPS_NotSet_Fixup_CreatesAndEnables(t *testing.T) {
 	}
 	current := &Customizations{} // No FIPS field set
 
-	errs, warns := lintFIPS(policyBP, nil, current, true)
+	errs := lintFIPSE(policyBP, current, true)
+	warns := lintFIPSW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.NotNil(t, current.Fips)
@@ -484,7 +508,8 @@ func TestFIPS_Removal_FromSnapshot_Warns(t *testing.T) {
 	snapshot := &Customizations{Fips: &FIPS{Enabled: &fipsTrue}}
 	current := &Customizations{Fips: &FIPS{Enabled: &fipsFalse}}
 
-	errs, warns := lintFIPS(policyBP, snapshot, current, false)
+	errs := lintFIPSE(policyBP, current, false)
+	warns := lintFIPSW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -503,7 +528,8 @@ func TestFIPS_DisabledInPolicy_SnapshotEnabled_Warns(t *testing.T) {
 	snapshot := &Customizations{Fips: &FIPS{Enabled: &fipsTrue}}
 	current := &Customizations{Fips: &FIPS{Enabled: &fipsFalse}}
 
-	errs, warns := lintFIPS(policyBP, snapshot, current, false)
+	errs := lintFIPSE(policyBP, current, false)
+	warns := lintFIPSW(policyBP, snapshot)
 	require.Empty(t, errs)
 	require.Len(t, warns, 1)
 	require.Equal(t, "Compliance", warns[0].Name)
@@ -519,7 +545,8 @@ func TestPackages_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 	current := &Customizations{Packages: common.ToPtr([]string{"pkg-existing"})}
 
 	// Step 1: open (fixup=false) -> expect errors for missing packages
-	errs, warns := lintPackages(policyBP, nil, current, false)
+	errs := lintPackagesE(policyBP, current, false)
+	warns := lintPackagesW(policyBP, nil)
 	require.Len(t, errs, 2)
 	require.Empty(t, warns)
 	require.Equal(t, "Compliance", errs[0].Name)
@@ -527,7 +554,8 @@ func TestPackages_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 	require.Contains(t, errs[1].Description, "package pkg-required-2 required by policy is not present")
 
 	// Step 2: user chooses fixup -> apply changes, no errors
-	errs, warns = lintPackages(policyBP, nil, current, true)
+	errs = lintPackagesE(policyBP, current, true)
+	warns = lintPackagesW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 	require.ElementsMatch(t,
@@ -536,7 +564,8 @@ func TestPackages_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 	)
 
 	// Step 3: open again (fixup=false) -> no errors now
-	errs, warns = lintPackages(policyBP, nil, current, false)
+	errs = lintPackagesE(policyBP, current, false)
+	warns = lintPackagesW(policyBP, nil)
 	require.Empty(t, errs)
 	require.Empty(t, warns)
 }

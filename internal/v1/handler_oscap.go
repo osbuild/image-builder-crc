@@ -306,16 +306,16 @@ func lintPackagesE(policyBP *blueprint.Blueprint, currentCust *Customizations, f
 func lintPackagesW(policyBP *blueprint.Blueprint, snapshotCust *Customizations) []BlueprintLintItem {
 	var warns []BlueprintLintItem
 
-	if policyBP == nil || snapshotCust == nil {
-		return warns
-	}
-
-	for _, pkg := range common.FromPtr(snapshotCust.Packages) {
-		if !slices.Contains(policyBP.GetPackagesEx(false), pkg) {
-			warns = append(warns, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("package %s is no longer required by policy", pkg),
-			})
+	// Check for obsolete packages from snapshot - even if policyBP is nil,
+	// as the policy might have changed to one without package requirements
+	if snapshotCust != nil {
+		for _, pkg := range common.FromPtr(snapshotCust.Packages) {
+			if policyBP == nil || !slices.Contains(policyBP.GetPackagesEx(false), pkg) {
+				warns = append(warns, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("package %s is no longer required by policy", pkg),
+				})
+			}
 		}
 	}
 	return warns
@@ -353,17 +353,20 @@ func lintFilesystemsE(policyBP *blueprint.Blueprint, currentCust *Customizations
 func lintFilesystemsW(policyBP *blueprint.Blueprint, snapshotCust *Customizations) []BlueprintLintItem {
 	var warns []BlueprintLintItem
 
-	if policyBP == nil || snapshotCust == nil {
-		return warns
-	}
-
-	policyFilesystems := policyBP.Customizations.GetFilesystems()
-	for _, fs := range common.FromPtr(snapshotCust.Filesystem) {
-		if !slices.ContainsFunc(policyFilesystems, func(fsc blueprint.FilesystemCustomization) bool { return fsc.Mountpoint == fs.Mountpoint }) {
-			warns = append(warns, BlueprintLintItem{
-				Name:        "Compliance",
-				Description: fmt.Sprintf("mountpoint %s is no longer required by policy", fs.Mountpoint),
-			})
+	// Check for obsolete filesystems from snapshot - even if policyBP is nil,
+	// as the policy might have changed to one without filesystem requirements
+	if snapshotCust != nil {
+		var policyFilesystems []blueprint.FilesystemCustomization
+		if policyBP != nil {
+			policyFilesystems = policyBP.Customizations.GetFilesystems()
+		}
+		for _, fs := range common.FromPtr(snapshotCust.Filesystem) {
+			if !slices.ContainsFunc(policyFilesystems, func(fsc blueprint.FilesystemCustomization) bool { return fsc.Mountpoint == fs.Mountpoint }) {
+				warns = append(warns, BlueprintLintItem{
+					Name:        "Compliance",
+					Description: fmt.Sprintf("mountpoint %s is no longer required by policy", fs.Mountpoint),
+				})
+			}
 		}
 	}
 	return warns
@@ -429,11 +432,16 @@ func lintServicesE(policyBP *blueprint.Blueprint, currentCust *Customizations, f
 func lintServicesW(policyBP *blueprint.Blueprint, snapshotCust *Customizations) []BlueprintLintItem {
 	var warns []BlueprintLintItem
 
-	if policyBP == nil || snapshotCust == nil || snapshotCust.Services == nil {
+	// Check for obsolete services from snapshot - even if policyBP is nil,
+	// as the policy might have changed to one without service requirements
+	if snapshotCust == nil || snapshotCust.Services == nil {
 		return warns
 	}
 
-	policyServices := policyBP.Customizations.GetServices()
+	var policyServices *blueprint.ServicesCustomization
+	if policyBP != nil {
+		policyServices = policyBP.Customizations.GetServices()
+	}
 
 	// Preserve expected order: enabled -> masked -> disabled
 	_, checkWarns := checkObsoleteServices(snapshotCust.Services.Enabled, "enabled", func(service string) bool {
@@ -586,18 +594,17 @@ func lintFIPSE(policyBP *blueprint.Blueprint, currentCust *Customizations, fixup
 // lintFIPSW validates FIPS settings from saved policy no longer required
 func lintFIPSW(policyBP *blueprint.Blueprint, snapshotCust *Customizations) []BlueprintLintItem {
 	var warns []BlueprintLintItem
-	if policyBP == nil {
-		return warns
-	}
 
-	// Determine policy FIPS requirement if present
-	var policyFIPS *bool
-	if policyBP.Customizations != nil {
-		policyFIPS = policyBP.Customizations.FIPS
-	}
-
-	// Warnings: saved policy had FIPS enabled previously but not now
+	// Check for obsolete FIPS from snapshot - even if policyBP is nil,
+	// as the policy might have changed to one without FIPS requirements
 	if snapshotCust != nil && snapshotCust.Fips != nil && snapshotCust.Fips.Enabled != nil && *snapshotCust.Fips.Enabled {
+		// Determine policy FIPS requirement if present
+		var policyFIPS *bool
+		if policyBP != nil && policyBP.Customizations != nil {
+			policyFIPS = policyBP.Customizations.FIPS
+		}
+
+		// Warnings: saved policy had FIPS enabled previously but not now
 		if policyFIPS == nil || !*policyFIPS {
 			warns = append(warns, BlueprintLintItem{
 				Name:        "Compliance",
