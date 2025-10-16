@@ -241,14 +241,12 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup 
 
 	policyBP, err := h.server.complianceClient.PolicyCustomizations(ctx.Request().Context(), major, minor, compl.PolicyId.String())
 	if err == compliance.ErrorTailoringNotFound {
-		if fixup {
-			return nil, nil, echo.NewHTTPError(http.StatusNotFound, err)
-		}
 		// Add error but continue processing (like old behavior)
 		allErrors = append(allErrors, BlueprintLintItem{
 			Name:        "Compliance",
 			Description: "Compliance policy does not have a definition for the latest minor version",
 		})
+		policyBP = nil
 	} else if err != nil {
 		return nil, nil, err
 	}
@@ -274,6 +272,11 @@ func (h *Handlers) lintOpenscap(ctx echo.Context, bpBody *Customizations, fixup 
 	allErrors = append(allErrors, errs...)
 	warns = lintFIPSW(policyBP, snapshotCust)
 	allWarnings = append(allWarnings, warns...)
+
+	// If we couldn't find the policy and fixup was requested, return error after processing warnings
+	if policyBP == nil && fixup {
+		return nil, nil, echo.NewHTTPError(http.StatusNotFound, compliance.ErrorTailoringNotFound)
+	}
 
 	return allErrors, allWarnings, nil
 }
@@ -330,19 +333,21 @@ func lintFilesystemsE(policyBP *blueprint.Blueprint, currentCust *Customizations
 	}
 
 	// Only check if policy actually defines filesystem requirements
-	for _, fsc := range policyBP.Customizations.GetFilesystems() {
-		if currentCust == nil || currentCust.Filesystem == nil || !slices.ContainsFunc(*currentCust.Filesystem, func(fs Filesystem) bool { return fs.Mountpoint == fsc.Mountpoint }) {
-			if !fixup {
-				errs = append(errs, BlueprintLintItem{
-					Name:        "Compliance",
-					Description: fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint),
-				})
-			}
-			if fixup {
-				currentCust.Filesystem = common.ToPtr(append(common.FromPtr(currentCust.Filesystem), Filesystem{
-					Mountpoint: fsc.Mountpoint,
-					MinSize:    fsc.MinSize,
-				}))
+	if policyBP.Customizations != nil {
+		for _, fsc := range policyBP.Customizations.GetFilesystems() {
+			if currentCust == nil || currentCust.Filesystem == nil || !slices.ContainsFunc(*currentCust.Filesystem, func(fs Filesystem) bool { return fs.Mountpoint == fsc.Mountpoint }) {
+				if !fixup {
+					errs = append(errs, BlueprintLintItem{
+						Name:        "Compliance",
+						Description: fmt.Sprintf("mountpoint %s required by policy is not present", fsc.Mountpoint),
+					})
+				}
+				if fixup {
+					currentCust.Filesystem = common.ToPtr(append(common.FromPtr(currentCust.Filesystem), Filesystem{
+						Mountpoint: fsc.Mountpoint,
+						MinSize:    fsc.MinSize,
+					}))
+				}
 			}
 		}
 	}
@@ -380,47 +385,49 @@ func lintServicesE(policyBP *blueprint.Blueprint, currentCust *Customizations, f
 		return errs
 	}
 
-	services := policyBP.Customizations.GetServices()
-	if services != nil {
-		for _, e := range services.Enabled {
-			if currentCust == nil || currentCust.Services == nil || currentCust.Services.Enabled == nil || !slices.Contains(*currentCust.Services.Enabled, e) {
-				if !fixup {
-					errs = append(errs, BlueprintLintItem{
-						Name:        "Compliance",
-						Description: fmt.Sprintf("service %s required as enabled by policy is not present", e),
-					})
-				}
-				if fixup {
-					currentCust.Services = common.ToPtr(common.FromPtr(currentCust.Services))
-					currentCust.Services.Enabled = common.ToPtr(append(common.FromPtr(currentCust.Services.Enabled), e))
-				}
-			}
-		}
-		for _, m := range services.Masked {
-			if currentCust == nil || currentCust.Services == nil || currentCust.Services.Masked == nil || !slices.Contains(*currentCust.Services.Masked, m) {
-				if !fixup {
-					errs = append(errs, BlueprintLintItem{
-						Name:        "Compliance",
-						Description: fmt.Sprintf("service %s required as masked by policy is not present", m),
-					})
-				}
-				if fixup {
-					currentCust.Services = common.ToPtr(common.FromPtr(currentCust.Services))
-					currentCust.Services.Masked = common.ToPtr(append(common.FromPtr(currentCust.Services.Masked), m))
+	if policyBP.Customizations != nil {
+		services := policyBP.Customizations.GetServices()
+		if services != nil {
+			for _, e := range services.Enabled {
+				if currentCust == nil || currentCust.Services == nil || currentCust.Services.Enabled == nil || !slices.Contains(*currentCust.Services.Enabled, e) {
+					if !fixup {
+						errs = append(errs, BlueprintLintItem{
+							Name:        "Compliance",
+							Description: fmt.Sprintf("service %s required as enabled by policy is not present", e),
+						})
+					}
+					if fixup {
+						currentCust.Services = common.ToPtr(common.FromPtr(currentCust.Services))
+						currentCust.Services.Enabled = common.ToPtr(append(common.FromPtr(currentCust.Services.Enabled), e))
+					}
 				}
 			}
-		}
-		for _, d := range services.Disabled {
-			if currentCust == nil || currentCust.Services == nil || currentCust.Services.Disabled == nil || !slices.Contains(*currentCust.Services.Disabled, d) {
-				if !fixup {
-					errs = append(errs, BlueprintLintItem{
-						Name:        "Compliance",
-						Description: fmt.Sprintf("service %s required as disabled by policy is not present", d),
-					})
+			for _, m := range services.Masked {
+				if currentCust == nil || currentCust.Services == nil || currentCust.Services.Masked == nil || !slices.Contains(*currentCust.Services.Masked, m) {
+					if !fixup {
+						errs = append(errs, BlueprintLintItem{
+							Name:        "Compliance",
+							Description: fmt.Sprintf("service %s required as masked by policy is not present", m),
+						})
+					}
+					if fixup {
+						currentCust.Services = common.ToPtr(common.FromPtr(currentCust.Services))
+						currentCust.Services.Masked = common.ToPtr(append(common.FromPtr(currentCust.Services.Masked), m))
+					}
 				}
-				if fixup {
-					currentCust.Services = common.ToPtr(common.FromPtr(currentCust.Services))
-					currentCust.Services.Disabled = common.ToPtr(append(common.FromPtr(currentCust.Services.Disabled), d))
+			}
+			for _, d := range services.Disabled {
+				if currentCust == nil || currentCust.Services == nil || currentCust.Services.Disabled == nil || !slices.Contains(*currentCust.Services.Disabled, d) {
+					if !fixup {
+						errs = append(errs, BlueprintLintItem{
+							Name:        "Compliance",
+							Description: fmt.Sprintf("service %s required as disabled by policy is not present", d),
+						})
+					}
+					if fixup {
+						currentCust.Services = common.ToPtr(common.FromPtr(currentCust.Services))
+						currentCust.Services.Disabled = common.ToPtr(append(common.FromPtr(currentCust.Services.Disabled), d))
+					}
 				}
 			}
 		}
@@ -477,8 +484,6 @@ func checkObsoleteServices(services *[]string, serviceType string, isStillRequir
 	}
 	return nil, warns
 }
-
-
 
 // lintKernelE validates kernel settings required by current policy but missing from current blueprint
 func lintKernelE(policyBP *blueprint.Blueprint, currentCust *Customizations, fixup bool) []BlueprintLintItem {
