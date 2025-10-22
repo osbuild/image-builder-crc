@@ -147,11 +147,6 @@ jobs:
             --local \
             -o yaml > processed-templates/image-builder.yml
 
-          oc process -f templates/iqe-trigger-integration.yml \
-            -p IMAGE_TAG=image_tag \
-            --local \
-            -o yaml > processed-templates/iqe-trigger-integration.yml
-
       - uses: stackrox/kube-linter-action@v1.0.5
         with:
           directory: processed-templates
