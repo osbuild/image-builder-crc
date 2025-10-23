@@ -37,19 +37,41 @@ const (
 func rhRepos(ids []string, urls []string) (res []content_sources.ApiRepositoryResponse) {
 	if slices.Contains(urls, "https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os") || slices.Contains(ids, RepoBaseID) {
 		res = append(res, content_sources.ApiRepositoryResponse{
-			GpgKey:   common.ToPtr(RhelGPG),
-			Uuid:     common.ToPtr(RepoBaseID),
-			Url:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os"),
-			Snapshot: common.ToPtr(true),
-			Name:     common.ToPtr("baseos"),
+			GpgKey:            common.ToPtr(RhelGPG),
+			Uuid:              common.ToPtr(RepoBaseID),
+			Url:               common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os"),
+			LatestSnapshotUrl: common.ToPtr("http://snappy-url/snappy/baseos"),
+			Snapshot:          common.ToPtr(true),
+			Name:              common.ToPtr("baseos"),
 		})
 	}
 
 	if slices.Contains(urls, "https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os") || slices.Contains(ids, RepoAppstrID) {
 		res = append(res, content_sources.ApiRepositoryResponse{
+			GpgKey:            common.ToPtr(RhelGPG),
+			Uuid:              common.ToPtr(RepoAppstrID),
+			Url:               common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os"),
+			LatestSnapshotUrl: common.ToPtr("http://snappy-url/snappy/appstream"),
+			Snapshot:          common.ToPtr(true),
+			Name:              common.ToPtr("appstream"),
+		})
+	}
+
+	if slices.Contains(urls, "https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os") {
+		res = append(res, content_sources.ApiRepositoryResponse{
+			GpgKey:   common.ToPtr(RhelGPG),
+			Uuid:     common.ToPtr(RepoBaseID),
+			Url:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
+			Snapshot: common.ToPtr(true),
+			Name:     common.ToPtr("baseos"),
+		})
+	}
+
+	if slices.Contains(urls, "https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os") {
+		res = append(res, content_sources.ApiRepositoryResponse{
 			GpgKey:   common.ToPtr(RhelGPG),
 			Uuid:     common.ToPtr(RepoAppstrID),
-			Url:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os"),
+			Url:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
 			Snapshot: common.ToPtr(true),
 			Name:     common.ToPtr("appstream"),
 		})
