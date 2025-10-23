@@ -383,7 +383,6 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	if err != nil {
 		return err
 	}
-
 	snapshotCust := extractSnapshotCustomizations(blueprintEntry)
 	var lintErrors []BlueprintLintItem
 	var lintWarnings []BlueprintLintItem
@@ -415,7 +414,6 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 
 	return ctx.JSON(http.StatusOK, blueprintResponse)
 }
-
 
 // extractSnapshotCustomizations extracts saved policy customizations from a blueprint entry's service snapshots
 func extractSnapshotCustomizations(blueprintEntry *db.BlueprintEntry) *Customizations {
