@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -116,7 +117,12 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		repositories = append(repositories, snapshotRepos...)
 
 		// A sanity check to make sure there's a snapshot for each repo
-		expected := len(buildRepositories(arch, composeRequest.ImageRequests[0].ImageType))
+		expected := 0
+		for _, r := range arch.Repositories {
+			if len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) {
+				expected++
+			}
+		}
 		if len(repositories) != expected {
 			return ComposeResponse{}, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
 		}
@@ -126,7 +132,10 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			return ComposeResponse{}, err
 		}
 	} else {
-		repositories = buildRepositories(arch, composeRequest.ImageRequests[0].ImageType)
+		repositories, err = h.buildRepositoriesWithLatestSnapshots(ctx, arch, composeRequest.ImageRequests[0].ImageType)
+		if err != nil {
+			return ComposeResponse{}, err
+		}
 	}
 
 	uploadOptions, imageType, err := h.buildUploadOptions(ctx, composeRequest.ImageRequests[0].UploadRequest, composeRequest.ImageRequests[0].ImageType)
@@ -218,21 +227,108 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	}, nil
 }
 
-func buildRepositories(arch *distribution.Architecture, imageType ImageTypes) []composer.Repository {
+// buildRepositoriesWithLatestSnapshots transforms the CDN repository URLs to the latest snapshot URL
+// or falls back to CDN if snapshot is not available
+func (h *Handlers) buildRepositoriesWithLatestSnapshots(ctx echo.Context, arch *distribution.Architecture, imageType ImageTypes) ([]composer.Repository, error) {
 	var repositories []composer.Repository
+	var cdnRepoURLs []string
+	var errs []error
+
 	for _, r := range arch.Repositories {
-		// If no image type tags are defined for the repo, add the repo
-		if len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(imageType)) {
-			repositories = append(repositories, composer.Repository{
-				Baseurl:  r.Baseurl,
-				Metalink: r.Metalink,
-				Rhsm:     common.ToPtr(r.Rhsm),
-				Gpgkey:   r.GpgKey,
-				CheckGpg: r.CheckGpg,
-			})
+		if (len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(imageType))) && r.Rhsm {
+			cdnRepoURLs = append(cdnRepoURLs, *r.Baseurl)
 		}
 	}
-	return repositories
+
+	var repoMap map[string]content_sources.ApiRepositoryResponse
+	if len(cdnRepoURLs) > 0 {
+		var err error
+		repoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), cdnRepoURLs, nil, false)
+		if err != nil {
+			return nil, fmt.Errorf("unable to retrieve get repositories: %w", err)
+		}
+	}
+
+	for _, r := range arch.Repositories {
+		if len(r.ImageTypeTags) > 0 && !slices.Contains(r.ImageTypeTags, string(imageType)) {
+			continue
+		}
+
+		composerRepo, err := h.buildComposerRepositoryWithLatestSnapshot(r, repoMap)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		repositories = append(repositories, composerRepo)
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+	return repositories, nil
+}
+
+func (h *Handlers) buildComposerRepositoryWithLatestSnapshot(r distribution.Repository, repoMap map[string]content_sources.ApiRepositoryResponse) (composer.Repository, error) {
+	composerRepo := composer.Repository{
+		Baseurl:  r.Baseurl,
+		Metalink: r.Metalink,
+		Rhsm:     common.ToPtr(r.Rhsm),
+		CheckGpg: r.CheckGpg,
+		Gpgkey:   r.GpgKey,
+	}
+
+	if !r.Rhsm {
+		return composerRepo, nil
+	}
+
+	var matchedRepo *content_sources.ApiRepositoryResponse
+	for _, apiRepo := range repoMap {
+		if apiRepo.Url != nil && *apiRepo.Url == *r.Baseurl {
+			matchedRepo = &apiRepo
+			break
+		}
+	}
+
+	if matchedRepo != nil && matchedRepo.LatestSnapshotUrl != nil && *matchedRepo.LatestSnapshotUrl != "" {
+		repoURL, err := url.Parse(*matchedRepo.LatestSnapshotUrl)
+		if err != nil {
+			return composer.Repository{}, fmt.Errorf("failed to parse snapshot URL for repository %s: %w", *r.Baseurl, err)
+		}
+		snapshotRepo, err := h.buildComposerRepositoryFromSnapshot(repoURL.Path, false, matchedRepo)
+		if err != nil {
+			return composer.Repository{}, err
+		}
+		return snapshotRepo, nil
+	}
+
+	return composerRepo, nil
+}
+
+func (h *Handlers) buildComposerRepositoryFromSnapshot(snapshotPath string, usePrefix bool, apiRepo *content_sources.ApiRepositoryResponse) (composer.Repository, error) {
+	composerRepo := composer.Repository{}
+
+	var baseurl string
+	if usePrefix {
+		baseurl = h.server.csReposURL.JoinPath(h.server.csReposPrefix, snapshotPath).String()
+	} else {
+		baseurl = h.server.csReposURL.JoinPath(snapshotPath).String()
+	}
+	composerRepo.Baseurl = common.ToPtr(baseurl)
+	composerRepo.Rhsm = common.ToPtr(false)
+
+	if apiRepo != nil {
+		if apiRepo.GpgKey != nil && *apiRepo.GpgKey != "" {
+			composerRepo.Gpgkey = apiRepo.GpgKey
+		}
+		if composerRepo.Gpgkey != nil && *composerRepo.Gpgkey != "" {
+			composerRepo.CheckGpg = common.ToPtr(true)
+		}
+		composerRepo.ModuleHotfixes = apiRepo.ModuleHotfixes
+		composerRepo.CheckRepoGpg = apiRepo.MetadataVerification
+	}
+
+	return composerRepo, nil
 }
 
 func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string, repoIDs []string, external bool, snapshotDate string) ([]composer.Repository, []composer.CustomRepository, error) {
@@ -287,26 +383,20 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 
 	var repositories []composer.Repository
 	var customRepositories []composer.CustomRepository
+	var errs []error
+
 	for _, snap := range *csSnapshots.Data {
 		repo, ok := repoMap[*snap.RepositoryUuid]
 		if !ok {
-			return repositories, customRepositories, fmt.Errorf("returned snapshot %v unexpected repository id %v", *snap.Match.Uuid, *snap.RepositoryUuid)
+			errs = append(errs, fmt.Errorf("returned snapshot %v unexpected repository id %v", *snap.Match.Uuid, *snap.RepositoryUuid))
+			continue
 		}
 
-		composerRepo := composer.Repository{
-			// unlike latest snapshot URLs, the repository path of a snapshot match doesn't contain the path prefix
-			Baseurl: common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.Match.RepositoryPath).String()),
-			Rhsm:    common.ToPtr(false),
+		composerRepo, err := h.buildComposerRepositoryFromSnapshot(*snap.Match.RepositoryPath, true, &repo)
+		if err != nil {
+			errs = append(errs, err)
+			continue
 		}
-
-		if repo.GpgKey != nil && *repo.GpgKey != "" {
-			composerRepo.Gpgkey = repo.GpgKey
-		}
-		if composerRepo.Gpgkey != nil && *composerRepo.Gpgkey != "" {
-			composerRepo.CheckGpg = common.ToPtr(true)
-		}
-		composerRepo.ModuleHotfixes = repo.ModuleHotfixes
-		composerRepo.CheckRepoGpg = repo.MetadataVerification
 		repositories = append(repositories, composerRepo)
 
 		// Don't enable custom repositories, as they require further setup to be useable.
@@ -323,6 +413,10 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		customRepo.ModuleHotfixes = repo.ModuleHotfixes
 		customRepo.CheckRepoGpg = repo.MetadataVerification
 		customRepositories = append(customRepositories, customRepo)
+	}
+
+	if len(errs) > 0 {
+		return repositories, customRepositories, errors.Join(errs...)
 	}
 
 	ctx.Logger().Debugf("Resolved snapshots: %v", repositories)
