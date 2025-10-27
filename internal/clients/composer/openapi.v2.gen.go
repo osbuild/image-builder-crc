@@ -259,6 +259,7 @@ type BlueprintCustomizations struct {
 	// Directories Directories to create in the final artifact
 	Directories *[]Directory `json:"directories,omitempty"`
 	Disk        *Disk        `json:"disk,omitempty"`
+	DNF         *DNF         `json:"dnf,omitempty"`
 
 	// Fdo FIDO device onboard configuration
 	Fdo *FDO `json:"fdo,omitempty"`
@@ -644,6 +645,7 @@ type Customizations struct {
 	CustomRepositories *[]CustomRepository `json:"custom_repositories,omitempty"`
 	Directories        *[]Directory        `json:"directories,omitempty"`
 	Disk               *Disk               `json:"disk,omitempty"`
+	DNF                *DNF                `json:"dnf,omitempty"`
 	EnabledModules     *[]Module           `json:"enabled_modules,omitempty"`
 
 	// Fdo FIDO device onboard configuration
@@ -703,6 +705,17 @@ type Customizations struct {
 // uses LVM, even when there are no extra mountpoints. 'raw' uses raw partitions
 // even when there are one or more mountpoints.
 type CustomizationsPartitioningMode string
+
+// DNF defines model for DNF.
+type DNF struct {
+	Config *DNFConfig `json:"config,omitempty"`
+}
+
+// DNFConfig defines model for DNFConfig.
+type DNFConfig struct {
+	// SetReleasever Set the releasever DNF variable, tying the system to a specific release of RHEL
+	SetReleasever *bool `json:"set_releasever,omitempty"`
+}
 
 // DNFPluginConfig defines model for DNFPluginConfig.
 type DNFPluginConfig struct {
