@@ -27,6 +27,9 @@ type ApiArtifact struct {
 
 // ApiContentUnitSearchRequest defines model for api.ContentUnitSearchRequest.
 type ApiContentUnitSearchRequest struct {
+	// Date Optional date to search in dated snapshots of the listed repositories.
+	Date *string `json:"date,omitempty"`
+
 	// ExactNames List of names to search using an exact match
 	ExactNames *[]string `json:"exact_names,omitempty"`
 
@@ -859,6 +862,9 @@ type ApiSnapshotResponse struct {
 
 	// CreatedAt Datetime the snapshot was created
 	CreatedAt *string `json:"created_at,omitempty"`
+
+	// DetectedOsVersion Release version of the repository (BaseOS)
+	DetectedOsVersion *string `json:"detected_os_version,omitempty"`
 
 	// RemovedCounts Count of each content type
 	RemovedCounts *map[string]int64 `json:"removed_counts,omitempty"`
