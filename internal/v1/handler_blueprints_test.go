@@ -1497,10 +1497,14 @@ func TestLintBlueprint(t *testing.T) {
 	}))
 
 	cases := []struct {
-		blueprint  v1.BlueprintBody
-		lintErrors []v1.BlueprintLintItem
+		name         string
+		blueprint    v1.BlueprintBody
+		snapshot     *json.RawMessage
+		lintErrors   []v1.BlueprintLintItem
+		lintWarnings []v1.BlueprintLintItem
 	}{
 		{
+			name: "missing packages and services",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-8",
 				Customizations: v1.Customizations{
@@ -1515,6 +1519,7 @@ func TestLintBlueprint(t *testing.T) {
 			},
 		},
 		{
+			name: "all requirements satisfied",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-8",
 				Customizations: v1.Customizations{
@@ -1535,9 +1540,9 @@ func TestLintBlueprint(t *testing.T) {
 					},
 				},
 			},
-			lintErrors: []v1.BlueprintLintItem{},
 		},
 		{
+			name: "missing filesystems and kernel params",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-8",
 				Customizations: v1.Customizations{
@@ -1551,6 +1556,7 @@ func TestLintBlueprint(t *testing.T) {
 			},
 		},
 		{
+			name: "filesystems and kernel params satisfied",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-8",
 				Customizations: v1.Customizations{
@@ -1570,9 +1576,9 @@ func TestLintBlueprint(t *testing.T) {
 					},
 				},
 			},
-			lintErrors: []v1.BlueprintLintItem{},
 		},
 		{
+			name: "unsupported minor version",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-89",
 				Customizations: v1.Customizations{
@@ -1584,6 +1590,7 @@ func TestLintBlueprint(t *testing.T) {
 			},
 		},
 		{
+			name: "unsupported minor version duplicate",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-89",
 				Customizations: v1.Customizations{
@@ -1596,6 +1603,7 @@ func TestLintBlueprint(t *testing.T) {
 			},
 		},
 		{
+			name: "minimal policy missing package",
 			blueprint: v1.BlueprintBody{
 				Distribution: "rhel-8",
 				Customizations: v1.Customizations{
@@ -1606,21 +1614,79 @@ func TestLintBlueprint(t *testing.T) {
 				{Name: "Compliance", Description: "package required-by-compliance required by policy is not present"},
 			},
 		},
+		{
+			name: "policy changes generate warnings",
+			blueprint: v1.BlueprintBody{
+				Distribution: "rhel-8",
+				Customizations: v1.Customizations{
+					Openscap: &oscap3, // Minimal policy - only requires "required-by-compliance" package
+					Packages: &[]string{
+						"required-by-compliance", // Still required by minimal policy
+					},
+				},
+			},
+			snapshot: func() *json.RawMessage {
+				// Create snapshot with previous policy's customizations (more than current policy requires)
+				snapshotData := map[string]interface{}{
+					"compliance": map[string]interface{}{
+						"policy_id": mocks.PolicyID, // Previous policy was the full one
+						"policy_customizations": map[string]interface{}{
+							"packages": []string{"required-by-compliance", "obsolete-package"},
+							"services": map[string]interface{}{
+								"enabled":  []string{"enabled-required-by-compliance", "obsolete-enabled-service"},
+								"masked":   []string{"masked-required-by-compliance", "obsolete-masked-service"},
+								"disabled": []string{"obsolete-disabled-service"},
+							},
+							"filesystem": []map[string]interface{}{
+								{"mountpoint": "/tmp", "min_size": 1000},
+								{"mountpoint": "/obsolete", "min_size": 500},
+							},
+							"kernel": map[string]interface{}{
+								"name":   "obsolete-kernel",
+								"append": "obsolete-param=1",
+							},
+							"fips": map[string]interface{}{
+								"enabled": true,
+							},
+						},
+					},
+				}
+				data, _ := json.Marshal(snapshotData)
+				rawMsg := json.RawMessage(data)
+				return &rawMsg
+			}(),
+			lintWarnings: []v1.BlueprintLintItem{
+				{Name: "Compliance", Description: "package obsolete-package is no longer required by policy"},
+				{Name: "Compliance", Description: "service enabled-required-by-compliance is no longer required as enabled by policy"},
+				{Name: "Compliance", Description: "service obsolete-enabled-service is no longer required as enabled by policy"},
+				{Name: "Compliance", Description: "service masked-required-by-compliance is no longer required as masked by policy"},
+				{Name: "Compliance", Description: "service obsolete-masked-service is no longer required as masked by policy"},
+				{Name: "Compliance", Description: "service obsolete-disabled-service is no longer required as disabled by policy"},
+				{Name: "Compliance", Description: "mountpoint /tmp is no longer required by policy"},
+				{Name: "Compliance", Description: "mountpoint /obsolete is no longer required by policy"},
+				{Name: "Compliance", Description: "kernel name obsolete-kernel is no longer required by policy"},
+				{Name: "Compliance", Description: "kernel command line parameter 'obsolete-param=1' is no longer required by policy"},
+				{Name: "Compliance", Description: "FIPS is no longer required by policy"},
+			},
+		},
 	}
 
 	for idx, c := range cases {
-		fmt.Printf("TestLintBlueprint case %d\n", idx)
+		fmt.Printf("TestLintBlueprint case %d: %s\n", idx, c.name)
 
 		bpID := uuid.New()
 		bpjson, err := json.Marshal(c.blueprint)
 		require.NoError(t, err)
-		require.NoError(t, srv.DB.InsertBlueprint(context.Background(), bpID, uuid.New(), "000000", "000000", "bp1", "", bpjson, nil, nil))
+
+		snapshotBytes := []byte(common.FromPtr(c.snapshot))
+		require.NoError(t, srv.DB.InsertBlueprint(context.Background(), bpID, uuid.New(), "000000", "000000", "bp1", "", bpjson, nil, snapshotBytes))
 
 		var result v1.BlueprintResponse
 		respStatusCode, body := tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srv.URL, bpID), &tutils.AuthString0)
 		require.Equal(t, http.StatusOK, respStatusCode)
 		require.NoError(t, json.Unmarshal([]byte(body), &result))
 		require.ElementsMatch(t, c.lintErrors, result.Lint.Errors)
+		require.ElementsMatch(t, c.lintWarnings, result.Lint.Warnings)
 
 		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000"))
 	}
