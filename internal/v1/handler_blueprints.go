@@ -252,6 +252,51 @@ func WithRedactedFiles(paths []string) BlueprintBodyOption {
 	}
 }
 
+// validateBlueprintRequest performs common validation for blueprint requests
+// used by both CreateBlueprint and UpdateBlueprint handlers
+func validateBlueprintRequest(ctx echo.Context, blueprintRequest *CreateBlueprintRequest, existingUsers []User) error {
+	// Validate blueprint name
+	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
+		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
+			Errors: []HTTPError{{
+				Title:  "Invalid blueprint name",
+				Detail: blueprintInvalidNameDetail,
+			}},
+		})
+	}
+
+	// Validate users if present
+	users := blueprintRequest.Customizations.Users
+	if users != nil {
+		for i, user := range *users {
+			// For update operations, merge with existing users first
+			if existingUsers != nil {
+				err := (*users)[i].MergeForUpdate(existingUsers)
+				if err != nil {
+					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid user",
+							Detail: err.Error(),
+						}},
+					})
+				}
+			} else {
+				// For create operations, validate directly
+				if err := user.Valid(); err != nil {
+					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid user",
+							Detail: err.Error(),
+						}},
+					})
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
@@ -272,13 +317,9 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 	}
 
-	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
+	// Validate blueprint request (name and users)
+	if err := validateBlueprintRequest(ctx, &blueprintRequest, nil); err != nil {
+		return err
 	}
 
 	id := uuid.New()
@@ -292,21 +333,6 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 	desc := ""
 	if blueprintRequest.Description != nil {
 		desc = *blueprintRequest.Description
-	}
-
-	users := blueprintRequest.Customizations.Users
-	if users != nil {
-		for _, user := range *users {
-			// Make sure every user has either ssh key or password set
-			if err := user.Valid(); err != nil {
-				return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-					Errors: []HTTPError{{
-						Title:  "Invalid user",
-						Detail: err.Error(),
-					}},
-				})
-			}
-		}
 	}
 
 	blueprint, err := BlueprintFromAPI(blueprintRequest)
@@ -526,15 +552,8 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		return err
 	}
 
-	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
-	}
-
+	// Get existing blueprint for user validation if users are present
+	var existingUsers []User
 	if blueprintRequest.Customizations.Users != nil {
 		be, err := h.server.db.GetBlueprint(ctx.Request().Context(), blueprintId, userID.OrgID(), nil)
 		if err != nil {
@@ -549,18 +568,13 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		}
 
 		if eb.Customizations.Users != nil {
-			for i := range *blueprintRequest.Customizations.Users {
-				err := (*blueprintRequest.Customizations.Users)[i].MergeForUpdate(*eb.Customizations.Users)
-				if err != nil {
-					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-						Errors: []HTTPError{{
-							Title:  "Invalid user",
-							Detail: err.Error(),
-						}},
-					})
-				}
-			}
+			existingUsers = *eb.Customizations.Users
 		}
+	}
+
+	// Validate blueprint request (name and users with merge logic for updates)
+	if err := validateBlueprintRequest(ctx, &blueprintRequest, existingUsers); err != nil {
+		return err
 	}
 
 	blueprint, err := BlueprintFromAPI(blueprintRequest)
