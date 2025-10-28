@@ -122,7 +122,7 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
 	err = json.Unmarshal([]byte(resp), &jsonResp)
 	require.NoError(t, err)
-	require.Equal(t, "Invalid blueprint name", jsonResp.Errors[0].Title)
+	require.Equal(t, "blueprint name rule violation", jsonResp.Errors[0].Title)
 
 	// Test the content template ID was saved to the blueprint
 	blueprintResp, err := v1.BlueprintFromEntry(be)
@@ -504,7 +504,7 @@ func TestHandlers_UpdateBlueprint(t *testing.T) {
 	require.Equal(t, http.StatusUnprocessableEntity, statusCode)
 	err = json.Unmarshal([]byte(resp), &jsonResp)
 	require.NoError(t, err)
-	require.Equal(t, "Invalid blueprint name", jsonResp.Errors[0].Title)
+	require.Equal(t, "blueprint name rule violation", jsonResp.Errors[0].Title)
 
 	// Test non-existing blueprint
 	body["name"] = "Changing to correct body"
