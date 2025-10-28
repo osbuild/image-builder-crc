@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -24,6 +26,7 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/images/pkg/crypt"
+	"github.com/osbuild/images/pkg/customizations/fsnode"
 )
 
 var (
@@ -252,17 +255,32 @@ func WithRedactedFiles(paths []string) BlueprintBodyOption {
 	}
 }
 
+// ValidationError represents a validation error that should be returned as HTTP 422
+type ValidationError struct {
+	HTTPErrorList HTTPErrorList
+}
+
+func (e ValidationError) Error() string {
+	if len(e.HTTPErrorList.Errors) > 0 {
+		return e.HTTPErrorList.Errors[0].Detail
+	}
+	return "validation error"
+}
+
 // validateBlueprintRequest performs common validation for blueprint requests
 // used by both CreateBlueprint and UpdateBlueprint handlers
+// Returns a ValidationError if validation fails, nil if validation passes
 func validateBlueprintRequest(ctx echo.Context, blueprintRequest *CreateBlueprintRequest, existingUsers []User) error {
 	// Validate blueprint name
 	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
+		return ValidationError{
+			HTTPErrorList: HTTPErrorList{
+				Errors: []HTTPError{{
+					Title:  "Invalid blueprint name",
+					Detail: blueprintInvalidNameDetail,
+				}},
+			},
+		}
 	}
 
 	// Validate users if present
@@ -273,22 +291,181 @@ func validateBlueprintRequest(ctx echo.Context, blueprintRequest *CreateBlueprin
 			if existingUsers != nil {
 				err := (*users)[i].MergeForUpdate(existingUsers)
 				if err != nil {
-					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-						Errors: []HTTPError{{
-							Title:  "Invalid user",
-							Detail: err.Error(),
-						}},
-					})
+					return ValidationError{
+						HTTPErrorList: HTTPErrorList{
+							Errors: []HTTPError{{
+								Title:  "Invalid user",
+								Detail: err.Error(),
+							}},
+						},
+					}
 				}
 			} else {
 				// For create operations, validate directly
 				if err := user.Valid(); err != nil {
-					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
+					return ValidationError{
+						HTTPErrorList: HTTPErrorList{
+							Errors: []HTTPError{{
+								Title:  "Invalid user",
+								Detail: err.Error(),
+							}},
+						},
+					}
+				}
+			}
+		}
+	}
+
+	// Validate Files using images library fsnode validation
+	if blueprintRequest.Customizations.Files != nil {
+		for _, file := range *blueprintRequest.Customizations.Files {
+			// Convert API types to fsnode types for validation
+			var mode *os.FileMode
+			if file.Mode != nil {
+				// Parse octal mode string to os.FileMode
+				if modeVal, err := strconv.ParseUint(*file.Mode, 8, 32); err == nil {
+					m := os.FileMode(modeVal)
+					mode = &m
+				}
+			}
+
+			var user interface{}
+			if file.User != nil {
+				// Handle union type - could be string or int64
+				if userStr, err := file.User.AsFileUser0(); err == nil {
+					user = userStr
+				} else if userInt, err := file.User.AsFileUser1(); err == nil {
+					user = userInt
+				}
+			}
+
+			var group interface{}
+			if file.Group != nil {
+				// Handle union type - could be string or int64
+				if groupStr, err := file.Group.AsFileGroup0(); err == nil {
+					group = groupStr
+				} else if groupInt, err := file.Group.AsFileGroup1(); err == nil {
+					group = groupInt
+				}
+			}
+
+			var data []byte
+			if file.Data != nil {
+				data = []byte(*file.Data)
+			}
+
+			// Use fsnode.NewFile for validation - this handles all path, mode, user, group validation
+			_, err := fsnode.NewFile(file.Path, mode, user, group, data)
+			if err != nil {
+				return ValidationError{
+					HTTPErrorList: HTTPErrorList{
 						Errors: []HTTPError{{
-							Title:  "Invalid user",
-							Detail: err.Error(),
+							Title:  "Invalid file customization",
+							Detail: fmt.Sprintf("file %q: %s", file.Path, err.Error()),
 						}},
-					})
+					},
+				}
+			}
+		}
+	}
+
+	// Validate Directories using images library fsnode validation
+	if blueprintRequest.Customizations.Directories != nil {
+		for _, dir := range *blueprintRequest.Customizations.Directories {
+			// Convert API types to fsnode types for validation
+			var mode *os.FileMode
+			if dir.Mode != nil {
+				// Parse octal mode string to os.FileMode
+				if modeVal, err := strconv.ParseUint(*dir.Mode, 8, 32); err == nil {
+					m := os.FileMode(modeVal)
+					mode = &m
+				}
+			}
+
+			var user interface{}
+			if dir.User != nil {
+				// Handle union type - could be string or int64
+				if userStr, err := dir.User.AsDirectoryUser0(); err == nil {
+					user = userStr
+				} else if userInt, err := dir.User.AsDirectoryUser1(); err == nil {
+					user = userInt
+				}
+			}
+
+			var group interface{}
+			if dir.Group != nil {
+				// Handle union type - could be string or int64
+				if groupStr, err := dir.Group.AsDirectoryGroup0(); err == nil {
+					group = groupStr
+				} else if groupInt, err := dir.Group.AsDirectoryGroup1(); err == nil {
+					group = groupInt
+				}
+			}
+
+			ensureParents := false
+			if dir.EnsureParents != nil {
+				ensureParents = *dir.EnsureParents
+			}
+
+			// Use fsnode.NewDirectory for validation - this handles all path, mode, user, group validation
+			_, err := fsnode.NewDirectory(dir.Path, mode, user, group, ensureParents)
+			if err != nil {
+				return ValidationError{
+					HTTPErrorList: HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid directory customization",
+							Detail: fmt.Sprintf("directory %q: %s", dir.Path, err.Error()),
+						}},
+					},
+				}
+			}
+		}
+	}
+
+	// Validate Filesystem using basic path validation patterns from fsnode library
+	if blueprintRequest.Customizations.Filesystem != nil {
+		for _, fs := range *blueprintRequest.Customizations.Filesystem {
+			// Use the same path validation logic as fsnode (following library patterns)
+			if fs.Mountpoint == "" {
+				return ValidationError{
+					HTTPErrorList: HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid filesystem customization",
+							Detail: "mountpoint must not be empty",
+						}},
+					},
+				}
+			}
+			if fs.Mountpoint[0] != '/' {
+				return ValidationError{
+					HTTPErrorList: HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid filesystem customization",
+							Detail: fmt.Sprintf("mountpoint %q must be absolute", fs.Mountpoint),
+						}},
+					},
+				}
+			}
+			if fs.Mountpoint != filepath.Clean(fs.Mountpoint) {
+				return ValidationError{
+					HTTPErrorList: HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid filesystem customization",
+							Detail: fmt.Sprintf("mountpoint %q must be canonical", fs.Mountpoint),
+						}},
+					},
+				}
+			}
+
+			// Validate minimum size is reasonable
+			if fs.MinSize > 0 && fs.MinSize < 1024*1024 { // 1MB minimum
+				return ValidationError{
+					HTTPErrorList: HTTPErrorList{
+						Errors: []HTTPError{{
+							Title:  "Invalid filesystem customization",
+							Detail: fmt.Sprintf("mountpoint %q minimum size must be at least 1MB", fs.Mountpoint),
+						}},
+					},
 				}
 			}
 		}
@@ -319,6 +496,9 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 
 	// Validate blueprint request (name and users)
 	if err := validateBlueprintRequest(ctx, &blueprintRequest, nil); err != nil {
+		if validationErr, ok := err.(ValidationError); ok {
+			return ctx.JSON(http.StatusUnprocessableEntity, validationErr.HTTPErrorList)
+		}
 		return err
 	}
 
@@ -574,6 +754,9 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 
 	// Validate blueprint request (name and users with merge logic for updates)
 	if err := validateBlueprintRequest(ctx, &blueprintRequest, existingUsers); err != nil {
+		if validationErr, ok := err.(ValidationError); ok {
+			return ctx.JSON(http.StatusUnprocessableEntity, validationErr.HTTPErrorList)
+		}
 		return err
 	}
 
