@@ -27,9 +27,7 @@ import (
 )
 
 var (
-	blueprintNameRegex         = regexp.MustCompile(`\S+`)
 	customizationUserNameRegex = regexp.MustCompile(`\S+`)
-	blueprintInvalidNameDetail = "The blueprint name must contain at least two characters."
 )
 
 type BlueprintBody struct {
@@ -39,6 +37,46 @@ type BlueprintBody struct {
 }
 
 type BlueprintBodyOption func(*BlueprintBody)
+
+// toHTTPErrorList converts a joined error (containing blueprintRuleError types) to HTTPErrorList
+func toHTTPErrorList(err error) HTTPErrorList {
+	if err == nil {
+		return HTTPErrorList{Errors: nil}
+	}
+
+	var httpErrors []HTTPError
+
+	// Recursively collect all rule errors from joined errors
+	var collectErrors func(error)
+	collectErrors = func(e error) {
+		// First, check if this is a joined error and unwrap it to collect all errors
+		if joinedErr, ok := e.(interface{ Unwrap() []error }); ok {
+			for _, unwrapped := range joinedErr.Unwrap() {
+				collectErrors(unwrapped)
+			}
+			return
+		}
+
+		// Try errors.As with value type (for both direct and wrapped blueprintRuleError values)
+		var ve blueprintRuleError
+		if errors.As(e, &ve) {
+			httpErrors = append(httpErrors, HTTPError{
+				Title:  ve.title,
+				Detail: ve.detail,
+			})
+			return
+		}
+
+		// For non-blueprintRuleError types, create a generic blueprint rule error
+		httpErrors = append(httpErrors, HTTPError{
+			Title:  "blueprint rule error",
+			Detail: e.Error(),
+		})
+	}
+
+	collectErrors(err)
+	return HTTPErrorList{Errors: httpErrors}
+}
 
 func (u *User) CryptPassword() error {
 	// Prevent empty and already hashed password  from being hashed
@@ -276,13 +314,21 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 	}
 
-	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
+	// Check blueprint rules (name and users)
+	if err := CheckBlueprintRules(ctx, &blueprintRequest, nil); err != nil {
+		// Check if error contains rule errors by using toHTTPErrorList
+		// which properly handles joined errors by unwrapping them
+		errorList := toHTTPErrorList(err)
+		// If toHTTPErrorList found rule errors, return 422
+		// Check if any error is a blueprint rule error (not the generic fallback)
+		for _, httpErr := range errorList.Errors {
+			if httpErr.Title != "blueprint rule error" {
+				return ctx.JSON(http.StatusUnprocessableEntity, errorList)
+			}
+		}
+		// If all errors are generic, this shouldn't happen from CheckBlueprintRules
+		// but return the error as-is for safety
+		return err
 	}
 
 	id := uuid.New()
@@ -296,21 +342,6 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 	desc := ""
 	if blueprintRequest.Description != nil {
 		desc = *blueprintRequest.Description
-	}
-
-	users := blueprintRequest.Customizations.Users
-	if users != nil {
-		for _, user := range *users {
-			// Make sure every user has either ssh key or password set
-			if err := user.Valid(); err != nil {
-				return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-					Errors: []HTTPError{{
-						Title:  "Invalid user",
-						Detail: err.Error(),
-					}},
-				})
-			}
-		}
 	}
 
 	blueprint, err := BlueprintFromAPI(blueprintRequest)
@@ -533,15 +564,8 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		return err
 	}
 
-	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
-	}
-
+	// Get existing blueprint for user validation if users are present
+	var existingUsers []User
 	if blueprintRequest.Customizations.Users != nil {
 		be, err := h.server.db.GetBlueprint(ctx.Request().Context(), blueprintId, userID.OrgID(), nil)
 		if err != nil {
@@ -556,18 +580,25 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		}
 
 		if eb.Customizations.Users != nil {
-			for i := range *blueprintRequest.Customizations.Users {
-				err := (*blueprintRequest.Customizations.Users)[i].MergeForUpdate(*eb.Customizations.Users)
-				if err != nil {
-					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-						Errors: []HTTPError{{
-							Title:  "Invalid user",
-							Detail: err.Error(),
-						}},
-					})
-				}
+			existingUsers = *eb.Customizations.Users
+		}
+	}
+
+	// Check blueprint rules (name and users with merge logic for updates)
+	if err := CheckBlueprintRules(ctx, &blueprintRequest, existingUsers); err != nil {
+		// Check if error contains rule errors by using toHTTPErrorList
+		// which properly handles joined errors by unwrapping them
+		errorList := toHTTPErrorList(err)
+		// If toHTTPErrorList found rule errors, return 422
+		// Check if any error is a blueprint rule error (not the generic fallback)
+		for _, httpErr := range errorList.Errors {
+			if httpErr.Title != "blueprint rule error" {
+				return ctx.JSON(http.StatusUnprocessableEntity, errorList)
 			}
 		}
+		// If all errors are generic, this shouldn't happen from CheckBlueprintRules
+		// but return the error as-is for safety
+		return err
 	}
 
 	blueprint, err := BlueprintFromAPI(blueprintRequest)
