@@ -16,21 +16,21 @@ var (
 	blueprintInvalidNameDetail = "The blueprint name must contain at least two characters."
 )
 
-// ValidationError represents a validation error that should be returned as HTTP 422
-type ValidationError struct {
+// RuleViolationError represents a rule violation that should be returned as HTTP 422
+type RuleViolationError struct {
 	HTTPErrorList HTTPErrorList
 }
 
-func (e ValidationError) Error() string {
+func (e RuleViolationError) Error() string {
 	if len(e.HTTPErrorList.Errors) > 0 {
 		return e.HTTPErrorList.Errors[0].Detail
 	}
-	return "validation error"
+	return "rule violation"
 }
 
-// newValidationError creates a ValidationError with the given title and detail
-func newValidationError(title, detail string) ValidationError {
-	return ValidationError{
+// newRuleViolation creates a RuleViolationError with the given title and detail
+func newRuleViolation(title, detail string) RuleViolationError {
+	return RuleViolationError{
 		HTTPErrorList: HTTPErrorList{
 			Errors: []HTTPError{{
 				Title:  title,
@@ -109,60 +109,60 @@ func parseDirectoryGroup(dirGroup *Directory_Group) interface{} {
 	return nil
 }
 
-// BlueprintValidator interface for the Chain of Responsibility pattern
-type BlueprintValidator interface {
-	Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error
+// BlueprintRuleChecker interface for the Chain of Responsibility pattern
+type BlueprintRuleChecker interface {
+	CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error
 }
 
-// ValidationChain manages a chain of blueprint validators
-type ValidationChain struct {
-	validators []BlueprintValidator
+// RuleCheckingChain manages a chain of blueprint rule checkers
+type RuleCheckingChain struct {
+	checkers []BlueprintRuleChecker
 }
 
-// Validate executes all validators in the chain and collects all errors
-func (vc *ValidationChain) Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
-	var allErrors []HTTPError
-
-	for _, validator := range vc.validators {
-		if err := validator.Validate(ctx, request, existingUsers); err != nil {
-			if validationErr, ok := err.(ValidationError); ok {
-				// Collect all errors from this validator
-				allErrors = append(allErrors, validationErr.HTTPErrorList.Errors...)
+// CheckRules executes all rule checkers in the chain and collects all violations
+func (rc *RuleCheckingChain) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
+	var allViolations []HTTPError
+	
+	for _, checker := range rc.checkers {
+		if err := checker.CheckRules(ctx, request, existingUsers); err != nil {
+			if ruleViolationErr, ok := err.(RuleViolationError); ok {
+				// Collect all violations from this checker
+				allViolations = append(allViolations, ruleViolationErr.HTTPErrorList.Errors...)
 			} else {
 				// Handle unexpected error types
-				allErrors = append(allErrors, HTTPError{
-					Title:  "Validation Error",
+				allViolations = append(allViolations, HTTPError{
+					Title:  "Rule Violation",
 					Detail: err.Error(),
 				})
 			}
 		}
 	}
-
-	if len(allErrors) > 0 {
-		return ValidationError{
+	
+	if len(allViolations) > 0 {
+		return RuleViolationError{
 			HTTPErrorList: HTTPErrorList{
-				Errors: allErrors,
+				Errors: allViolations,
 			},
 		}
 	}
-
+	
 	return nil
 }
 
-// NameValidator validates blueprint names
-type NameValidator struct{}
+// NameRuleChecker checks blueprint name rules
+type NameRuleChecker struct{}
 
-func (nv *NameValidator) Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
+func (nrc *NameRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
 	if !blueprintNameRegex.MatchString(request.Name) {
-		return newValidationError("Invalid blueprint name", blueprintInvalidNameDetail)
+		return newRuleViolation("Blueprint name rule violation", blueprintInvalidNameDetail)
 	}
 	return nil
 }
 
-// UserValidator validates blueprint users
-type UserValidator struct{}
+// UserRuleChecker checks blueprint user rules
+type UserRuleChecker struct{}
 
-func (uv *UserValidator) Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
+func (urc *UserRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
 	users := request.Customizations.Users
 	if users == nil {
 		return nil
@@ -177,23 +177,23 @@ func (uv *UserValidator) Validate(ctx echo.Context, request *CreateBlueprintRequ
 		}
 
 		if err != nil {
-			return newValidationError("Invalid user", err.Error())
+			return newRuleViolation("User rule violation", err.Error())
 		}
 	}
 	return nil
 }
 
-// FileValidator validates blueprint file customizations
-type FileValidator struct{}
+// FileRuleChecker checks blueprint file customization rules
+type FileRuleChecker struct{}
 
-func (fv *FileValidator) Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
+func (frc *FileRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
 	files := request.Customizations.Files
 	if files == nil {
 		return nil
 	}
 
 	for _, file := range *files {
-		// Convert API types to fsnode types for validation
+		// Convert API types to fsnode types for rule checking
 		mode := parseOctalMode(file.Mode)
 		user := parseFileUser(file.User)
 		group := parseFileGroup(file.Group)
@@ -203,26 +203,26 @@ func (fv *FileValidator) Validate(ctx echo.Context, request *CreateBlueprintRequ
 			data = []byte(*file.Data)
 		}
 
-		// Use fsnode.NewFile for validation - this handles all path, mode, user, group validation
+		// Use fsnode.NewFile for rule checking - this handles all path, mode, user, group rules
 		_, err := fsnode.NewFile(file.Path, mode, user, group, data)
 		if err != nil {
-			return newValidationError("Invalid file customization", fmt.Sprintf("file %q: %s", file.Path, err.Error()))
+			return newRuleViolation("File rule violation", fmt.Sprintf("file %q: %s", file.Path, err.Error()))
 		}
 	}
 	return nil
 }
 
-// DirectoryValidator validates blueprint directory customizations
-type DirectoryValidator struct{}
+// DirectoryRuleChecker checks blueprint directory customization rules
+type DirectoryRuleChecker struct{}
 
-func (dv *DirectoryValidator) Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
+func (drc *DirectoryRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
 	directories := request.Customizations.Directories
 	if directories == nil {
 		return nil
 	}
 
 	for _, dir := range *directories {
-		// Convert API types to fsnode types for validation
+		// Convert API types to fsnode types for rule checking
 		mode := parseOctalMode(dir.Mode)
 		user := parseDirectoryUser(dir.User)
 		group := parseDirectoryGroup(dir.Group)
@@ -232,60 +232,60 @@ func (dv *DirectoryValidator) Validate(ctx echo.Context, request *CreateBlueprin
 			ensureParents = *dir.EnsureParents
 		}
 
-		// Use fsnode.NewDirectory for validation - this handles all path, mode, user, group validation
+		// Use fsnode.NewDirectory for rule checking - this handles all path, mode, user, group rules
 		_, err := fsnode.NewDirectory(dir.Path, mode, user, group, ensureParents)
 		if err != nil {
-			return newValidationError("Invalid directory customization", fmt.Sprintf("directory %q: %s", dir.Path, err.Error()))
+			return newRuleViolation("Directory rule violation", fmt.Sprintf("directory %q: %s", dir.Path, err.Error()))
 		}
 	}
 	return nil
 }
 
-// FilesystemValidator validates blueprint filesystem customizations
-type FilesystemValidator struct{}
+// FilesystemRuleChecker checks blueprint filesystem customization rules
+type FilesystemRuleChecker struct{}
 
-func (fsv *FilesystemValidator) Validate(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
+func (fsrc *FilesystemRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
 	filesystem := request.Customizations.Filesystem
 	if filesystem == nil {
 		return nil
 	}
 
 	for _, fs := range *filesystem {
-		// Use the same path validation logic as fsnode (following library patterns)
+		// Use the same path rule checking logic as fsnode (following library patterns)
 		if fs.Mountpoint == "" {
-			return newValidationError("Invalid filesystem customization", "mountpoint must not be empty")
+			return newRuleViolation("Filesystem rule violation", "mountpoint must not be empty")
 		}
 		if fs.Mountpoint[0] != '/' {
-			return newValidationError("Invalid filesystem customization", fmt.Sprintf("mountpoint %q must be absolute", fs.Mountpoint))
+			return newRuleViolation("Filesystem rule violation", fmt.Sprintf("mountpoint %q must be absolute", fs.Mountpoint))
 		}
 		if fs.Mountpoint != filepath.Clean(fs.Mountpoint) {
-			return newValidationError("Invalid filesystem customization", fmt.Sprintf("mountpoint %q must be canonical", fs.Mountpoint))
+			return newRuleViolation("Filesystem rule violation", fmt.Sprintf("mountpoint %q must be canonical", fs.Mountpoint))
 		}
 
-		// Validate minimum size is reasonable
+		// Check minimum size is reasonable
 		if fs.MinSize > 0 && fs.MinSize < 1024*1024 { // 1MB minimum
-			return newValidationError("Invalid filesystem customization", fmt.Sprintf("mountpoint %q minimum size must be at least 1MB", fs.Mountpoint))
+			return newRuleViolation("Filesystem rule violation", fmt.Sprintf("mountpoint %q minimum size must be at least 1MB", fs.Mountpoint))
 		}
 	}
 	return nil
 }
 
-// NewBlueprintValidationChain creates a new validation chain with all validators
-func NewBlueprintValidationChain() *ValidationChain {
-	return &ValidationChain{
-		validators: []BlueprintValidator{
-			&NameValidator{},
-			&UserValidator{},
-			&FileValidator{},
-			&DirectoryValidator{},
-			&FilesystemValidator{},
+// NewBlueprintRuleChecker creates a new rule checking chain with all checkers
+func NewBlueprintRuleChecker() *RuleCheckingChain {
+	return &RuleCheckingChain{
+		checkers: []BlueprintRuleChecker{
+			&NameRuleChecker{},
+			&UserRuleChecker{},
+			&FileRuleChecker{},
+			&DirectoryRuleChecker{},
+			&FilesystemRuleChecker{},
 		},
 	}
 }
 
-// ValidateBlueprintRequest performs common validation for blueprint requests
+// CheckBlueprintRules performs common rule checking for blueprint requests
 // using the Chain of Responsibility pattern
-func ValidateBlueprintRequest(ctx echo.Context, blueprintRequest *CreateBlueprintRequest, existingUsers []User) error {
-	chain := NewBlueprintValidationChain()
-	return chain.Validate(ctx, blueprintRequest, existingUsers)
+func CheckBlueprintRules(ctx echo.Context, blueprintRequest *CreateBlueprintRequest, existingUsers []User) error {
+	chain := NewBlueprintRuleChecker()
+	return chain.CheckRules(ctx, blueprintRequest, existingUsers)
 }

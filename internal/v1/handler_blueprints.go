@@ -270,10 +270,10 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 	}
 
-	// Validate blueprint request (name and users)
-	if err := ValidateBlueprintRequest(ctx, &blueprintRequest, nil); err != nil {
-		if validationErr, ok := err.(ValidationError); ok {
-			return ctx.JSON(http.StatusUnprocessableEntity, validationErr.HTTPErrorList)
+	// Check blueprint rules (name and users)
+	if err := CheckBlueprintRules(ctx, &blueprintRequest, nil); err != nil {
+		if ruleViolationErr, ok := err.(RuleViolationError); ok {
+			return ctx.JSON(http.StatusUnprocessableEntity, ruleViolationErr.HTTPErrorList)
 		}
 		return err
 	}
@@ -528,10 +528,10 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		}
 	}
 
-	// Validate blueprint request (name and users with merge logic for updates)
-	if err := ValidateBlueprintRequest(ctx, &blueprintRequest, existingUsers); err != nil {
-		if validationErr, ok := err.(ValidationError); ok {
-			return ctx.JSON(http.StatusUnprocessableEntity, validationErr.HTTPErrorList)
+	// Check blueprint rules (name and users with merge logic for updates)
+	if err := CheckBlueprintRules(ctx, &blueprintRequest, existingUsers); err != nil {
+		if ruleViolationErr, ok := err.(RuleViolationError); ok {
+			return ctx.JSON(http.StatusUnprocessableEntity, ruleViolationErr.HTTPErrorList)
 		}
 		return err
 	}
