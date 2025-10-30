@@ -122,7 +122,7 @@ type RuleCheckingChain struct {
 // CheckRules executes all rule checkers in the chain and collects all violations
 func (rc *RuleCheckingChain) CheckRules(ctx echo.Context, request *CreateBlueprintRequest, existingUsers []User) error {
 	var allViolations []HTTPError
-	
+
 	for _, checker := range rc.checkers {
 		if err := checker.CheckRules(ctx, request, existingUsers); err != nil {
 			if ruleViolationErr, ok := err.(RuleViolationError); ok {
@@ -137,7 +137,7 @@ func (rc *RuleCheckingChain) CheckRules(ctx echo.Context, request *CreateBluepri
 			}
 		}
 	}
-	
+
 	if len(allViolations) > 0 {
 		return RuleViolationError{
 			HTTPErrorList: HTTPErrorList{
@@ -145,7 +145,7 @@ func (rc *RuleCheckingChain) CheckRules(ctx echo.Context, request *CreateBluepri
 			},
 		}
 	}
-	
+
 	return nil
 }
 
@@ -192,6 +192,7 @@ func (frc *FileRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprin
 		return nil
 	}
 
+	var violations []HTTPError
 	for _, file := range *files {
 		// Convert API types to fsnode types for rule checking
 		mode := parseOctalMode(file.Mode)
@@ -206,7 +207,18 @@ func (frc *FileRuleChecker) CheckRules(ctx echo.Context, request *CreateBlueprin
 		// Use fsnode.NewFile for rule checking - this handles all path, mode, user, group rules
 		_, err := fsnode.NewFile(file.Path, mode, user, group, data)
 		if err != nil {
-			return newRuleViolation("File rule violation", fmt.Sprintf("file %q: %s", file.Path, err.Error()))
+			violations = append(violations, HTTPError{
+				Title:  "File rule violation",
+				Detail: fmt.Sprintf("file %q: %s", file.Path, err.Error()),
+			})
+		}
+	}
+
+	if len(violations) > 0 {
+		return RuleViolationError{
+			HTTPErrorList: HTTPErrorList{
+				Errors: violations,
+			},
 		}
 	}
 	return nil
@@ -221,6 +233,7 @@ func (drc *DirectoryRuleChecker) CheckRules(ctx echo.Context, request *CreateBlu
 		return nil
 	}
 
+	var violations []HTTPError
 	for _, dir := range *directories {
 		// Convert API types to fsnode types for rule checking
 		mode := parseOctalMode(dir.Mode)
@@ -235,7 +248,18 @@ func (drc *DirectoryRuleChecker) CheckRules(ctx echo.Context, request *CreateBlu
 		// Use fsnode.NewDirectory for rule checking - this handles all path, mode, user, group rules
 		_, err := fsnode.NewDirectory(dir.Path, mode, user, group, ensureParents)
 		if err != nil {
-			return newRuleViolation("Directory rule violation", fmt.Sprintf("directory %q: %s", dir.Path, err.Error()))
+			violations = append(violations, HTTPError{
+				Title:  "Directory rule violation",
+				Detail: fmt.Sprintf("directory %q: %s", dir.Path, err.Error()),
+			})
+		}
+	}
+
+	if len(violations) > 0 {
+		return RuleViolationError{
+			HTTPErrorList: HTTPErrorList{
+				Errors: violations,
+			},
 		}
 	}
 	return nil
@@ -250,21 +274,40 @@ func (fsrc *FilesystemRuleChecker) CheckRules(ctx echo.Context, request *CreateB
 		return nil
 	}
 
+	var violations []HTTPError
 	for _, fs := range *filesystem {
 		// Use the same path rule checking logic as fsnode (following library patterns)
 		if fs.Mountpoint == "" {
-			return newRuleViolation("Filesystem rule violation", "mountpoint must not be empty")
-		}
-		if fs.Mountpoint[0] != '/' {
-			return newRuleViolation("Filesystem rule violation", fmt.Sprintf("mountpoint %q must be absolute", fs.Mountpoint))
-		}
-		if fs.Mountpoint != filepath.Clean(fs.Mountpoint) {
-			return newRuleViolation("Filesystem rule violation", fmt.Sprintf("mountpoint %q must be canonical", fs.Mountpoint))
+			violations = append(violations, HTTPError{
+				Title:  "Filesystem rule violation",
+				Detail: "mountpoint must not be empty",
+			})
+		} else if fs.Mountpoint[0] != '/' {
+			violations = append(violations, HTTPError{
+				Title:  "Filesystem rule violation",
+				Detail: fmt.Sprintf("mountpoint %q must be absolute", fs.Mountpoint),
+			})
+		} else if fs.Mountpoint != filepath.Clean(fs.Mountpoint) {
+			violations = append(violations, HTTPError{
+				Title:  "Filesystem rule violation",
+				Detail: fmt.Sprintf("mountpoint %q must be canonical", fs.Mountpoint),
+			})
 		}
 
 		// Check minimum size is reasonable
 		if fs.MinSize > 0 && fs.MinSize < 1024*1024 { // 1MB minimum
-			return newRuleViolation("Filesystem rule violation", fmt.Sprintf("mountpoint %q minimum size must be at least 1MB", fs.Mountpoint))
+			violations = append(violations, HTTPError{
+				Title:  "Filesystem rule violation",
+				Detail: fmt.Sprintf("mountpoint %q minimum size must be at least 1MB", fs.Mountpoint),
+			})
+		}
+	}
+
+	if len(violations) > 0 {
+		return RuleViolationError{
+			HTTPErrorList: HTTPErrorList{
+				Errors: violations,
+			},
 		}
 	}
 	return nil

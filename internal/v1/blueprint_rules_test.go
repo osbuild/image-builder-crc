@@ -19,10 +19,13 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 
 	// Test cases structure
 	testCases := []struct {
-		name           string
-		customizations map[string]interface{}
-		expectError    bool
-		errorTitle     string
+		name                 string
+		customizations       map[string]interface{}
+		expectError          bool
+		errorTitle           string
+		expectMultipleErrors bool
+		expectedErrorCount   int
+		expectedErrors       []v1.HTTPError
 	}{
 		// Files - Positive cases
 		{
@@ -166,6 +169,60 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 			expectError: true,
 			errorTitle:  "Filesystem rule violation",
 		},
+		// Multiple violations - test that all violations are collected and returned
+		{
+			name: "multiple file violations - two invalid files",
+			customizations: map[string]interface{}{
+				"files": []map[string]interface{}{
+					{"path": "relative.txt", "data": "content"}, // relative path
+					{"path": "/etc/config/", "data": "content"}, // trailing slash
+				},
+			},
+			expectError:          true,
+			expectMultipleErrors: true,
+			expectedErrorCount:   2,
+			expectedErrors: []v1.HTTPError{
+				{
+					Title:  "File rule violation",
+					Detail: `file "relative.txt": path must be absolute`,
+				},
+				{
+					Title:  "File rule violation",
+					Detail: `file "/etc/config/": path must not end with a slash`,
+				},
+			},
+		},
+		{
+			name: "multiple violations across different types",
+			customizations: map[string]interface{}{
+				"files": []map[string]interface{}{
+					{"path": "badfile.txt", "data": "content"}, // relative path
+				},
+				"directories": []map[string]interface{}{
+					{"path": "baddir"}, // relative path
+				},
+				"filesystem": []map[string]interface{}{
+					{"mountpoint": "var", "min_size": 1073741824}, // relative mountpoint
+				},
+			},
+			expectError:          true,
+			expectMultipleErrors: true,
+			expectedErrorCount:   3,
+			expectedErrors: []v1.HTTPError{
+				{
+					Title:  "File rule violation",
+					Detail: `file "badfile.txt": path must be absolute`,
+				},
+				{
+					Title:  "Directory rule violation",
+					Detail: `directory "baddir": path must be absolute`,
+				},
+				{
+					Title:  "Filesystem rule violation",
+					Detail: `mountpoint "var" must be absolute`,
+				},
+			},
+		},
 	}
 
 	// Run test cases
@@ -201,7 +258,27 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 				err := json.Unmarshal([]byte(resp), &jsonResp)
 				require.NoError(t, err)
 				require.NotEmpty(t, jsonResp.Errors)
-				require.Equal(t, tc.errorTitle, jsonResp.Errors[0].Title)
+
+				if tc.expectMultipleErrors {
+					require.Equal(t, tc.expectedErrorCount, len(jsonResp.Errors))
+
+					// If expectedErrors is specified, check each error in detail
+					if len(tc.expectedErrors) > 0 {
+						require.Equal(t, len(tc.expectedErrors), len(jsonResp.Errors))
+						for i, expectedError := range tc.expectedErrors {
+							require.Equal(t, expectedError.Title, jsonResp.Errors[i].Title)
+							require.Equal(t, expectedError.Detail, jsonResp.Errors[i].Detail)
+						}
+					} else {
+						// For multiple errors without specific expectations, verify all are rule violations
+						for _, error := range jsonResp.Errors {
+							require.NotEmpty(t, error.Title)
+							require.NotEmpty(t, error.Detail)
+						}
+					}
+				} else {
+					require.Equal(t, tc.errorTitle, jsonResp.Errors[0].Title)
+				}
 			} else {
 				// Should succeed
 				require.Equal(t, http.StatusCreated, statusCode)
