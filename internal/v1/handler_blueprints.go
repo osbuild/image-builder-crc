@@ -27,9 +27,7 @@ import (
 )
 
 var (
-	blueprintNameRegex         = regexp.MustCompile(`\S+`)
 	customizationUserNameRegex = regexp.MustCompile(`\S+`)
-	blueprintInvalidNameDetail = "The blueprint name must contain at least two characters."
 )
 
 type BlueprintBody struct {
@@ -276,13 +274,12 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		}
 	}
 
-	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
+	// Check blueprint rules (name and users)
+	if err := CheckBlueprintRules(ctx, &blueprintRequest, nil); err != nil {
+		if ruleViolationErr, ok := err.(RuleViolationError); ok {
+			return ctx.JSON(http.StatusUnprocessableEntity, ruleViolationErr.HTTPErrorList)
+		}
+		return err
 	}
 
 	id := uuid.New()
@@ -296,21 +293,6 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 	desc := ""
 	if blueprintRequest.Description != nil {
 		desc = *blueprintRequest.Description
-	}
-
-	users := blueprintRequest.Customizations.Users
-	if users != nil {
-		for _, user := range *users {
-			// Make sure every user has either ssh key or password set
-			if err := user.Valid(); err != nil {
-				return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-					Errors: []HTTPError{{
-						Title:  "Invalid user",
-						Detail: err.Error(),
-					}},
-				})
-			}
-		}
 	}
 
 	blueprint, err := BlueprintFromAPI(blueprintRequest)
@@ -533,15 +515,8 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		return err
 	}
 
-	if !blueprintNameRegex.MatchString(blueprintRequest.Name) {
-		return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-			Errors: []HTTPError{{
-				Title:  "Invalid blueprint name",
-				Detail: blueprintInvalidNameDetail,
-			}},
-		})
-	}
-
+	// Get existing blueprint for user validation if users are present
+	var existingUsers []User
 	if blueprintRequest.Customizations.Users != nil {
 		be, err := h.server.db.GetBlueprint(ctx.Request().Context(), blueprintId, userID.OrgID(), nil)
 		if err != nil {
@@ -556,18 +531,16 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		}
 
 		if eb.Customizations.Users != nil {
-			for i := range *blueprintRequest.Customizations.Users {
-				err := (*blueprintRequest.Customizations.Users)[i].MergeForUpdate(*eb.Customizations.Users)
-				if err != nil {
-					return ctx.JSON(http.StatusUnprocessableEntity, HTTPErrorList{
-						Errors: []HTTPError{{
-							Title:  "Invalid user",
-							Detail: err.Error(),
-						}},
-					})
-				}
-			}
+			existingUsers = *eb.Customizations.Users
 		}
+	}
+
+	// Check blueprint rules (name and users with merge logic for updates)
+	if err := CheckBlueprintRules(ctx, &blueprintRequest, existingUsers); err != nil {
+		if ruleViolationErr, ok := err.(RuleViolationError); ok {
+			return ctx.JSON(http.StatusUnprocessableEntity, ruleViolationErr.HTTPErrorList)
+		}
+		return err
 	}
 
 	blueprint, err := BlueprintFromAPI(blueprintRequest)
