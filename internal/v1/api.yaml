@@ -1279,6 +1279,7 @@ components:
         - gcp
         - guest-image
         - image-installer
+        - network-installer
         - oci
         - pxe-tar-xz
         - vsphere

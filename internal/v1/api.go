@@ -143,6 +143,7 @@ const (
 	ImageTypesGcp               ImageTypes = "gcp"
 	ImageTypesGuestImage        ImageTypes = "guest-image"
 	ImageTypesImageInstaller    ImageTypes = "image-installer"
+	ImageTypesNetworkInstaller  ImageTypes = "network-installer"
 	ImageTypesOci               ImageTypes = "oci"
 	ImageTypesPxeTarXz          ImageTypes = "pxe-tar-xz"
 	ImageTypesRhelEdgeCommit    ImageTypes = "rhel-edge-commit"
