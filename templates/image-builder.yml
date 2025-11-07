@@ -218,7 +218,11 @@ objects:
                else c.request->'customizations'->'kernel' end as kernel,
           case when c.request->'customizations'->'firewall'='{}' then 'null'
                else c.request->'customizations'->'firewall' end as firewall,
-          jsonb_array_length(c.request->'customizations'->'users') as num_users
+          jsonb_array_length(c.request->'customizations'->'users') as num_users,
+          c.request->'aap_registration' as aap_registration,
+          (select jsonb_agg(file)
+           from jsonb_array_elements(coalesce(c.request->'customizations'->'files', '[]'::jsonb)) as file
+           where file->>'path' in ('/etc/systemd/system/register-satellite.service', '/usr/local/sbin/register-satellite')) as satellite_registration
         from
           composes c
           left outer join blueprint_versions v on c.blueprint_version_id = v.id
