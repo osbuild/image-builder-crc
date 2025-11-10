@@ -113,6 +113,7 @@ const (
 	ImageTypesIotSimplifiedInstaller ImageTypes = "iot-simplified-installer"
 	ImageTypesLiveInstaller          ImageTypes = "live-installer"
 	ImageTypesMinimalRaw             ImageTypes = "minimal-raw"
+	ImageTypesNetworkInstaller       ImageTypes = "network-installer"
 	ImageTypesOci                    ImageTypes = "oci"
 	ImageTypesPxeTarXz               ImageTypes = "pxe-tar-xz"
 	ImageTypesVsphere                ImageTypes = "vsphere"
