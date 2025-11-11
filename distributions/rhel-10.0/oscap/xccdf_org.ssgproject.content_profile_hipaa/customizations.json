@@ -22,7 +22,6 @@
     "enabled": [
       "auditd",
       "crond",
-      "crond",
       "rsyslog"
     ],
     "masked": [
