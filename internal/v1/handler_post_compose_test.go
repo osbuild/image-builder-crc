@@ -2255,24 +2255,16 @@ func TestComposeCustomizations(t *testing.T) {
 					ImageType:    composer.ImageTypesGuestImage,
 					Repositories: []composer.Repository{
 						{
-							Baseurl:     common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-							Rhsm:        common.ToPtr(true),
-							CheckGpg:    common.ToPtr(true),
-							Gpgkey:      common.ToPtr(mocks.RhelGPG),
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
 						},
 						{
-							Baseurl:     common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-							Rhsm:        common.ToPtr(true),
-							CheckGpg:    common.ToPtr(true),
-							Gpgkey:      common.ToPtr(mocks.RhelGPG),
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
 						},
 					},
 					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
@@ -3143,6 +3135,197 @@ WantedBy=basic.target
 		require.NoError(t, err)
 		require.Equal(t, id, result.Id)
 		// compare expected compose request with actual receieved compose request
+		require.Equal(t, payload.composerRequest, composerRequest)
+		composerRequest = composer.ComposeRequest{}
+	}
+}
+
+func TestComposeWithLatestSnapshots(t *testing.T) {
+	var composeId uuid.UUID
+	var composerRequest composer.ComposeRequest
+	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "Bearer" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
+		err := json.NewDecoder(r.Body).Decode(&composerRequest)
+		require.NoError(t, err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		composeId = uuid.New()
+		result := composer.ComposeId{
+			Id: composeId,
+		}
+		err = json.NewEncoder(w).Encode(result)
+		require.NoError(t, err)
+	}))
+	defer apiSrv.Close()
+
+	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
+	defer srv.Shutdown(t)
+
+	var uo v1.UploadRequest_Options
+	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+	var uoGCP v1.UploadRequest_Options
+	require.NoError(t, uoGCP.FromGCPUploadRequestOptions(v1.GCPUploadRequestOptions{
+		ShareWithAccounts: common.ToPtr([]string{"user:example@example.com"}),
+	}))
+
+	payloads := []struct {
+		imageBuilderRequest v1.ComposeRequest
+		composerRequest     composer.ComposeRequest
+	}{
+		// RHEL 9.7 without SnapshotDate uses latest snapshots
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-9.7",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						// No SnapshotDate - this triggers buildRepositoriesWithLatestSnapshots
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/baseos"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/appstream"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// CentOS 9 with non-CDN repos (should pass through unchanged, no snapshotting)
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "centos-9",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "centos-9",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.CentosGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.CentosGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// RHEL 9.6 GCP image with mix of CDN and non-CDN repos
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-9.7",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGcp,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesGcp,
+							Options: uoGCP,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGcp,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/baseos"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/appstream"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.GcpGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.GcpGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.GCPUploadOptions{
+						Region:            "",
+						Bucket:            common.ToPtr(""),
+						ShareWithAccounts: &[]string{"user:example@example.com"},
+					}),
+				},
+			},
+		},
+	}
+
+	for idx, payload := range payloads {
+		fmt.Printf("TT payload %d\n", idx)
+		respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload.imageBuilderRequest)
+		if respStatusCode != http.StatusCreated {
+			fmt.Printf("Body: %s\n", body)
+		}
+		require.Equal(t, http.StatusCreated, respStatusCode)
+
+		var result v1.ComposeResponse
+		err := json.Unmarshal([]byte(body), &result)
+		require.NoError(t, err)
+		require.Equal(t, composeId, result.Id)
 		require.Equal(t, payload.composerRequest, composerRequest)
 		composerRequest = composer.ComposeRequest{}
 	}
