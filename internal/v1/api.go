@@ -282,7 +282,7 @@ type BlueprintExportResponse struct {
 	Name         string            `json:"name"`
 
 	// SnapshotDate Importing the snapshot date will not yet be supported. It is exported for informative reasons.
-	// The format is YYYY-MM-DD.
+	// The format is RFC3339 e.g. "2025-11-26T00:00:00.000Z".
 	SnapshotDate *string `json:"snapshot_date,omitempty"`
 }
 
@@ -820,7 +820,7 @@ type ImageRequest struct {
 	// distribution. The snapshot that was made closest to, but before the specified date will
 	// be used. If no snapshots made before the specified date can be found, the snapshot
 	// closest to, but after the specified date will be used. If no snapshots can be found at
-	// all, the request will fail. The format must be YYYY-MM-DD (ISO 8601 extended).
+	// all, the request will fail. The format must be RFC3339 e.g. "2025-11-26T00:00:00.000Z".
 	SnapshotDate  *string       `json:"snapshot_date,omitempty"`
 	UploadRequest UploadRequest `json:"upload_request"`
 }
