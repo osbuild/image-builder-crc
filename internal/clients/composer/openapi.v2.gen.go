@@ -1052,6 +1052,7 @@ type ImageSBOMSbomType string
 // ImageStatus defines model for ImageStatus.
 type ImageStatus struct {
 	Error          *ComposeStatusError `json:"error,omitempty"`
+	Progress       *Progress           `json:"progress,omitempty"`
 	Status         ImageStatusValue    `json:"status"`
 	UploadStatus   *UploadStatus       `json:"upload_status,omitempty"`
 	UploadStatuses *[]UploadStatus     `json:"upload_statuses,omitempty"`
@@ -1275,6 +1276,16 @@ type Partition struct {
 	union json.RawMessage
 }
 
+// Progress defines model for Progress.
+type Progress struct {
+	// Done Amount of completed steps in the build.
+	Done        int          `json:"done"`
+	SubProgress *SubProgress `json:"subprogress,omitempty"`
+
+	// Total Total amount of steps in the build.
+	Total int `json:"total"`
+}
+
 // PulpOSTreeUploadOptions defines model for PulpOSTreeUploadOptions.
 type PulpOSTreeUploadOptions struct {
 	// Basepath Basepath for distributing the repository
@@ -1393,6 +1404,15 @@ type SubManRHSMCertdConfig struct {
 type SubManRHSMConfig struct {
 	AutoEnableYumPlugins *bool `json:"auto_enable_yum_plugins,omitempty"`
 	ManageRepos          *bool `json:"manage_repos,omitempty"`
+}
+
+// SubProgress defines model for SubProgress.
+type SubProgress struct {
+	// Done Amount of completed steps in the build.
+	Done int `json:"done"`
+
+	// Total Total amount of steps in the build.
+	Total int `json:"total"`
 }
 
 // Subscription defines model for Subscription.

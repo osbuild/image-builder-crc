@@ -122,6 +122,14 @@ func TestComposeStatus(t *testing.T) {
 						Type:    composer.UploadTypesAws,
 						Options: awsUS,
 					},
+					Progress: &composer.Progress{
+						Done:  1,
+						Total: 1,
+						SubProgress: &composer.SubProgress{
+							Done:  230,
+							Total: 230,
+						},
+					},
 				},
 				Status: composer.ComposeStatusValueSuccess,
 			},
@@ -131,6 +139,14 @@ func TestComposeStatus(t *testing.T) {
 					Status:  v1.Success,
 					Type:    v1.UploadTypesAws,
 					Options: ibAwsUS,
+				},
+				Progress: &v1.Progress{
+					Done:  1,
+					Total: 1,
+					SubProgress: &v1.SubProgress{
+						Done:  230,
+						Total: 230,
+					},
 				},
 			},
 		},

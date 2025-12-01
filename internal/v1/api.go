@@ -831,6 +831,7 @@ type ImageRequestArchitecture string
 // ImageStatus defines model for ImageStatus.
 type ImageStatus struct {
 	Error        *ComposeStatusError `json:"error,omitempty"`
+	Progress     *Progress           `json:"progress,omitempty"`
 	Status       ImageStatusStatus   `json:"status"`
 	UploadStatus *UploadStatus       `json:"upload_status,omitempty"`
 }
@@ -968,6 +969,16 @@ type PackagesResponse struct {
 // Partition defines model for Partition.
 type Partition = composer.Partition
 
+// Progress defines model for Progress.
+type Progress struct {
+	// Done Amount of completed steps in the build.
+	Done        int          `json:"done"`
+	SubProgress *SubProgress `json:"subprogress,omitempty"`
+
+	// Total Total amount of steps in the build.
+	Total int `json:"total"`
+}
+
 // Readiness defines model for Readiness.
 type Readiness struct {
 	Readiness string `json:"readiness"`
@@ -1015,6 +1026,15 @@ type Services struct {
 
 	// Masked List of services to mask by default
 	Masked *[]string `json:"masked,omitempty"`
+}
+
+// SubProgress defines model for SubProgress.
+type SubProgress struct {
+	// Done Amount of completed steps in the build.
+	Done int `json:"done"`
+
+	// Total Total amount of steps in the build.
+	Total int `json:"total"`
 }
 
 // Subscription defines model for Subscription.

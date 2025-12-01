@@ -276,6 +276,19 @@ func (h *Handlers) handleComposeStatusResponse(ctx echo.Context, resp *http.Resp
 		status.ImageStatus.Error = parseComposeStatusError(ctx, cloudStat.ImageStatus.Error)
 	}
 
+	if cloudStat.ImageStatus.Progress != nil {
+		status.ImageStatus.Progress = &Progress{
+			Done:  cloudStat.ImageStatus.Progress.Done,
+			Total: cloudStat.ImageStatus.Progress.Total,
+		}
+		if cloudStat.ImageStatus.Progress.SubProgress != nil {
+			status.ImageStatus.Progress.SubProgress = &SubProgress{
+				Done:  cloudStat.ImageStatus.Progress.SubProgress.Done,
+				Total: cloudStat.ImageStatus.Progress.SubProgress.Total,
+			}
+		}
+	}
+
 	return ctx.JSON(http.StatusOK, status)
 }
 
