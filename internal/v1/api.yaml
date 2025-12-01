@@ -882,6 +882,8 @@ components:
           type: string
           enum: ['success', 'failure', 'pending', 'building', 'uploading', 'registering']
           example: 'success'
+        progress:
+          $ref: '#/components/schemas/Progress'
         upload_status:
           $ref: '#/components/schemas/UploadStatus'
         error:
@@ -896,6 +898,26 @@ components:
         reason:
           type: string
         details: {}
+    Progress:
+      allOf:
+      - $ref: '#/components/schemas/SubProgress'
+      - type: object
+        properties:
+          subprogress:
+            $ref: '#/components/schemas/SubProgress'
+    SubProgress:
+      type: object
+      x-go-name: SubProgress
+      required:
+      - done
+      - total
+      properties:
+        done:
+          type: integer
+          description: Amount of completed steps in the build.
+        total:
+          type: integer
+          description: Total amount of steps in the build.
     CloneStatusResponse:
       required:
         - compose_id
