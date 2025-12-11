@@ -266,6 +266,17 @@ func TestValidateComposeRequest(t *testing.T) {
 			require.Contains(t, body, fmt.Sprintf("Total AWS image size cannot exceed %d bytes", v1.FSMaxSize))
 		}
 
+		// For azure the limit is doubled, 130 GiB total
+		payload.Customizations.Filesystem = &[]v1.Filesystem{
+			{
+				Mountpoint: "/",
+				MinSize:    2147483648,
+			},
+			{
+				Mountpoint: "/var",
+				MinSize:    137438953472,
+			},
+		}
 		for _, it := range []v1.ImageTypes{v1.ImageTypesAzure, v1.ImageTypesVhd} {
 			payload.ImageRequests[0].ImageType = it
 			payload.ImageRequests[0].UploadRequest = azureUr
@@ -305,21 +316,44 @@ func TestValidateComposeRequest(t *testing.T) {
 		}
 
 		testData := []struct {
+			it      v1.ImageTypes
 			fsSize  *uint64
 			imgSize *uint64
 			isError bool
 		}{
 			// Filesystem, Image, Error expected for ami/azure images
-			{nil, nil, false}, // No sizes
-			{common.ToPtr(uint64(68719476736)), nil, false}, // Just filesystem size, smaller than v1.FSMaxSize
+			{v1.ImageTypesAmi, nil, nil, false}, // No sizes
+			// Just filesystem size, smaller than v1.FSMaxSize
+			{v1.ImageTypesAws, common.ToPtr(uint64(68719476736)), nil, false},
+			{v1.ImageTypesAzure, common.ToPtr(uint64(68719476736)), nil, false},
 
-			{nil, common.ToPtr(uint64(13958643712)), false},                                        // Just image size, smaller than v1.FSMaxSize
-			{common.ToPtr(uint64(v1.FSMaxSize + 1)), nil, true},                                    // Just filesystem size, larger than v1.FSMaxSize
-			{nil, common.ToPtr(uint64(v1.FSMaxSize + 1)), true},                                    // Just image side, larger than v1.FSMaxSize
-			{common.ToPtr(uint64(68719476736)), common.ToPtr(uint64(13958643712)), false},          // filesystem smaller, image smaller
-			{common.ToPtr(uint64(v1.FSMaxSize + 1)), common.ToPtr(uint64(13958643712)), true},      // filesystem larger, image smaller
-			{common.ToPtr(uint64(68719476736)), common.ToPtr(uint64(v1.FSMaxSize + 1)), true},      // filesystem smaller, image larger
-			{common.ToPtr(uint64(v1.FSMaxSize + 1)), common.ToPtr(uint64(v1.FSMaxSize + 1)), true}, // filesystem larger, image larger
+			// Just image size, smaller than v1.FSMaxSize
+			{v1.ImageTypesAws, nil, common.ToPtr(uint64(13958643712)), false},
+			{v1.ImageTypesVhd, nil, common.ToPtr(uint64(13958643712)), false},
+
+			// Just filesystem size, larger than v1.FSMaxSize (*2)
+			{v1.ImageTypesAmi, common.ToPtr(uint64(v1.FSMaxSize + 1)), nil, true},
+			{v1.ImageTypesAzure, common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), nil, true},
+
+			// Just image side, larger than v1.FSMaxSize
+			{v1.ImageTypesAws, nil, common.ToPtr(uint64(v1.FSMaxSize + 1)), true},
+			{v1.ImageTypesVhd, nil, common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), true},
+
+			// filesystem smaller, image smaller
+			{v1.ImageTypesAmi, common.ToPtr(uint64(68719476736)), common.ToPtr(uint64(13958643712)), false},
+			{v1.ImageTypesAzure, common.ToPtr(uint64(68719476736)), common.ToPtr(uint64(13958643712)), false},
+
+			// filesystem larger, image smaller
+			{v1.ImageTypesAws, common.ToPtr(uint64(v1.FSMaxSize + 1)), common.ToPtr(uint64(13958643712)), true},
+			{v1.ImageTypesVhd, common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), common.ToPtr(uint64(13958643712)), true},
+
+			// filesystem smaller, image larger
+			{v1.ImageTypesAmi, common.ToPtr(uint64(68719476736)), common.ToPtr(uint64(v1.FSMaxSize + 1)), true},
+			{v1.ImageTypesAzure, common.ToPtr(uint64(68719476736)), common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), true},
+
+			// filesystem larger, image larger
+			{v1.ImageTypesAws, common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), true},
+			{v1.ImageTypesVhd, common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), common.ToPtr(uint64((v1.FSMaxSize * 2) + 1)), true},
 		}
 
 		// Guest Image has no errors even when the size is larger
@@ -328,13 +362,11 @@ func TestValidateComposeRequest(t *testing.T) {
 		}
 
 		// Test the aws and azure types for expected errors
-		for _, it := range []v1.ImageTypes{v1.ImageTypesAmi, v1.ImageTypesAws, v1.ImageTypesAzure, v1.ImageTypesVhd} {
-			for idx, td := range testData {
-				if td.isError {
-					assert.Error(t, v1.ValidateComposeRequest(buildComposeRequest(td.fsSize, td.imgSize, it)), "%v: idx=%d", it, idx)
-				} else {
-					assert.Nil(t, v1.ValidateComposeRequest(buildComposeRequest(td.fsSize, td.imgSize, it)), "%v: idx=%d", it, idx)
-				}
+		for idx, td := range testData {
+			if td.isError {
+				assert.Error(t, v1.ValidateComposeRequest(buildComposeRequest(td.fsSize, td.imgSize, td.it)), "%v: idx=%d", td.it, idx)
+			} else {
+				assert.Nil(t, v1.ValidateComposeRequest(buildComposeRequest(td.fsSize, td.imgSize, td.it)), "%v: idx=%d", td.it, idx)
 			}
 		}
 	})

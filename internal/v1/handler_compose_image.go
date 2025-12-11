@@ -857,16 +857,13 @@ func validateComposeRequest(cr *ComposeRequest) error {
 		totalSize = *cr.ImageRequests[0].Size
 	}
 
-	if totalSize > FSMaxSize {
-		it := cr.ImageRequests[0].ImageType
-		switch it {
-		case ImageTypesAmi, ImageTypesAws:
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Total AWS image size cannot exceed %d bytes", FSMaxSize))
-		case ImageTypesAzure, ImageTypesVhd:
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Total Azure image size cannot exceed %d bytes", FSMaxSize))
-		}
+	it := cr.ImageRequests[0].ImageType
+	if totalSize > FSMaxSize && (it == ImageTypesAmi || it == ImageTypesAws) {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Total AWS image size cannot exceed %d bytes", FSMaxSize))
 	}
-
+	if totalSize > (FSMaxSize*2) && (it == ImageTypesAzure || it == ImageTypesVhd) {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Total Azure image size cannot exceed %d bytes", FSMaxSize))
+	}
 	return nil
 }
 
