@@ -1393,12 +1393,15 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			}
 		}
 
-		if res.Services != nil {
-			res.Services.Enabled = common.ToPtr(append(*res.Services.Enabled, fmt.Sprintf("%s.service", AAP_FIRST_BOOT_FILENAME)))
+		aapService := fmt.Sprintf("%s.service", AAP_FIRST_BOOT_FILENAME)
+		if res.Services == nil {
+			res.Services = &composer.Services{}
+		}
+
+		if res.Services.Enabled == nil {
+			res.Services.Enabled = &[]string{aapService}
 		} else {
-			res.Services = &composer.Services{
-				Enabled: &[]string{fmt.Sprintf("%s.service", AAP_FIRST_BOOT_FILENAME)},
-			}
+			res.Services.Enabled = common.ToPtr(append(*res.Services.Enabled, aapService))
 		}
 
 		if res.Files != nil {
