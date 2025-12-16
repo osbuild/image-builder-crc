@@ -1993,7 +1993,7 @@ func TestComposeCustomizations(t *testing.T) {
 				Customizations: &v1.Customizations{
 					Packages: &[]string{"pkg"},
 					Subscription: &v1.Subscription{
-						Organization:        000,
+						Organization:        0o00,
 						InsightsClientProxy: common.ToPtr(""),
 					},
 					Fdo: &v1.FDO{
@@ -3130,6 +3130,98 @@ WantedBy=basic.target
 					},
 					Cacerts: &composer.CACertsCustomization{
 						PemCerts: []string{"---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---"},
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
+							Rhsm:     common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// aap first boot registration with pre-existing services disabled
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					AAPRegistration: &v1.AAPRegistration{
+						AnsibleCallbackUrl: "http://some-url.org/api/controller/v2/job_templates/38/callback/",
+						HostConfigKey:      "some-key",
+					},
+					Services: &v1.Services{
+						Disabled: common.ToPtr([]string{"pre-existing-service"}),
+					},
+				},
+				Distribution: "rhel-8",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-8.10",
+				Customizations: &composer.Customizations{
+					Files: &[]composer.File{
+						{
+							Data: common.ToPtr(fmt.Sprintf(
+								"#!/usr/bin/bash\n\ncurl -s -i --data %q %s\n",
+								fmt.Sprintf("host_config_key=%s", "some-key"),
+								fmt.Sprintf(
+									"%s/api/controller/v2/job_templates/%v/callback/",
+									"http://some-url.org",
+									"38",
+								),
+							)),
+							Path:          "/usr/local/sbin/aap-first-boot-reg",
+							Mode:          common.ToPtr("0774"),
+							EnsureParents: common.ToPtr(true),
+						},
+						{
+							Data: common.ToPtr(`[Unit]
+Description=Ansible Automations Platform first boot registration
+ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
+ConditionPathExists=!/var/local/.aap-first-boot-reg-done
+Wants=network-online.target
+After=network-online.target
+After=osbuild-first-boot.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/aap-first-boot-reg
+ExecStartPost=/usr/bin/touch /var/local/.aap-first-boot-reg-done
+RemainAfterExit=yes
+
+[Install]
+WantedBy=basic.target
+`),
+							Path:          "/etc/systemd/system/aap-first-boot-reg.service",
+							EnsureParents: common.ToPtr(true),
+						},
+					},
+					Services: &composer.Services{
+						Enabled:  common.ToPtr([]string{"aap-first-boot-reg.service"}),
+						Disabled: common.ToPtr([]string{"pre-existing-service"}),
 					},
 				},
 				ImageRequest: &composer.ImageRequest{
