@@ -51,12 +51,14 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, err
 	}
 
-	quotaOk, err := common.CheckQuota(ctx.Request().Context(), userID.OrgID(), h.server.db, h.server.quotaFile)
+	quotaResult, err := common.CheckQuota(ctx.Request().Context(), userID.OrgID(), h.server.db, h.server.quotaFile)
 	if err != nil {
 		return ComposeResponse{}, err
 	}
-	if !quotaOk {
-		return ComposeResponse{}, echo.NewHTTPError(http.StatusForbidden, "Quota exceeded for user")
+	if !quotaResult.Ok {
+		windowDays := int(quotaResult.SlidingWindow.Hours() / 24)
+		msg := fmt.Sprintf("Quota of %d builds per %d days exceeded for user", quotaResult.Limit, windowDays)
+		return ComposeResponse{}, echo.NewHTTPError(http.StatusForbidden, msg)
 	}
 
 	if string(composeRequest.ImageRequests[0].UploadRequest.Type) == "" {
