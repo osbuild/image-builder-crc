@@ -42,13 +42,21 @@ type Quota struct {
 	SlidingWindow time.Duration `json:"slidingWindow"`
 }
 
-// Returns true if the number of requests made by OrgID during a sliding window is below a threshold.
+// QuotaResult contains the result of a quota check along with quota details.
+type QuotaResult struct {
+	Ok            bool
+	Limit         int
+	Used          int
+	SlidingWindow time.Duration
+}
+
+// Returns a QuotaResult indicating if the number of requests made by OrgID during a sliding window is below a threshold.
 // The duration of the sliding window and the value of the threshold must be set in a file pointed by the QUOTA_FILE
 // environment variable.
-// If the variable is unset (or an empty string), the check is disabled and always returns true.
-func CheckQuota(ctx context.Context, orgID string, dB db.DB, quotaFile string) (bool, error) {
+// If the variable is unset (or an empty string), the check is disabled and always returns Ok=true.
+func CheckQuota(ctx context.Context, orgID string, dB db.DB, quotaFile string) (QuotaResult, error) {
 	if quotaFile == "" {
-		return true, nil
+		return QuotaResult{Ok: true}, nil
 	}
 	var authorizedRequests int
 	var slidingWindow time.Duration
@@ -57,15 +65,15 @@ func CheckQuota(ctx context.Context, orgID string, dB db.DB, quotaFile string) (
 	var quotas map[string]Quota
 	jsonFile, err := os.Open(filepath.Clean(quotaFile))
 	if _, ok := err.(*os.PathError); ok {
-		return false, fmt.Errorf("no config file for quotas found at %s", quotaFile)
+		return QuotaResult{}, fmt.Errorf("no config file for quotas found at %s", quotaFile)
 	} else {
 		rawJsonFile, err := io.ReadAll(jsonFile)
 		if err != nil {
-			return false, fmt.Errorf("failed to read quota file %q: %s", quotaFile, err.Error())
+			return QuotaResult{}, fmt.Errorf("failed to read quota file %q: %s", quotaFile, err.Error())
 		}
 		err = json.Unmarshal(rawJsonFile, &quotas)
 		if err != nil {
-			return false, fmt.Errorf("failed to unmarshal quota file %q: %s", quotaFile, err.Error())
+			return QuotaResult{}, fmt.Errorf("failed to unmarshal quota file %q: %s", quotaFile, err.Error())
 		}
 		if quota, ok := quotas[orgID]; ok {
 			authorizedRequests = quota.Quota
@@ -74,14 +82,19 @@ func CheckQuota(ctx context.Context, orgID string, dB db.DB, quotaFile string) (
 			authorizedRequests = quota.Quota
 			slidingWindow = quota.SlidingWindow
 		} else {
-			return false, fmt.Errorf("no default values in the quotas file %s", quotaFile)
+			return QuotaResult{}, fmt.Errorf("no default values in the quotas file %s", quotaFile)
 		}
 	}
 
 	// read user created requests
 	count, err := dB.CountComposesSince(ctx, orgID, slidingWindow)
 	if err != nil {
-		return false, err
+		return QuotaResult{}, err
 	}
-	return count < authorizedRequests, nil
+	return QuotaResult{
+		Ok:            count < authorizedRequests,
+		Limit:         authorizedRequests,
+		Used:          count,
+		SlidingWindow: slidingWindow,
+	}, nil
 }
