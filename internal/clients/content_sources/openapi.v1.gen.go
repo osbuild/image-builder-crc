@@ -64,30 +64,6 @@ type ApiCreateUploadRequest struct {
 	Size int `json:"size"`
 }
 
-// ApiDetectRpmsRequest defines model for api.DetectRpmsRequest.
-type ApiDetectRpmsRequest struct {
-	// Limit Maximum number of records to return for the search
-	Limit *int `json:"limit,omitempty"`
-
-	// RpmNames List of rpm names to search
-	RpmNames *[]string `json:"rpm_names,omitempty"`
-
-	// Urls URLs of repositories to search
-	Urls *[]string `json:"urls,omitempty"`
-
-	// Uuids List of repository UUIDs to search
-	Uuids *[]string `json:"uuids,omitempty"`
-}
-
-// ApiDetectRpmsResponse defines model for api.DetectRpmsResponse.
-type ApiDetectRpmsResponse struct {
-	// Found List of rpm names found in given repositories
-	Found *[]string `json:"found,omitempty"`
-
-	// Missing List of rpm names not found in given repositories
-	Missing *[]string `json:"missing,omitempty"`
-}
-
 // ApiFeature defines model for api.Feature.
 type ApiFeature struct {
 	// Accessible Whether the current user can access the feature
@@ -1547,9 +1523,6 @@ type ValidateRepositoryParametersJSONRequestBody = ValidateRepositoryParametersJ
 
 // SearchRpmJSONRequestBody defines body for SearchRpm for application/json ContentType.
 type SearchRpmJSONRequestBody = ApiContentUnitSearchRequest
-
-// DetectRpmJSONRequestBody defines body for DetectRpm for application/json ContentType.
-type DetectRpmJSONRequestBody = ApiDetectRpmsRequest
 
 // SearchSnapshotEnvironmentsJSONRequestBody defines body for SearchSnapshotEnvironments for application/json ContentType.
 type SearchSnapshotEnvironmentsJSONRequestBody = ApiSnapshotSearchRpmRequest
