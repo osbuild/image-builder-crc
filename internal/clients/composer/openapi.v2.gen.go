@@ -1841,7 +1841,7 @@ type Subscription struct {
 	ActivationKey string `json:"activation_key"`
 	BaseUrl       string `json:"base_url"`
 
-	// ContentSets Optional list of repository IDs to enable with subscription-manager on first boot.
+	// ContentSets Optional list of repository IDs to enable with subscription-manager when registering the system with Insights.
 	ContentSets *[]string `json:"content_sets,omitempty"`
 	Insights    bool      `json:"insights"`
 
