@@ -3330,6 +3330,412 @@ WantedBy=basic.target
 				},
 			},
 		},
+		// no subscription, 1 non-baseos/appstream rhel repository
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+					},
+				},
+				Distribution: "rhel-9",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				Customizations: &composer.Customizations{
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
+					},
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/baseos"),
+							Rhsm:     common.ToPtr(false),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/appstream"),
+							Rhsm:     common.ToPtr(false),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// subscription, 1 non-baseos/appstream rhel repository
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					Subscription: &v1.Subscription{
+						Insights: true,
+					},
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+					},
+				},
+				Distribution: "rhel-9",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				Customizations: &composer.Customizations{
+					Subscription: &composer.Subscription{
+						Insights:            true,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						InsightsClientProxy: common.ToPtr(""),
+						ContentSets:         common.ToPtr([]string{"codeready-builder-for-rhel-9-x86_64-rpms"}),
+					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
+					},
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/baseos"),
+							Rhsm:     common.ToPtr(false),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/appstream"),
+							Rhsm:     common.ToPtr(false),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// subscription, 1 non-baseos/appstream rhel repo, 1 non-rhel repo
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					Subscription: &v1.Subscription{
+						Insights: true,
+					},
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+						{
+							Baseurl:      common.ToPtr("https://some-repo-base-url.org"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr("some-gpg-key"),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+						{
+							Id:       "some-repo-id",
+							Baseurl:  &[]string{"https://some-repo-base-url.org"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{"some-gpg-key"},
+						},
+					},
+				},
+				Distribution: "rhel-9",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				Customizations: &composer.Customizations{
+					Subscription: &composer.Subscription{
+						Insights:            true,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						InsightsClientProxy: common.ToPtr(""),
+						ContentSets:         common.ToPtr([]string{"codeready-builder-for-rhel-9-x86_64-rpms"}),
+					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
+						{
+							Baseurl:      common.ToPtr("https://some-repo-base-url.org"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr("some-gpg-key"),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
+					},
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							Gpgkey:   &[]string{mocks.RhelGPG},
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Id:       "some-repo-id",
+							Baseurl:  &[]string{"https://some-repo-base-url.org"},
+							Gpgkey:   &[]string{"some-gpg-key"},
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/baseos"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/appstream"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
+		// subscription, 2 non-baseos/appstream rhel repos
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Customizations: &v1.Customizations{
+					Subscription: &v1.Subscription{
+						Insights: true,
+					},
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/highavailability/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         false,
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+						{
+							Id:       mocks.RepoHighAvailabilityID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/highavailability/os/"},
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+					},
+				},
+				Distribution: "rhel-9",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				Customizations: &composer.Customizations{
+					Subscription: &composer.Subscription{
+						Insights:            true,
+						Rhc:                 common.ToPtr(false),
+						Organization:        "0",
+						InsightsClientProxy: common.ToPtr(""),
+						ContentSets:         common.ToPtr([]string{"codeready-builder-for-rhel-9-x86_64-rpms", "rhel-9-for-x86_64-highavailability-rpms"}),
+					},
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
+						{
+							Baseurl:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/highavailability/os/"),
+							CheckGpg:     common.ToPtr(true),
+							CheckRepoGpg: common.ToPtr(true),
+							Gpgkey:       common.ToPtr(mocks.RhelGPG),
+							IgnoreSsl:    common.ToPtr(false),
+							Rhsm:         common.ToPtr(false),
+						},
+					},
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Id:       mocks.RepoCodeReadyID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"},
+							Gpgkey:   &[]string{mocks.RhelGPG},
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Id:       mocks.RepoHighAvailabilityID,
+							Baseurl:  &[]string{"https://cdn.redhat.com/content/dist/rhel9/9/x86_64/highavailability/os/"},
+							Gpgkey:   &[]string{mocks.RhelGPG},
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+				},
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/baseos"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/snappy/appstream"),
+							Rhsm:     common.ToPtr(false),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+							CheckGpg: common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+			},
+		},
 	}
 
 	for idx, payload := range payloads {
