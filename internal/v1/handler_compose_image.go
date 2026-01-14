@@ -343,10 +343,34 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Snapshot date %s is not in DateOnly (yyyy-mm-dd) or RFC3339 (yyyy-mm-ddThh:mm:ssZ) format", snapshotDate))
 	}
 
-	repoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, external)
-	if err != nil {
-		ctx.Logger().Warnf("Unable to get repositories for base urls: %v", err)
-		return nil, nil, fmt.Errorf("unable to retrieve repositories: %v", err)
+	repoMap := content_sources.RepositoryByID{}
+	if external {
+		// When building customizations, fetch both RH and non-RH repos to support building snapshots for additional (non-base) RH repos
+		rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
+		if err != nil {
+			ctx.Logger().Warnf("Unable to get RH repositories for base urls: %v", err)
+			return nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+		} else {
+			for id, repo := range rhRepoMap {
+				repoMap[id] = repo
+			}
+		}
+
+		nonRHRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, true)
+		if err != nil {
+			ctx.Logger().Warnf("Unable to get non-RH repositories for base urls: %v", err)
+			return nil, nil, fmt.Errorf("unable to retrieve non-RH repositories: %v", err)
+		} else {
+			for id, repo := range nonRHRepoMap {
+				repoMap[id] = repo
+			}
+		}
+	} else {
+		repoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, external)
+		if err != nil {
+			ctx.Logger().Warnf("Unable to get repositories for base urls: %v", err)
+			return nil, nil, fmt.Errorf("unable to retrieve repositories: %v", err)
+		}
 	}
 
 	repoUUIDs := make([]string, 0, len(repoMap))
