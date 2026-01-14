@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/osbuild/logging/pkg/strc"
@@ -124,6 +125,51 @@ func (csc *ContentSourcesClient) GetRepositories(ctx context.Context, repoURLs [
 	}
 
 	return result, nil
+}
+
+func (csc *ContentSourcesClient) FindRepoByURL(repos []ApiRepositoryResponse, targetURL string) (ApiRepositoryResponse, bool) {
+	idx := slices.IndexFunc(repos, func(r ApiRepositoryResponse) bool {
+		return r.Url != nil && *r.Url == targetURL
+	})
+
+	if idx == -1 {
+		return ApiRepositoryResponse{}, false
+	}
+
+	return repos[idx], true
+}
+
+func (csc *ContentSourcesClient) FindRepoByID(repos []ApiRepositoryResponse, targetID string) (ApiRepositoryResponse, bool) {
+	idx := slices.IndexFunc(repos, func(r ApiRepositoryResponse) bool {
+		return r.Uuid != nil && *r.Uuid == targetID
+	})
+
+	if idx == -1 {
+		return ApiRepositoryResponse{}, false
+	}
+
+	return repos[idx], true
+}
+
+func (csc *ContentSourcesClient) FetchLabelsFromNonBaseRHRepos(ctx context.Context, repoIDs []string) ([]string, error) {
+	rhRepoMap, err := csc.GetRepositories(ctx, nil, repoIDs, false)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+	}
+
+	var labels []string
+	for _, repoID := range repoIDs {
+		if repo, ok := rhRepoMap[repoID]; ok {
+			if repo.Label != nil && *repo.Label != "" {
+				if strings.Contains(*repo.Label, "baseos") || strings.Contains(*repo.Label, "appstream") {
+					continue
+				}
+				labels = append(labels, *repo.Label)
+			}
+		}
+	}
+
+	return labels, nil
 }
 
 // returns []ApiRepositoryExportResponse
