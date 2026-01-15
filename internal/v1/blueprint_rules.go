@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/osbuild/images/pkg/customizations/fsnode"
+	"github.com/osbuild/images/pkg/policies"
 )
 
 var (
@@ -143,6 +144,15 @@ func checkFileRule(request *CreateBlueprintRequest) error {
 
 	var errs []error
 	for _, file := range *files {
+		// Check path policy first
+		if err := policies.CustomFilesPolicies.Check(file.Path); err != nil {
+			errs = append(errs, newBlueprintRuleError(
+				"file rule violation",
+				fmt.Sprintf("file %q: %s", file.Path, err.Error()),
+			))
+			continue
+		}
+
 		mode := parseOctalMode(file.Mode)
 		user := parseFileUser(file.User)
 		group := parseFileGroup(file.Group)
@@ -172,6 +182,15 @@ func checkDirectoryRule(request *CreateBlueprintRequest) error {
 
 	var errs []error
 	for _, dir := range *directories {
+		// Check path policy first
+		if err := policies.CustomDirectoriesPolicies.Check(dir.Path); err != nil {
+			errs = append(errs, newBlueprintRuleError(
+				"directory rule violation",
+				fmt.Sprintf("directory %q: %s", dir.Path, err.Error()),
+			))
+			continue
+		}
+
 		mode := parseOctalMode(dir.Mode)
 		user := parseDirectoryUser(dir.User)
 		group := parseDirectoryGroup(dir.Group)

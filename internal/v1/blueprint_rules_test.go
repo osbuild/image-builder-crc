@@ -73,6 +73,35 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 			expectError: true,
 			errorTitle:  "file rule violation",
 		},
+		{
+			name: "invalid file path - restricted system path /usr/share",
+			customizations: map[string]interface{}{
+				"files": []map[string]interface{}{
+					{"path": "/usr/share/nginx/html/index.html", "data": "Hello World"},
+				},
+			},
+			expectError: true,
+			errorTitle:  "file rule violation",
+		},
+		{
+			name: "invalid file path - restricted /usr (but /usr/local allowed)",
+			customizations: map[string]interface{}{
+				"files": []map[string]interface{}{
+					{"path": "/usr/bin/myapp", "data": "#!/bin/bash"},
+				},
+			},
+			expectError: true,
+			errorTitle:  "file rule violation",
+		},
+		{
+			name: "valid file path - /usr/local is allowed",
+			customizations: map[string]interface{}{
+				"files": []map[string]interface{}{
+					{"path": "/usr/local/bin/myapp", "data": "#!/bin/bash"},
+				},
+			},
+			expectError: false,
+		},
 		// Directories - Positive cases
 		{
 			name: "valid directory customization - simple",
@@ -184,11 +213,11 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 			expectedErrors: []v1.HTTPError{
 				{
 					Title:  "file rule violation",
-					Detail: `file "relative.txt": path must be absolute`,
+					Detail: `file "relative.txt": path "relative.txt" must be absolute`,
 				},
 				{
 					Title:  "file rule violation",
-					Detail: `file "/etc/config/": path must not end with a slash`,
+					Detail: `file "/etc/config/": path "/etc/config/" must be canonical`,
 				},
 			},
 		},
@@ -211,11 +240,11 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 			expectedErrors: []v1.HTTPError{
 				{
 					Title:  "file rule violation",
-					Detail: `file "badfile.txt": path must be absolute`,
+					Detail: `file "badfile.txt": path "badfile.txt" must be absolute`,
 				},
 				{
 					Title:  "directory rule violation",
-					Detail: `directory "baddir": path must be absolute`,
+					Detail: `directory "baddir": path "baddir" must be absolute`,
 				},
 				{
 					Title:  "filesystem rule violation",
