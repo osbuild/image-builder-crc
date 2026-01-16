@@ -20,6 +20,7 @@ const (
 const (
 	RepoBaseID       = "2531793b-c607-4e1c-80b2-fbbaf9d12790"
 	RepoAppstrID     = "dbd21dfc-1733-4877-b1c8-8fb5a98beeb4"
+	RepoCodeReadyID  = "e2d9e12f-5658-408f-8bfd-5d218919d57e"
 	RepoPLID         = "a7ec8864-0e3c-4af2-8c06-567891280af5"
 	RepoPLID2        = "c01c2d9c-4624-4558-9ca9-8abcc5eb4437"
 	RepoPLID3        = "d064585d-5d25-4e10-88d0-9ab4d192b21d"
@@ -74,6 +75,16 @@ func rhRepos(ids []string, urls []string) (res []content_sources.ApiRepositoryRe
 			Url:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os"),
 			Snapshot: common.ToPtr(true),
 			Name:     common.ToPtr("appstream"),
+		})
+	}
+
+	if slices.Contains(urls, "https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/") || slices.Contains(ids, RepoCodeReadyID) {
+		res = append(res, content_sources.ApiRepositoryResponse{
+			GpgKey:   common.ToPtr(RhelGPG),
+			Uuid:     common.ToPtr(RepoCodeReadyID),
+			Url:      common.ToPtr("https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/"),
+			Snapshot: common.ToPtr(true),
+			Name:     common.ToPtr("codeready"),
 		})
 	}
 
@@ -216,6 +227,18 @@ func snaps(uuids []string) (res []content_sources.ApiSnapshotForDate) {
 				Url:            common.ToPtr("http://snappy-url/snappy/epel10"),
 			},
 			RepositoryUuid: common.ToPtr(RepoSharedEpelID),
+		})
+	}
+
+	if slices.Contains(uuids, RepoCodeReadyID) {
+		res = append(res, content_sources.ApiSnapshotForDate{
+			IsAfter: common.ToPtr(false),
+			Match: &content_sources.ApiSnapshotResponse{
+				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath: common.ToPtr("/snappy/codeready"),
+				Url:            common.ToPtr("http://snappy-url/snappy/codeready"),
+			},
+			RepositoryUuid: common.ToPtr(RepoCodeReadyID),
 		})
 	}
 	return res

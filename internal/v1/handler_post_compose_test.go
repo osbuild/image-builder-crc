@@ -1501,6 +1501,87 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 		},
+		// 1 payload and custom repository from additional RH repos
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: "rhel-9.7",
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesGuestImage,
+						SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAwsS3,
+							Options: uo,
+						},
+					},
+				},
+				Customizations: &v1.Customizations{
+					PayloadRepositories: &[]v1.Repository{
+						{
+							Id: common.ToPtr(mocks.RepoCodeReadyID),
+						},
+					},
+					CustomRepositories: &[]v1.CustomRepository{
+						{
+							Id: mocks.RepoCodeReadyID,
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution: "rhel-9.7",
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesGuestImage,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:     common.ToPtr("https://content-sources.org/api/neat/snappy/baseos"),
+							Rhsm:        common.ToPtr(false),
+							Gpgkey:      common.ToPtr(mocks.RhelGPG),
+							CheckGpg:    common.ToPtr(true),
+							IgnoreSsl:   nil,
+							Metalink:    nil,
+							Mirrorlist:  nil,
+							PackageSets: nil,
+						},
+						{
+							Baseurl:     common.ToPtr("https://content-sources.org/api/neat/snappy/appstream"),
+							Rhsm:        common.ToPtr(false),
+							Gpgkey:      common.ToPtr(mocks.RhelGPG),
+							CheckGpg:    common.ToPtr(true),
+							IgnoreSsl:   nil,
+							Metalink:    nil,
+							Mirrorlist:  nil,
+							PackageSets: nil,
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSS3UploadOptions{
+						Region: "",
+					}),
+				},
+				Customizations: &composer.Customizations{
+					PayloadRepositories: &[]composer.Repository{
+						{
+							Baseurl:  common.ToPtr("https://content-sources.org/api/neat/snappy/codeready"),
+							Rhsm:     common.ToPtr(false),
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   common.ToPtr(mocks.RhelGPG),
+						},
+					},
+					CustomRepositories: &[]composer.CustomRepository{
+						{
+							Baseurl:  &[]string{"http://snappy-url/snappy/codeready"},
+							Name:     common.ToPtr("codeready"),
+							Enabled:  common.ToPtr(false),
+							Id:       mocks.RepoCodeReadyID,
+							CheckGpg: common.ToPtr(true),
+							Gpgkey:   &[]string{mocks.RhelGPG},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for idx, payload := range payloads {
