@@ -738,6 +738,8 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 			composerImageType = composer.ImageTypesGuestImage
 		case ImageTypesImageInstaller:
 			composerImageType = composer.ImageTypesImageInstaller
+		case ImageTypesNetworkInstaller:
+			composerImageType = composer.ImageTypesNetworkInstaller
 		case ImageTypesVsphere:
 			composerImageType = composer.ImageTypesVsphere
 		case ImageTypesVsphereOva:
