@@ -142,18 +142,6 @@ func (cc *ComposerClient) OpenAPI(ctx context.Context) (*http.Response, error) {
 	return cc.request(ctx, "GET", fmt.Sprintf("%s/openapi", cc.composerURL), nil, nil)
 }
 
-func (cc *ComposerClient) CloneCompose(ctx context.Context, id uuid.UUID, clone CloneComposeBody) (*http.Response, error) {
-	buf, err := json.Marshal(clone)
-	if err != nil {
-		return nil, err
-	}
-	return cc.request(ctx, "POST", fmt.Sprintf("%s/composes/%s/clone", cc.composerURL, id), contentHeaders, bytes.NewReader(buf))
-}
-
-func (cc *ComposerClient) CloneStatus(ctx context.Context, id uuid.UUID) (*http.Response, error) {
-	return cc.request(ctx, "GET", fmt.Sprintf("%s/clones/%s", cc.composerURL, id), nil, nil)
-}
-
 func (cc *ComposerClient) GetDistribution(ctx context.Context, distro string, imageTypes, architectures []string) (*http.Response, error) {
 	params := url.Values{}
 	for _, it := range imageTypes {
