@@ -477,99 +477,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComposeMetadata'
-  /composes/{composeId}/clone:
-    post:
-      summary: clone a compose
-      description: |
-        Clones a compose. Only composes with the 'aws' image type currently support cloning.
-      parameters:
-        - in: path
-          name: composeId
-          schema:
-            type: string
-            format: uuid
-            example: '123e4567-e89b-12d3-a456-426655440000'
-          required: true
-          description: Id of compose to clone
-      operationId: cloneCompose
-      tags:
-        - compose
-      requestBody:
-        required: true
-        description: details of the new clone
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CloneRequest"
-      responses:
-        '201':
-          description: cloning has started
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CloneResponse"
-  /composes/{composeId}/clones:
-    get:
-      summary: get clones of a compose
-      parameters:
-        - in: path
-          name: composeId
-          schema:
-            type: string
-            format: uuid
-            example: '123e4567-e89b-12d3-a456-426655440000'
-          required: true
-          description: Id of compose to get the clones of
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 100
-            minimum: 1
-            maximum: 100
-          description: max amount of clones, default 100
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            default: 0
-            minimum: 0
-          description: clones page offset, default 0
-      description: |
-        Returns a list of all the clones which were started for a compose
-      operationId: getComposeClones
-      tags:
-        - compose
-      responses:
-        '200':
-          description: compose clones
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClonesResponse'
-  /clones/{id}:
-    get:
-      summary: get status of a compose clone
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-            example: '123e4567-e89b-12d3-a456-426655440000'
-          required: true
-          description: Id of clone status to get
-      description: status of a clone
-      operationId: getCloneStatus
-      tags:
-        - compose
-      responses:
-        '200':
-          description: clone status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CloneStatusResponse'
   /compose:
     post:
       summary: compose image
@@ -918,16 +825,6 @@ components:
         total:
           type: integer
           description: Total amount of steps in the build.
-    CloneStatusResponse:
-      required:
-        - compose_id
-      allOf:
-        - type: object
-          properties:
-            compose_id:
-              type: string
-              format: uuid
-        - $ref: '#/components/schemas/UploadStatus'
     UploadStatus:
       required:
         - status
@@ -1608,75 +1505,6 @@ components:
             type: string
         modelVersion:
           type: string
-    ClonesResponse:
-      required:
-        - meta
-        - links
-        - data
-      properties:
-        meta:
-          $ref: '#/components/schemas/ListResponseMeta'
-        links:
-          $ref: '#/components/schemas/ListResponseLinks'
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ClonesResponseItem'
-    ClonesResponseItem:
-      required:
-        - id
-        - compose_id
-        - request
-        - created_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        compose_id:
-          type: string
-          format: uuid
-          description: 'UUID of the parent compose of the clone'
-        request:
-          $ref: '#/components/schemas/CloneRequest'
-        created_at:
-          type: string
-    CloneRequest:
-      oneOf:
-      - $ref: '#/components/schemas/AWSEC2Clone'
-    AWSEC2Clone:
-      type: object
-      required:
-        - region
-      properties:
-        region:
-          type: string
-          description: |
-            A region as described in
-            https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-regions
-        share_with_accounts:
-          type: array
-          maxItems: 100
-          example: ['123456789012']
-          description: |
-            An array of AWS account IDs as described in
-            https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html
-          items:
-            type: string
-            pattern: '^[0-9]{12}$'
-        share_with_sources:
-          type: array
-          example: ['12345']
-          items:
-            type: string
-          uniqueItems: true
-    CloneResponse:
-      required:
-        - id
-      properties:
-        id:
-          type: string
-          format: uuid
-          example: '123e4567-e89b-12d3-a456-426655440000'
     DistributionProfileResponse:
       type: array
       description: |
