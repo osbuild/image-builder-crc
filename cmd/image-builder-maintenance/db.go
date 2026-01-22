@@ -13,13 +13,6 @@ const (
 	sqlDeleteComposes = `
                 DELETE FROM composes
                 WHERE created_at < $1`
-	sqlExpiredClonesCount = `
-                SELECT COUNT(*) FROM clones
-                WHERE compose_id in (
-                    SELECT job_id
-                    FROM composes
-                    WHERE created_at < $1
-                )`
 	sqlExpiredComposesCount = `
                 SELECT COUNT(*) FROM composes
                 WHERE created_at < $1`
@@ -58,15 +51,6 @@ func (d *maintenanceDB) DeleteComposes(ctx context.Context, emailRetentionDate t
 		return tag.RowsAffected(), fmt.Errorf("error deleting composes: %v", err)
 	}
 	return tag.RowsAffected(), nil
-}
-
-func (d *maintenanceDB) ExpiredClonesCount(ctx context.Context, emailRetentionDate time.Time) (int64, error) {
-	var count int64
-	err := d.Conn.QueryRow(ctx, sqlExpiredClonesCount, emailRetentionDate).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
 }
 
 func (d *maintenanceDB) ExpiredComposesCount(ctx context.Context, emailRetentionDate time.Time) (int64, error) {
@@ -159,7 +143,6 @@ func DBCleanup(ctx context.Context, dbURL string, dryRun bool, ComposesRetention
 		slog.ErrorContext(ctx, "error running vacuum stats", "err", err)
 	}
 
-	var rowsClones int64
 	var rows int64
 
 	emailRetentionDate := time.Now().AddDate(0, ComposesRetentionMonths*-1, 0)
@@ -175,16 +158,11 @@ func DBCleanup(ctx context.Context, dbURL string, dryRun bool, ComposesRetention
 			// so `break` works as expected
 		}
 		if dryRun {
-			rowsClones, err = db.ExpiredClonesCount(ctx, emailRetentionDate)
-			if err != nil {
-				slog.ErrorContext(ctx, "error querying expired clones", "err", err)
-			}
-
 			rows, err = db.ExpiredComposesCount(ctx, emailRetentionDate)
 			if err != nil {
 				slog.WarnContext(ctx, "error querying expired composes", "err", err)
 			}
-			slog.InfoContext(ctx, "dryrun", "expired_composes_count", rows, "expired_clones_count", rowsClones)
+			slog.InfoContext(ctx, "dryrun", "expired_composes_count", rows)
 			break
 		}
 

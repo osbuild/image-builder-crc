@@ -136,7 +136,7 @@ func TestComposeStatus(t *testing.T) {
 			imageStatus: v1.ImageStatus{
 				Status: v1.ImageStatusStatusSuccess,
 				UploadStatus: &v1.UploadStatus{
-					Status:  v1.Success,
+					Status:  v1.UploadStatusStatusSuccess,
 					Type:    v1.UploadTypesAws,
 					Options: ibAwsUS,
 				},
@@ -165,7 +165,7 @@ func TestComposeStatus(t *testing.T) {
 			imageStatus: v1.ImageStatus{
 				Status: v1.ImageStatusStatusSuccess,
 				UploadStatus: &v1.UploadStatus{
-					Status:  v1.Success,
+					Status:  v1.UploadStatusStatusSuccess,
 					Type:    v1.UploadTypesAwsS3,
 					Options: ibAwsS3US,
 				},
@@ -186,7 +186,7 @@ func TestComposeStatus(t *testing.T) {
 			imageStatus: v1.ImageStatus{
 				Status: v1.ImageStatusStatusSuccess,
 				UploadStatus: &v1.UploadStatus{
-					Status:  v1.Success,
+					Status:  v1.UploadStatusStatusSuccess,
 					Type:    v1.UploadTypesAzure,
 					Options: ibAzureUS,
 				},
@@ -207,7 +207,7 @@ func TestComposeStatus(t *testing.T) {
 			imageStatus: v1.ImageStatus{
 				Status: v1.ImageStatusStatusSuccess,
 				UploadStatus: &v1.UploadStatus{
-					Status:  v1.Success,
+					Status:  v1.UploadStatusStatusSuccess,
 					Type:    v1.UploadTypesGcp,
 					Options: ibGcpUS,
 				},
@@ -228,7 +228,7 @@ func TestComposeStatus(t *testing.T) {
 			imageStatus: v1.ImageStatus{
 				Status: v1.ImageStatusStatusSuccess,
 				UploadStatus: &v1.UploadStatus{
-					Status:  v1.Success,
+					Status:  v1.UploadStatusStatusSuccess,
 					Type:    v1.UploadTypesOciObjectstorage,
 					Options: ibOciUS,
 				},

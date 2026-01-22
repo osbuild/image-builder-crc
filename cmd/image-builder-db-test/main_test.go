@@ -227,79 +227,6 @@ func testDeleteCompose(ctx context.Context, t *testing.T) {
 	require.Equal(t, 1, count)
 }
 
-func testClones(ctx context.Context, t *testing.T) {
-	d, err := db.InitDBConnectionPool(ctx, tutils.ConnStr(t))
-	require.NoError(t, err)
-	conn := tutils.Connect(t)
-	defer conn.Close(ctx)
-
-	composeId := uuid.New()
-	cloneId := uuid.New()
-	cloneId2 := uuid.New()
-
-	// fkey constraint on compose id
-	require.Error(t, d.InsertClone(ctx, composeId, cloneId, []byte(`
-{
-  "region": "us-east-2"
-}
-`)))
-
-	require.NoError(t, d.InsertCompose(ctx, composeId, ANR1, EMAIL1, ORGID1, nil, []byte(`
-{
-  "customizations": {
-  },
-  "distribution": "rhel-8",
-  "image_requests": [
-    {
-      "architecture": "x86_64",
-      "image_type": "guest-image",
-      "upload_request": {
-        "type": "aws.s3",
-        "options": {
-        }
-      }
-    }
-  ]
-}`), nil, nil))
-
-	require.NoError(t, d.InsertClone(ctx, composeId, cloneId, []byte(`
-{
-  "region": "us-east-2"
-}
-`)))
-	require.NoError(t, d.InsertClone(ctx, composeId, cloneId2, []byte(`
-{
-  "region": "eu-central-1"
-}
-`)))
-
-	clones, count, err := d.GetClonesForCompose(ctx, composeId, ORGID2, 100, 0)
-	require.NoError(t, err)
-	require.Empty(t, clones)
-	require.Equal(t, 0, count)
-
-	clones, count, err = d.GetClonesForCompose(ctx, composeId, ORGID1, 1, 0)
-	require.NoError(t, err)
-	require.Len(t, clones, 1)
-	require.Equal(t, 2, count)
-	require.Equal(t, cloneId2, clones[0].Id)
-
-	clones, count, err = d.GetClonesForCompose(ctx, composeId, ORGID1, 100, 0)
-	require.NoError(t, err)
-	require.Len(t, clones, 2)
-	require.Equal(t, 2, count)
-	require.Equal(t, cloneId2, clones[0].Id)
-	require.Equal(t, cloneId, clones[1].Id)
-
-	entry, err := d.GetClone(ctx, cloneId, ORGID2)
-	require.ErrorIs(t, err, db.ErrCloneNotFound)
-	require.Nil(t, entry)
-
-	entry, err = d.GetClone(ctx, cloneId, ORGID1)
-	require.NoError(t, err)
-	require.Equal(t, clones[1], *entry)
-}
-
 func testBlueprints(ctx context.Context, t *testing.T) {
 	d, err := db.InitDBConnectionPool(ctx, tutils.ConnStr(t))
 	require.NoError(t, err)
@@ -692,7 +619,6 @@ func TestAll(t *testing.T) {
 		testCountComposesSince,
 		testGetComposeImageType,
 		testDeleteCompose,
-		testClones,
 		testBlueprints,
 		testGetBlueprintComposes,
 	}

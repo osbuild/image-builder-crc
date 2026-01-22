@@ -15,7 +15,6 @@ import (
 
 // ErrComposeEntryNotFound occurs when no compose request is found for a user.
 var ErrComposeEntryNotFound = errors.New("compose entry not found")
-var ErrCloneNotFound = errors.New("clone not found")
 var ErrBlueprintNotFound = errors.New("blueprint not found")
 var ErrAffectedRowsMismatch = errors.New("unexpected affected rows")
 
@@ -35,13 +34,6 @@ type ComposeWithBlueprintVersion struct {
 	*ComposeEntry
 	BlueprintId      *uuid.UUID
 	BlueprintVersion *int
-}
-
-type CloneEntry struct {
-	Id        uuid.UUID
-	ComposeId uuid.UUID
-	Request   json.RawMessage
-	CreatedAt time.Time
 }
 
 type BlueprintEntry struct {
@@ -82,10 +74,6 @@ type DB interface {
 	CountComposesSince(ctx context.Context, orgId string, duration time.Duration) (int, error)
 	CountBlueprintComposesSince(ctx context.Context, orgId string, blueprintId uuid.UUID, blueprintVersion *int, since time.Duration, ignoreImageTypes []string) (int, error)
 	DeleteCompose(ctx context.Context, jobId uuid.UUID, orgId string) error
-
-	InsertClone(ctx context.Context, composeId, cloneId uuid.UUID, request json.RawMessage) error
-	GetClonesForCompose(ctx context.Context, composeId uuid.UUID, orgId string, limit, offset int) ([]CloneEntry, int, error)
-	GetClone(ctx context.Context, id uuid.UUID, orgId string) (*CloneEntry, error)
 
 	InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.UUID, orgID, accountNumber, name, description string, body json.RawMessage, metadata json.RawMessage, serviceSnapshots json.RawMessage) error
 	GetBlueprint(ctx context.Context, id uuid.UUID, orgID string, version *int) (*BlueprintEntry, error)
@@ -137,36 +125,6 @@ const (
 		SET deleted = TRUE
 		WHERE org_id=$1 AND job_id=$2
         `
-
-	sqlInsertClone = `
-		INSERT INTO clones(id, compose_id, request, created_at)
-		VALUES($1, $2, $3, CURRENT_TIMESTAMP)`
-
-	sqlGetClonesForCompose = `
-		SELECT clones.id, clones.compose_id, clones.request, clones.created_at
-		FROM clones
-		WHERE clones.compose_id=$1 AND $1 in (
-			SELECT composes.job_id
-			FROM composes
-			WHERE composes.org_id=$2)
-		ORDER BY created_at DESC
-		LIMIT $3 OFFSET $4`
-
-	sqlCountClonesForCompose = `
-		SELECT COUNT(*)
-		FROM clones
-		WHERE clones.compose_id=$1 AND $1 in (
-			SELECT composes.job_id
-			FROM composes
-			WHERE composes.org_id=$2)`
-
-	sqlGetClone = `
-		SELECT clones.id, clones.compose_id, clones.request, clones.created_at
-		FROM clones
-		WHERE clones.id=$1 AND clones.compose_id in (
-			SELECT composes.job_id
-			FROM composes
-			WHERE composes.org_id=$2)`
 )
 
 func InitDBConnectionPool(ctx context.Context, connStr string) (DB, error) {
@@ -322,79 +280,4 @@ func (db *dB) DeleteCompose(ctx context.Context, jobId uuid.UUID, orgId string) 
 	}
 
 	return err
-}
-
-func (db *dB) InsertClone(ctx context.Context, composeId, cloneId uuid.UUID, request json.RawMessage) error {
-	conn, err := db.Pool.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	_, err = conn.Exec(ctx, sqlInsertClone, cloneId, composeId, request)
-	return err
-}
-
-func (db *dB) GetClonesForCompose(ctx context.Context, composeId uuid.UUID, orgId string, limit, offset int) ([]CloneEntry, int, error) {
-	conn, err := db.Pool.Acquire(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer conn.Release()
-
-	rows, err := conn.Query(ctx, sqlGetClonesForCompose, composeId, orgId, limit, offset)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	var clones []CloneEntry
-	for rows.Next() {
-		var id uuid.UUID
-		var composeID uuid.UUID
-		var request json.RawMessage
-		var createdAt time.Time
-		err = rows.Scan(&id, &composeID, &request, &createdAt)
-		if err != nil {
-			return nil, 0, err
-		}
-		clones = append(clones, CloneEntry{
-			id,
-			composeID,
-			request,
-			createdAt,
-		})
-	}
-	if err = rows.Err(); err != nil {
-		return nil, 0, err
-	}
-
-	var count int
-	err = conn.QueryRow(ctx, sqlCountClonesForCompose, composeId, orgId).Scan(&count)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return clones, count, nil
-
-}
-
-func (db *dB) GetClone(ctx context.Context, id uuid.UUID, orgId string) (*CloneEntry, error) {
-	conn, err := db.Pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Release()
-
-	var clone CloneEntry
-	err = conn.QueryRow(ctx, sqlGetClone, id, orgId).Scan(&clone.Id, &clone.ComposeId, &clone.Request, &clone.CreatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrCloneNotFound
-		} else {
-			return nil, err
-		}
-	}
-
-	return &clone, nil
 }
