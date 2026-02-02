@@ -441,6 +441,11 @@ type BlueprintUser struct {
 	Uid *int `json:"uid,omitempty"`
 }
 
+// Bootc defines model for Bootc.
+type Bootc struct {
+	Reference string `json:"reference"`
+}
+
 // BtrfsSubvolume defines model for BtrfsSubvolume.
 type BtrfsSubvolume struct {
 	// Mountpoint Mountpoint for the subvolume
@@ -549,8 +554,9 @@ type ComposeMetadata struct {
 // ComposeRequest defines model for ComposeRequest.
 type ComposeRequest struct {
 	Blueprint      *Blueprint      `json:"blueprint,omitempty"`
+	Bootc          *Bootc          `json:"bootc,omitempty"`
 	Customizations *Customizations `json:"customizations,omitempty"`
-	Distribution   string          `json:"distribution"`
+	Distribution   *string         `json:"distribution,omitempty"`
 	ImageRequest   *ImageRequest   `json:"image_request,omitempty"`
 	ImageRequests  *[]ImageRequest `json:"image_requests,omitempty"`
 	Koji           *Koji           `json:"koji,omitempty"`
