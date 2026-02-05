@@ -27,14 +27,6 @@ const (
 	Ui  ClientId = "ui"
 )
 
-// Defines values for CloneStatusResponseStatus.
-const (
-	CloneStatusResponseStatusFailure CloneStatusResponseStatus = "failure"
-	CloneStatusResponseStatusPending CloneStatusResponseStatus = "pending"
-	CloneStatusResponseStatusRunning CloneStatusResponseStatus = "running"
-	CloneStatusResponseStatusSuccess CloneStatusResponseStatus = "success"
-)
-
 // Defines values for CustomizationsPartitioningMode.
 const (
 	AutoLvm CustomizationsPartitioningMode = "auto-lvm"
@@ -158,10 +150,10 @@ const (
 
 // Defines values for UploadStatusStatus.
 const (
-	Failure UploadStatusStatus = "failure"
-	Pending UploadStatusStatus = "pending"
-	Running UploadStatusStatus = "running"
-	Success UploadStatusStatus = "success"
+	UploadStatusStatusFailure UploadStatusStatus = "failure"
+	UploadStatusStatusPending UploadStatusStatus = "pending"
+	UploadStatusStatusRunning UploadStatusStatus = "running"
+	UploadStatusStatusSuccess UploadStatusStatus = "success"
 )
 
 // Defines values for UploadTypes.
@@ -187,18 +179,6 @@ type AAPRegistration struct {
 	// SkipTlsVerification When true, indicates the user has confirmed that HTTPS callback URL does not require a CA certificate for verification
 	SkipTlsVerification     *bool  `json:"skip_tls_verification,omitempty"`
 	TlsCertificateAuthority string `json:"tls_certificate_authority,omitempty"`
-}
-
-// AWSEC2Clone defines model for AWSEC2Clone.
-type AWSEC2Clone struct {
-	// Region A region as described in
-	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-regions
-	Region string `json:"region"`
-
-	// ShareWithAccounts An array of AWS account IDs as described in
-	// https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html
-	ShareWithAccounts *[]string `json:"share_with_accounts,omitempty"`
-	ShareWithSources  *[]string `json:"share_with_sources,omitempty"`
 }
 
 // AWSS3UploadRequestOptions defines model for AWSS3UploadRequestOptions.
@@ -356,48 +336,6 @@ type CACertsCustomization struct {
 
 // ClientId defines model for ClientId.
 type ClientId string
-
-// CloneRequest defines model for CloneRequest.
-type CloneRequest struct {
-	union json.RawMessage
-}
-
-// CloneResponse defines model for CloneResponse.
-type CloneResponse struct {
-	Id openapi_types.UUID `json:"id"`
-}
-
-// CloneStatusResponse defines model for CloneStatusResponse.
-type CloneStatusResponse struct {
-	ComposeId *openapi_types.UUID         `json:"compose_id,omitempty"`
-	Options   CloneStatusResponse_Options `json:"options"`
-	Status    CloneStatusResponseStatus   `json:"status"`
-	Type      UploadTypes                 `json:"type"`
-}
-
-// CloneStatusResponse_Options defines model for CloneStatusResponse.Options.
-type CloneStatusResponse_Options struct {
-	union json.RawMessage
-}
-
-// CloneStatusResponseStatus defines model for CloneStatusResponse.Status.
-type CloneStatusResponseStatus string
-
-// ClonesResponse defines model for ClonesResponse.
-type ClonesResponse struct {
-	Data  []ClonesResponseItem `json:"data"`
-	Links ListResponseLinks    `json:"links"`
-	Meta  ListResponseMeta     `json:"meta"`
-}
-
-// ClonesResponseItem defines model for ClonesResponseItem.
-type ClonesResponseItem struct {
-	// ComposeId UUID of the parent compose of the clone
-	ComposeId openapi_types.UUID `json:"compose_id"`
-	CreatedAt string             `json:"created_at"`
-	Id        openapi_types.UUID `json:"id"`
-	Request   CloneRequest       `json:"request"`
-}
 
 // ComposeMetadata defines model for ComposeMetadata.
 type ComposeMetadata struct {
@@ -1177,15 +1115,6 @@ type GetComposesParams struct {
 	IgnoreImageTypes *[]ImageTypes `form:"ignoreImageTypes,omitempty" json:"ignoreImageTypes,omitempty"`
 }
 
-// GetComposeClonesParams defines parameters for GetComposeClones.
-type GetComposeClonesParams struct {
-	// Limit max amount of clones, default 100
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
-
-	// Offset clones page offset, default 0
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
-}
-
 // GetPackagesParams defines parameters for GetPackages.
 type GetPackagesParams struct {
 	// Distribution distribution to look up packages for
@@ -1219,187 +1148,8 @@ type ComposeBlueprintJSONRequestBody ComposeBlueprintJSONBody
 // ComposeImageJSONRequestBody defines body for ComposeImage for application/json ContentType.
 type ComposeImageJSONRequestBody = ComposeRequest
 
-// CloneComposeJSONRequestBody defines body for CloneCompose for application/json ContentType.
-type CloneComposeJSONRequestBody = CloneRequest
-
 // RecommendPackageJSONRequestBody defines body for RecommendPackage for application/json ContentType.
 type RecommendPackageJSONRequestBody = RecommendPackageRequest
-
-// AsAWSEC2Clone returns the union data inside the CloneRequest as a AWSEC2Clone
-func (t CloneRequest) AsAWSEC2Clone() (AWSEC2Clone, error) {
-	var body AWSEC2Clone
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromAWSEC2Clone overwrites any union data inside the CloneRequest as the provided AWSEC2Clone
-func (t *CloneRequest) FromAWSEC2Clone(v AWSEC2Clone) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeAWSEC2Clone performs a merge with any union data inside the CloneRequest, using the provided AWSEC2Clone
-func (t *CloneRequest) MergeAWSEC2Clone(v AWSEC2Clone) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t CloneRequest) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *CloneRequest) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsAWSUploadStatus returns the union data inside the CloneStatusResponse_Options as a AWSUploadStatus
-func (t CloneStatusResponse_Options) AsAWSUploadStatus() (AWSUploadStatus, error) {
-	var body AWSUploadStatus
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromAWSUploadStatus overwrites any union data inside the CloneStatusResponse_Options as the provided AWSUploadStatus
-func (t *CloneStatusResponse_Options) FromAWSUploadStatus(v AWSUploadStatus) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeAWSUploadStatus performs a merge with any union data inside the CloneStatusResponse_Options, using the provided AWSUploadStatus
-func (t *CloneStatusResponse_Options) MergeAWSUploadStatus(v AWSUploadStatus) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsAWSS3UploadStatus returns the union data inside the CloneStatusResponse_Options as a AWSS3UploadStatus
-func (t CloneStatusResponse_Options) AsAWSS3UploadStatus() (AWSS3UploadStatus, error) {
-	var body AWSS3UploadStatus
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromAWSS3UploadStatus overwrites any union data inside the CloneStatusResponse_Options as the provided AWSS3UploadStatus
-func (t *CloneStatusResponse_Options) FromAWSS3UploadStatus(v AWSS3UploadStatus) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeAWSS3UploadStatus performs a merge with any union data inside the CloneStatusResponse_Options, using the provided AWSS3UploadStatus
-func (t *CloneStatusResponse_Options) MergeAWSS3UploadStatus(v AWSS3UploadStatus) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGCPUploadStatus returns the union data inside the CloneStatusResponse_Options as a GCPUploadStatus
-func (t CloneStatusResponse_Options) AsGCPUploadStatus() (GCPUploadStatus, error) {
-	var body GCPUploadStatus
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGCPUploadStatus overwrites any union data inside the CloneStatusResponse_Options as the provided GCPUploadStatus
-func (t *CloneStatusResponse_Options) FromGCPUploadStatus(v GCPUploadStatus) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGCPUploadStatus performs a merge with any union data inside the CloneStatusResponse_Options, using the provided GCPUploadStatus
-func (t *CloneStatusResponse_Options) MergeGCPUploadStatus(v GCPUploadStatus) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsAzureUploadStatus returns the union data inside the CloneStatusResponse_Options as a AzureUploadStatus
-func (t CloneStatusResponse_Options) AsAzureUploadStatus() (AzureUploadStatus, error) {
-	var body AzureUploadStatus
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromAzureUploadStatus overwrites any union data inside the CloneStatusResponse_Options as the provided AzureUploadStatus
-func (t *CloneStatusResponse_Options) FromAzureUploadStatus(v AzureUploadStatus) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeAzureUploadStatus performs a merge with any union data inside the CloneStatusResponse_Options, using the provided AzureUploadStatus
-func (t *CloneStatusResponse_Options) MergeAzureUploadStatus(v AzureUploadStatus) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsOCIUploadStatus returns the union data inside the CloneStatusResponse_Options as a OCIUploadStatus
-func (t CloneStatusResponse_Options) AsOCIUploadStatus() (OCIUploadStatus, error) {
-	var body OCIUploadStatus
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromOCIUploadStatus overwrites any union data inside the CloneStatusResponse_Options as the provided OCIUploadStatus
-func (t *CloneStatusResponse_Options) FromOCIUploadStatus(v OCIUploadStatus) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeOCIUploadStatus performs a merge with any union data inside the CloneStatusResponse_Options, using the provided OCIUploadStatus
-func (t *CloneStatusResponse_Options) MergeOCIUploadStatus(v OCIUploadStatus) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t CloneStatusResponse_Options) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *CloneStatusResponse_Options) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
 
 // AsDirectoryGroup0 returns the union data inside the Directory_Group as a DirectoryGroup0
 func (t Directory_Group) AsDirectoryGroup0() (DirectoryGroup0, error) {
@@ -2020,9 +1770,6 @@ type ServerInterface interface {
 	// export a blueprint
 	// (GET /blueprints/{id}/export)
 	ExportBlueprint(ctx echo.Context, id openapi_types.UUID) error
-	// get status of a compose clone
-	// (GET /clones/{id})
-	GetCloneStatus(ctx echo.Context, id openapi_types.UUID) error
 	// compose image
 	// (POST /compose)
 	ComposeImage(ctx echo.Context) error
@@ -2035,12 +1782,6 @@ type ServerInterface interface {
 	// get status of an image compose
 	// (GET /composes/{composeId})
 	GetComposeStatus(ctx echo.Context, composeId openapi_types.UUID) error
-	// clone a compose
-	// (POST /composes/{composeId}/clone)
-	CloneCompose(ctx echo.Context, composeId openapi_types.UUID) error
-	// get clones of a compose
-	// (GET /composes/{composeId}/clones)
-	GetComposeClones(ctx echo.Context, composeId openapi_types.UUID, params GetComposeClonesParams) error
 	// get metadata of an image compose
 	// (GET /composes/{composeId}/metadata)
 	GetComposeMetadata(ctx echo.Context, composeId openapi_types.UUID) error
@@ -2277,22 +2018,6 @@ func (w *ServerInterfaceWrapper) ExportBlueprint(ctx echo.Context) error {
 	return err
 }
 
-// GetCloneStatus converts echo context to params.
-func (w *ServerInterfaceWrapper) GetCloneStatus(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetCloneStatus(ctx, id)
-	return err
-}
-
 // ComposeImage converts echo context to params.
 func (w *ServerInterfaceWrapper) ComposeImage(ctx echo.Context) error {
 	var err error
@@ -2363,54 +2088,6 @@ func (w *ServerInterfaceWrapper) GetComposeStatus(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetComposeStatus(ctx, composeId)
-	return err
-}
-
-// CloneCompose converts echo context to params.
-func (w *ServerInterfaceWrapper) CloneCompose(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "composeId" -------------
-	var composeId openapi_types.UUID
-
-	err = runtime.BindStyledParameterWithOptions("simple", "composeId", ctx.Param("composeId"), &composeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter composeId: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.CloneCompose(ctx, composeId)
-	return err
-}
-
-// GetComposeClones converts echo context to params.
-func (w *ServerInterfaceWrapper) GetComposeClones(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "composeId" -------------
-	var composeId openapi_types.UUID
-
-	err = runtime.BindStyledParameterWithOptions("simple", "composeId", ctx.Param("composeId"), &composeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter composeId: %s", err))
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetComposeClonesParams
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
-	}
-
-	// ------------- Optional query parameter "offset" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetComposeClones(ctx, composeId, params)
 	return err
 }
 
@@ -2629,13 +2306,10 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/blueprints/:id/compose", wrapper.ComposeBlueprint)
 	router.GET(baseURL+"/blueprints/:id/composes", wrapper.GetBlueprintComposes)
 	router.GET(baseURL+"/blueprints/:id/export", wrapper.ExportBlueprint)
-	router.GET(baseURL+"/clones/:id", wrapper.GetCloneStatus)
 	router.POST(baseURL+"/compose", wrapper.ComposeImage)
 	router.GET(baseURL+"/composes", wrapper.GetComposes)
 	router.DELETE(baseURL+"/composes/:composeId", wrapper.DeleteCompose)
 	router.GET(baseURL+"/composes/:composeId", wrapper.GetComposeStatus)
-	router.POST(baseURL+"/composes/:composeId/clone", wrapper.CloneCompose)
-	router.GET(baseURL+"/composes/:composeId/clones", wrapper.GetComposeClones)
 	router.GET(baseURL+"/composes/:composeId/metadata", wrapper.GetComposeMetadata)
 	router.GET(baseURL+"/distributions", wrapper.GetDistributions)
 	router.POST(baseURL+"/experimental/blueprints/:id/fixup", wrapper.FixupBlueprint)

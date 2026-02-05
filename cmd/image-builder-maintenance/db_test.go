@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 	"github.com/stretchr/testify/require"
 )
@@ -80,9 +79,6 @@ func testExpireByCallingDBCleanup(ctx context.Context, t *testing.T) {
 	d, err := newDB(ctx, connStr)
 	require.NoError(t, err)
 
-	internalDB, err := db.InitDBConnectionPool(ctx, connStr)
-	require.NoError(t, err)
-
 	dbComposesRetentionMonths := 5
 
 	notYetExpiredTime := time.Now()
@@ -97,19 +93,8 @@ func testExpireByCallingDBCleanup(ctx context.Context, t *testing.T) {
 	insert = "INSERT INTO composes(job_id, request, created_at, account_number, org_id) VALUES ($1, $2, $3, $4, $5)"
 	_, err = d.Conn.Exec(ctx, insert, composeIdExpired, "{}", alreadyExpiredTime, ANR1, ORGID1)
 
-	cloneId := uuid.New()
-	require.NoError(t, internalDB.InsertClone(ctx, composeIdExpired, cloneId, []byte(`
-{
-  "region": "us-east-2"
-}
-`)))
-
 	// two rows inserted, only one is expired
 	rows, err := d.ExpiredComposesCount(ctx, emailRetentionDate)
-	require.NoError(t, err)
-	require.Equal(t, int64(1), rows)
-
-	rows, err = d.ExpiredClonesCount(ctx, emailRetentionDate)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), rows)
 
@@ -117,10 +102,6 @@ func testExpireByCallingDBCleanup(ctx context.Context, t *testing.T) {
 	require.NoError(t, err)
 
 	rows, err = d.ExpiredComposesCount(ctx, emailRetentionDate)
-	require.NoError(t, err)
-	require.Equal(t, int64(0), rows)
-
-	rows, err = d.ExpiredClonesCount(ctx, emailRetentionDate)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), rows)
 }
