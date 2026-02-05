@@ -3190,6 +3190,7 @@ Description=Ansible Automations Platform first boot registration
 ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
 ConditionPathExists=!/var/local/.aap-first-boot-reg-done
 Wants=network-online.target
+After=selinux-autorelabel.service
 After=network-online.target
 After=osbuild-first-boot.service
 
@@ -3284,6 +3285,7 @@ Description=Ansible Automations Platform first boot registration
 ConditionFileIsExecutable=/usr/local/sbin/aap-first-boot-reg
 ConditionPathExists=!/var/local/.aap-first-boot-reg-done
 Wants=network-online.target
+After=selinux-autorelabel.service
 After=network-online.target
 After=osbuild-first-boot.service
 
