@@ -1,7 +1,6 @@
 package v1_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -373,7 +372,7 @@ func TestValidateComposeRequest(t *testing.T) {
 }
 
 func TestComposeStatusError(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	id := uuid.New()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
