@@ -1,7 +1,6 @@
 package oauth2
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -41,7 +40,7 @@ func TestLazyToken(t *testing.T) {
 		ClientId:     clientID,
 		ClientSecret: clientSecret,
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := lazyToken.Token(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "mock-token-1", token)
@@ -78,7 +77,7 @@ func TestLazyTokenUnhappy(t *testing.T) {
 		ClientSecret: clientSecret,
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Ensure that NextToken() returns an error when the token server responds with an error
 	_, err := lazyToken.Token(ctx)

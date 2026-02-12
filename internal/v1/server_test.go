@@ -1,7 +1,6 @@
 package v1_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -121,7 +120,7 @@ type testServer struct {
 }
 
 func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfig) *testServer {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -244,7 +243,7 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 }
 
 func (ts *testServer) Shutdown(t *testing.T) {
-	require.NoError(t, ts.echo.Shutdown(context.Background()))
+	require.NoError(t, ts.echo.Shutdown(t.Context()))
 	ts.tokenSrv.Close()
 	ts.csSrv.Close()
 }
