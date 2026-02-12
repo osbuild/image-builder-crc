@@ -1,7 +1,6 @@
 package v1_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -59,7 +58,7 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	}
 
 	var jsonResp v1.HTTPErrorList
-	ctx := context.Background()
+	ctx := t.Context()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
@@ -359,7 +358,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	body := map[string]interface{}{
 		"name":           "Blueprint",
 		"description":    "desc",
@@ -517,7 +516,7 @@ func TestHandlers_UpdateBlueprint(t *testing.T) {
 }
 
 func TestHandlers_ComposeBlueprint(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	composeRequests := []composer.ComposeRequest{}
 	ids := []uuid.UUID{}
@@ -758,7 +757,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 }
 
 func TestHandlers_GetBlueprintComposes(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	blueprintId := uuid.New()
 	versionId := uuid.New()
 	version2Id := uuid.New()
@@ -948,7 +947,7 @@ func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
 }
 
 func TestHandlers_GetBlueprint(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
@@ -1099,7 +1098,7 @@ func compareOutputExportBlueprint(t *testing.T, jsonResponse string) {
 }
 
 func TestHandlers_ExportBlueprint(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
@@ -1333,7 +1332,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 }
 
 func TestHandlers_GetBlueprints(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
@@ -1369,7 +1368,7 @@ func TestHandlers_GetBlueprints(t *testing.T) {
 }
 
 func TestHandlers_DeleteBlueprint(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	blueprintId := uuid.New()
 	versionId := uuid.New()
 	version2Id := uuid.New()
@@ -1682,7 +1681,7 @@ func TestLintBlueprint(t *testing.T) {
 		require.NoError(t, err)
 
 		snapshotBytes := []byte(common.FromPtr(c.snapshot))
-		require.NoError(t, srv.DB.InsertBlueprint(context.Background(), bpID, uuid.New(), "000000", "000000", "bp1", "", bpjson, nil, snapshotBytes))
+		require.NoError(t, srv.DB.InsertBlueprint(t.Context(), bpID, uuid.New(), "000000", "000000", "bp1", "", bpjson, nil, snapshotBytes))
 
 		var result v1.BlueprintResponse
 		respStatusCode, body := tutils.GetResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srv.URL, bpID), &tutils.AuthString0)
@@ -1691,7 +1690,7 @@ func TestLintBlueprint(t *testing.T) {
 		require.ElementsMatch(t, c.lintErrors, result.Lint.Errors)
 		require.ElementsMatch(t, c.lintWarnings, result.Lint.Warnings)
 
-		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), bpID, "000000"))
+		require.NoError(t, srv.DB.DeleteBlueprint(t.Context(), bpID, "000000"))
 	}
 }
 
@@ -1778,7 +1777,7 @@ func TestFixupBlueprint(t *testing.T) {
 		var created v1.CreateBlueprintResponse
 		require.NoError(t, json.Unmarshal([]byte(respBody), &created))
 
-		beforeFixup, err := srv.DB.GetBlueprint(context.Background(), created.Id, "000000", nil)
+		beforeFixup, err := srv.DB.GetBlueprint(t.Context(), created.Id, "000000", nil)
 		require.NoError(t, err)
 		snapshotBeforeFixup := beforeFixup.ServiceSnapshots
 
@@ -1792,14 +1791,14 @@ func TestFixupBlueprint(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(body), &result))
 		require.Empty(t, result.Lint.Errors)
 
-		afterFixup, err := srv.DB.GetBlueprint(context.Background(), created.Id, "000000", nil)
+		afterFixup, err := srv.DB.GetBlueprint(t.Context(), created.Id, "000000", nil)
 		require.NoError(t, err)
 		require.Equal(t, snapshotBeforeFixup, afterFixup.ServiceSnapshots)
 
 		var ss db.ServiceSnapshots
 		require.NoError(t, json.Unmarshal(afterFixup.ServiceSnapshots, &ss))
 		require.NotNil(t, ss.Compliance)
-		require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), created.Id, "000000"))
+		require.NoError(t, srv.DB.DeleteBlueprint(t.Context(), created.Id, "000000"))
 	}
 }
 
@@ -1808,7 +1807,7 @@ func TestBlueprintComplianceSnapshot(t *testing.T) {
 		t.Skip("crypt() not supported on darwin")
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
@@ -1858,7 +1857,7 @@ func TestBlueprintComplianceSnapshot(t *testing.T) {
 }
 
 func TestBlueprintCreationRollbackOnPolicyFailure(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
@@ -1917,7 +1916,7 @@ func TestBlueprintUpdateAddsSnapshot(t *testing.T) {
 	var created v1.CreateBlueprintResponse
 	require.NoError(t, json.Unmarshal([]byte(respBody), &created))
 
-	beBefore, err := srv.DB.GetBlueprint(context.Background(), created.Id, "000000", nil)
+	beBefore, err := srv.DB.GetBlueprint(t.Context(), created.Id, "000000", nil)
 	require.NoError(t, err)
 	require.True(t, len(beBefore.ServiceSnapshots) == 0)
 
@@ -1940,9 +1939,9 @@ func TestBlueprintUpdateAddsSnapshot(t *testing.T) {
 	respStatusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srv.URL, created.Id), updateBody)
 	require.Equal(t, http.StatusCreated, respStatusCode)
 
-	beAfterUpdate, err := srv.DB.GetBlueprint(context.Background(), created.Id, "000000", nil)
+	beAfterUpdate, err := srv.DB.GetBlueprint(t.Context(), created.Id, "000000", nil)
 	require.NoError(t, err)
 	require.True(t, len(beAfterUpdate.ServiceSnapshots) != 0)
 
-	require.NoError(t, srv.DB.DeleteBlueprint(context.Background(), created.Id, "000000"))
+	require.NoError(t, srv.DB.DeleteBlueprint(t.Context(), created.Id, "000000"))
 }
