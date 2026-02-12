@@ -1,7 +1,6 @@
 package v1_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -143,7 +142,7 @@ func TestGetComposeStatusErrorResponse(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := context.Background()
+		ctx := t.Context()
 		composeId := uuid.New()
 
 		var composerStatus composer.ComposeStatus
@@ -216,7 +215,7 @@ func TestGetComposeStatusErrorResponse(t *testing.T) {
 }
 
 func TestGetComposeMetadata(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	id := uuid.New()
 	testPackages := []composer.PackageMetadata{
 		{
@@ -300,7 +299,7 @@ func TestGetComposeMetadata404(t *testing.T) {
 }
 
 func TestGetComposes(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	id := uuid.New()
 	id2 := uuid.New()
 	id3 := uuid.New()
@@ -462,7 +461,7 @@ func TestMetrics(t *testing.T) {
 }
 
 func TestGetClones(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	id := uuid.New()
 	cloneId := uuid.New()
 	awsAccountId := "123456123456"
@@ -556,7 +555,7 @@ func TestGetClones(t *testing.T) {
 }
 
 func TestGetCloneStatus(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	cloneId := uuid.New()
 	id := uuid.New()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -652,7 +651,7 @@ func TestGetCloneEntryNotFoundResponse(t *testing.T) {
 func TestValidateSpec(t *testing.T) {
 	spec, err := v1.GetSwagger()
 	require.NoError(t, err)
-	err = spec.Validate(context.Background())
+	err = spec.Validate(t.Context())
 	require.NoError(t, err)
 }
 
