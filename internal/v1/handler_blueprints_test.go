@@ -742,7 +742,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			require.NoError(t, err)
 			require.ElementsMatch(t, tc.composeRequests, composeRequests)
 			require.Len(t, result, tc.expectedImages)
-			for i := 0; i < tc.expectedImages; i++ {
+			for i := range tc.expectedImages {
 				require.Equal(t, ids[len(ids)-tc.expectedImages+i], result[i].Id)
 			}
 		})
