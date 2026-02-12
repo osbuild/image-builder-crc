@@ -541,7 +541,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 
 	if len(bodyBytes) != 0 {
 		// Saving the custom repositories in the object format
-		var result []map[string]interface{}
+		var result []map[string]any
 		err = json.Unmarshal(bodyBytes, &result)
 		if err != nil {
 			return fmt.Errorf("unable to export custom repositories: %w, %s", err, string(bodyBytes))

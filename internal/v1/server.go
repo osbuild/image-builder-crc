@@ -242,7 +242,7 @@ func RoutePrefix() string {
 // parameters either.
 type binder struct{}
 
-func (b binder) Bind(i interface{}, ctx echo.Context) error {
+func (b binder) Bind(i any, ctx echo.Context) error {
 	request := ctx.Request()
 	if request.ContentLength == 0 {
 		return nil
