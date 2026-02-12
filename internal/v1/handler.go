@@ -405,7 +405,7 @@ func parseComposeStatusError(ctx echo.Context, composeErr *composer.ComposeStatu
 		fallthrough
 	case 28: // osbuild target errors are added to details
 		if composeErr.Details != nil {
-			intfs := (composeErr.Details).([]interface{})
+			intfs := (composeErr.Details).([]any)
 			if len(intfs) == 0 {
 				return fbErr
 			}

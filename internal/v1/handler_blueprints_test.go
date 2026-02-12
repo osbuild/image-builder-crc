@@ -62,16 +62,16 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
-	body := map[string]interface{}{
+	body := map[string]any{
 		"name":        "Blueprint",
 		"description": "desc",
-		"customizations": map[string]interface{}{
+		"customizations": map[string]any{
 			"packages": []string{"nginx"},
-			"users": []map[string]interface{}{
+			"users": []map[string]any{
 				{"name": "user", "password": "test"},
 				{"name": "user2", "ssh_key": "ssh-rsa AAAAB3NzaC1"},
 			},
-			"aap_registration": map[string]interface{}{
+			"aap_registration": map[string]any{
 				"ansible_callback_url":      "https://aap-gw.example.com/api/controller/v2/job_templates/42/callback/",
 				"host_config_key":           "test-host-config-key-12345",
 				"tls_certificate_authority": "-----BEGIN CERTIFICATE-----\nMIIC0DCCAbigAwIBAgIUI...\n-----END CERTIFICATE-----",
@@ -79,11 +79,11 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 			},
 		},
 		"distribution": "centos-9",
-		"image_requests": []map[string]interface{}{
+		"image_requests": []map[string]any{
 			{
 				"architecture":     "x86_64",
 				"image_type":       "aws",
-				"upload_request":   map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"upload_request":   map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
 				"content_template": mocks.TemplateID,
 			},
 		},
@@ -359,16 +359,16 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	defer shutdownFn(t)
 
 	ctx := t.Context()
-	body := map[string]interface{}{
+	body := map[string]any{
 		"name":           "Blueprint",
 		"description":    "desc",
-		"customizations": map[string]interface{}{},
+		"customizations": map[string]any{},
 		"distribution":   "centos-9",
-		"image_requests": []map[string]interface{}{
+		"image_requests": []map[string]any{
 			{
 				"architecture":   "x86_64",
 				"image_type":     "aws",
-				"upload_request": map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"upload_request": map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
 			},
 		},
 	}
@@ -382,7 +382,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add new user with password = SUCCESS
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": "test"}}}
+	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": "test"}}}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
@@ -395,7 +395,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 
 	// Update with hashed password = SUCCESS
 	userHashedPassword := "$6$foo"
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": userHashedPassword}}}
+	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": userHashedPassword}}}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
@@ -409,12 +409,12 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Equal(t, userHashedPassword, *existingPassword)
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].SshKey)
 	// keep ssh key and remove password = SUCCESS
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": ""}}}
+	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": ""}}}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("http://localhost:8086/api/image-builder/v1/blueprints/%s", result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
 	// add ssh key and remove password = SUCCESS
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": "", "ssh_key": "ssh key"}}}
+	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": "", "ssh_key": "ssh key"}}}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
@@ -478,16 +478,16 @@ func TestHandlers_UpdateBlueprint(t *testing.T) {
 	_, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
-	body := map[string]interface{}{
+	body := map[string]any{
 		"name":           "Blueprint",
 		"description":    "desc",
-		"customizations": map[string]interface{}{"packages": []string{"nginx"}},
+		"customizations": map[string]any{"packages": []string{"nginx"}},
 		"distribution":   "centos-9",
-		"image_requests": []map[string]interface{}{
+		"image_requests": []map[string]any{
 			{
 				"architecture":   "x86_64",
 				"image_type":     "aws",
-				"upload_request": map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"upload_request": map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
 			},
 		},
 	}
@@ -510,7 +510,7 @@ func TestHandlers_UpdateBlueprint(t *testing.T) {
 	respStatusCodeNotFound, _ := tutils.PutResponseBody(t, srvURL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s", uuid.New()), body)
 	require.Equal(t, http.StatusNotFound, respStatusCodeNotFound)
 
-	body["customizations"] = map[string]interface{}{"users": []map[string]interface{}{{"name": "test", "password": "test"}}}
+	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": "test"}}}
 	statusCode, _ = tutils.PutResponseBody(t, srvURL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s", uuid.New()), body)
 	require.Equal(t, http.StatusNotFound, statusCode)
 }
@@ -1062,17 +1062,17 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 
 func compareOutputExportBlueprint(t *testing.T, jsonResponse string) {
 	// exported_at is dynamically generated, we need to change it
-	var jsonResponseUnmarshal map[string]interface{}
+	var jsonResponseUnmarshal map[string]any
 	err := json.Unmarshal([]byte(jsonResponse), &jsonResponseUnmarshal)
 	require.NoError(t, err)
-	metadata, ok := jsonResponseUnmarshal["metadata"].(map[string]interface{})
+	metadata, ok := jsonResponseUnmarshal["metadata"].(map[string]any)
 	metadata["exported_at"] = "2013-06-13 00:00:00 +0000 UTC"
 	require.Equal(t, true, ok)
 
 	// Now let's wrap the data again
 	data, err := json.Marshal(jsonResponseUnmarshal)
 	require.NoError(t, err)
-	var responseDataUnmarshal interface{}
+	var responseDataUnmarshal any
 	err = json.Unmarshal(data, &responseDataUnmarshal)
 	require.NoError(t, err)
 	generatedData, err := json.MarshalIndent(jsonResponseUnmarshal, "", "  ")
@@ -1083,7 +1083,7 @@ func compareOutputExportBlueprint(t *testing.T, jsonResponse string) {
 	fixtureData, err := os.ReadFile(exportedBlueprintFile)
 	require.NoError(t, err)
 
-	var fixtureDataUnmarshal interface{}
+	var fixtureDataUnmarshal any
 	err = json.Unmarshal(fixtureData, &fixtureDataUnmarshal)
 	require.NoError(t, err)
 	expectedData, err := json.MarshalIndent(fixtureDataUnmarshal, "", "  ")
@@ -1229,19 +1229,19 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 
 	nameMeta := "blueprint with metadata"
 	parentIdMeta := "be75e486-7f2b-4b0d-a0f2-de152dcd344a"
-	bodyToImport := map[string]interface{}{
+	bodyToImport := map[string]any{
 		"name":           nameMeta,
 		"description":    "desc",
-		"customizations": map[string]interface{}{"packages": []string{"nginx"}},
+		"customizations": map[string]any{"packages": []string{"nginx"}},
 		"distribution":   "centos-9",
-		"image_requests": []map[string]interface{}{
+		"image_requests": []map[string]any{
 			{
 				"architecture":   "x86_64",
 				"image_type":     "aws",
-				"upload_request": map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"upload_request": map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
 			},
 		},
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"parent_id":   parentIdMeta,
 			"exported_at": exportedAt,
 		},
@@ -1626,25 +1626,25 @@ func TestLintBlueprint(t *testing.T) {
 			},
 			snapshot: func() *json.RawMessage {
 				// Create snapshot with previous policy's customizations (more than current policy requires)
-				snapshotData := map[string]interface{}{
-					"compliance": map[string]interface{}{
+				snapshotData := map[string]any{
+					"compliance": map[string]any{
 						"policy_id": mocks.PolicyID, // Previous policy was the full one
-						"policy_customizations": map[string]interface{}{
+						"policy_customizations": map[string]any{
 							"packages": []string{"required-by-compliance", "obsolete-package"},
-							"services": map[string]interface{}{
+							"services": map[string]any{
 								"enabled":  []string{"enabled-required-by-compliance", "obsolete-enabled-service"},
 								"masked":   []string{"masked-required-by-compliance", "obsolete-masked-service"},
 								"disabled": []string{"obsolete-disabled-service"},
 							},
-							"filesystem": []map[string]interface{}{
+							"filesystem": []map[string]any{
 								{"mountpoint": "/tmp", "min_size": 1000},
 								{"mountpoint": "/obsolete", "min_size": 500},
 							},
-							"kernel": map[string]interface{}{
+							"kernel": map[string]any{
 								"name":   "obsolete-kernel",
 								"append": "obsolete-param=1",
 							},
-							"fips": map[string]interface{}{
+							"fips": map[string]any{
 								"enabled": true,
 							},
 						},
@@ -1808,21 +1808,21 @@ func TestBlueprintComplianceSnapshot(t *testing.T) {
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
-	body := map[string]interface{}{
+	body := map[string]any{
 		"name":        "BlueprintWithCompliance",
 		"description": "Blueprint with compliance policy",
-		"customizations": map[string]interface{}{
+		"customizations": map[string]any{
 			"packages": []string{"nginx"},
-			"openscap": map[string]interface{}{
+			"openscap": map[string]any{
 				"policy_id": mocks.PolicyID,
 			},
 		},
 		"distribution": "rhel-8",
-		"image_requests": []map[string]interface{}{
+		"image_requests": []map[string]any{
 			{
 				"architecture":   "x86_64",
 				"image_type":     "aws",
-				"upload_request": map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"upload_request": map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
 			},
 		},
 	}
@@ -1845,7 +1845,7 @@ func TestBlueprintComplianceSnapshot(t *testing.T) {
 	require.Equal(t, mocks.PolicyID, serviceSnapshots.Compliance.PolicyId.String())
 	require.NotEmpty(t, serviceSnapshots.Compliance.PolicyCustomizations)
 
-	var policyCustomizations map[string]interface{}
+	var policyCustomizations map[string]any
 	err = json.Unmarshal(serviceSnapshots.Compliance.PolicyCustomizations, &policyCustomizations)
 	require.NoError(t, err, "PolicyCustomizations should be valid JSON")
 	require.NotEmpty(t, policyCustomizations)
@@ -1860,21 +1860,21 @@ func TestBlueprintCreationRollbackOnPolicyFailure(t *testing.T) {
 
 	// This triggers a 500: the compliance mock has no tailorings for rhel-9,
 	// so building compliance snapshots fails and the creation rolls back.
-	body := map[string]interface{}{
+	body := map[string]any{
 		"name":        "BlueprintShouldRollback",
 		"description": "Blueprint that should be rolled back",
-		"customizations": map[string]interface{}{
+		"customizations": map[string]any{
 			"packages": []string{"nginx"},
-			"openscap": map[string]interface{}{
+			"openscap": map[string]any{
 				"policy_id": mocks.PolicyID,
 			},
 		},
 		"distribution": "rhel-9",
-		"image_requests": []map[string]interface{}{
+		"image_requests": []map[string]any{
 			{
 				"architecture":   "x86_64",
 				"image_type":     "aws",
-				"upload_request": map[string]interface{}{"type": "aws", "options": map[string]interface{}{"share_with_accounts": []string{"test-account"}}},
+				"upload_request": map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
 			},
 		},
 	}

@@ -90,7 +90,7 @@ func initQuotaFile(t *testing.T) (string, error) {
 	return file.Name(), nil
 }
 
-func makeUploadOptions(t *testing.T, uploadOptions interface{}) *composer.UploadOptions {
+func makeUploadOptions(t *testing.T, uploadOptions any) *composer.UploadOptions {
 	data, err := json.Marshal(uploadOptions)
 	require.NoError(t, err)
 
