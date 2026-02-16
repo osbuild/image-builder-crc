@@ -221,6 +221,9 @@ type AWSUploadStatus struct {
 	Region string `json:"region"`
 }
 
+// ArchitectureInfo Architecture metadata from images library
+type ArchitectureInfo = composer.ArchitectureInfo
+
 // ArchitectureItem defines model for ArchitectureItem.
 type ArchitectureItem struct {
 	Arch       string   `json:"arch"`
@@ -342,6 +345,9 @@ type BlueprintsResponse struct {
 	Links ListResponseLinks `json:"links"`
 	Meta  ListResponseMeta  `json:"meta"`
 }
+
+// BootMode defines model for BootMode.
+type BootMode = composer.ImageTypeInfoBootMode
 
 // BtrfsSubvolume defines model for BtrfsSubvolume.
 type BtrfsSubvolume = composer.BtrfsSubvolume
@@ -629,6 +635,33 @@ type Directory_User struct {
 // Disk defines model for Disk.
 type Disk = composer.Disk
 
+// DistributionDetails Complete metadata for a specific distribution from images library
+type DistributionDetails struct {
+	// Architectures Map of architecture names to their details
+	Architectures *map[string]ArchitectureInfo `json:"architectures,omitempty"`
+
+	// Codename Codename of the distribution
+	Codename *string `json:"codename,omitempty"`
+
+	// ModulePlatformId Module platform ID for DNF modularity
+	ModulePlatformId *string `json:"module_platform_id,omitempty"`
+
+	// Name Name of the distribution
+	Name string `json:"name"`
+
+	// OsVersion Full OS version including minor version
+	OsVersion *string `json:"os_version,omitempty"`
+
+	// OstreeRef Default OSTree reference template
+	OstreeRef *string `json:"ostree_ref,omitempty"`
+
+	// Product Product name
+	Product *string `json:"product,omitempty"`
+
+	// Releasever Release version used in repo files
+	Releasever *string `json:"releasever,omitempty"`
+}
+
 // DistributionItem defines model for DistributionItem.
 type DistributionItem struct {
 	Description string `json:"description"`
@@ -839,6 +872,9 @@ type ImageStatus struct {
 // ImageStatusStatus defines model for ImageStatus.Status.
 type ImageStatusStatus string
 
+// ImageTypeInfo Image type metadata from images library
+type ImageTypeInfo = composer.ImageTypeInfo
+
 // ImageTypes defines model for ImageTypes.
 type ImageTypes string
 
@@ -968,6 +1004,9 @@ type PackagesResponse struct {
 
 // Partition defines model for Partition.
 type Partition = composer.Partition
+
+// PartitionType defines model for PartitionType.
+type PartitionType = composer.ImageTypeInfoPartitionType
 
 // Progress defines model for Progress.
 type Progress struct {
@@ -1184,6 +1223,15 @@ type GetComposeClonesParams struct {
 
 	// Offset clones page offset, default 0
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetDistributionParams defines parameters for GetDistribution.
+type GetDistributionParams struct {
+	// ImageType Filter by image type. Multiple values can be specified.
+	ImageType *[]string `form:"image_type,omitempty" json:"image_type,omitempty"`
+
+	// Architecture Filter by architecture. Multiple values can be specified.
+	Architecture *[]string `form:"architecture,omitempty" json:"architecture,omitempty"`
 }
 
 // GetPackagesParams defines parameters for GetPackages.
@@ -2047,6 +2095,9 @@ type ServerInterface interface {
 	// get the distributions available to this user
 	// (GET /distributions)
 	GetDistributions(ctx echo.Context) error
+	// Get details for a specific distribution
+	// (GET /distributions/{distro})
+	GetDistribution(ctx echo.Context, distro string, params GetDistributionParams) error
 	// Apply linter fixes to blueprint
 	// (POST /experimental/blueprints/{id}/fixup)
 	FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
@@ -2439,6 +2490,38 @@ func (w *ServerInterfaceWrapper) GetDistributions(ctx echo.Context) error {
 	return err
 }
 
+// GetDistribution converts echo context to params.
+func (w *ServerInterfaceWrapper) GetDistribution(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "distro" -------------
+	var distro string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "distro", ctx.Param("distro"), &distro, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter distro: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDistributionParams
+	// ------------- Optional query parameter "image_type" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "image_type", ctx.QueryParams(), &params.ImageType)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter image_type: %s", err))
+	}
+
+	// ------------- Optional query parameter "architecture" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "architecture", ctx.QueryParams(), &params.Architecture)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter architecture: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetDistribution(ctx, distro, params)
+	return err
+}
+
 // FixupBlueprint converts echo context to params.
 func (w *ServerInterfaceWrapper) FixupBlueprint(ctx echo.Context) error {
 	var err error
@@ -2638,6 +2721,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/composes/:composeId/clones", wrapper.GetComposeClones)
 	router.GET(baseURL+"/composes/:composeId/metadata", wrapper.GetComposeMetadata)
 	router.GET(baseURL+"/distributions", wrapper.GetDistributions)
+	router.GET(baseURL+"/distributions/:distro", wrapper.GetDistribution)
 	router.POST(baseURL+"/experimental/blueprints/:id/fixup", wrapper.FixupBlueprint)
 	router.POST(baseURL+"/experimental/recommendations", wrapper.RecommendPackage)
 	router.GET(baseURL+"/oscap/:distribution/profiles", wrapper.GetOscapProfiles)
