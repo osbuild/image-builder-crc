@@ -112,16 +112,16 @@ func (e CustomizationsPartitioningMode) Valid() bool {
 
 // Defines values for DiskType.
 const (
-	Dos DiskType = "dos"
-	Gpt DiskType = "gpt"
+	DiskTypeDos DiskType = "dos"
+	DiskTypeGpt DiskType = "gpt"
 )
 
 // Valid indicates whether the value is a known member of the DiskType enum.
 func (e DiskType) Valid() bool {
 	switch e {
-	case Dos:
+	case DiskTypeDos:
 		return true
-	case Gpt:
+	case DiskTypeGpt:
 		return true
 	default:
 		return false
@@ -230,9 +230,52 @@ func (e ImageStatusValue) Valid() bool {
 	}
 }
 
+// Defines values for ImageTypeInfoBootMode.
+const (
+	Hybrid ImageTypeInfoBootMode = "hybrid"
+	Legacy ImageTypeInfoBootMode = "legacy"
+	None   ImageTypeInfoBootMode = "none"
+	Uefi   ImageTypeInfoBootMode = "uefi"
+)
+
+// Valid indicates whether the value is a known member of the ImageTypeInfoBootMode enum.
+func (e ImageTypeInfoBootMode) Valid() bool {
+	switch e {
+	case Hybrid:
+		return true
+	case Legacy:
+		return true
+	case None:
+		return true
+	case Uefi:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImageTypeInfoPartitionType.
+const (
+	ImageTypeInfoPartitionTypeDos ImageTypeInfoPartitionType = "dos"
+	ImageTypeInfoPartitionTypeGpt ImageTypeInfoPartitionType = "gpt"
+)
+
+// Valid indicates whether the value is a known member of the ImageTypeInfoPartitionType enum.
+func (e ImageTypeInfoPartitionType) Valid() bool {
+	switch e {
+	case ImageTypeInfoPartitionTypeDos:
+		return true
+	case ImageTypeInfoPartitionTypeGpt:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ImageTypes.
 const (
 	ImageTypesAws                    ImageTypes = "aws"
+	ImageTypesAwsCvm                 ImageTypes = "aws-cvm"
 	ImageTypesAwsHaRhui              ImageTypes = "aws-ha-rhui"
 	ImageTypesAwsRhui                ImageTypes = "aws-rhui"
 	ImageTypesAwsSapRhui             ImageTypes = "aws-sap-rhui"
@@ -269,6 +312,8 @@ const (
 func (e ImageTypes) Valid() bool {
 	switch e {
 	case ImageTypesAws:
+		return true
+	case ImageTypesAwsCvm:
 		return true
 	case ImageTypesAwsHaRhui:
 		return true
@@ -465,6 +510,15 @@ type AWSS3UploadOptions struct {
 // AWSS3UploadStatus defines model for AWSS3UploadStatus.
 type AWSS3UploadStatus struct {
 	Url string `json:"url"`
+}
+
+// ArchitectureInfo Architecture metadata from images library
+type ArchitectureInfo struct {
+	// ImageTypes Map of image type names to their details
+	ImageTypes *map[string]ImageTypeInfo `json:"image_types,omitempty"`
+
+	// Name Architecture name
+	Name string `json:"name"`
 }
 
 // AzureUploadOptions defines model for AzureUploadOptions.
@@ -719,6 +773,11 @@ type BlueprintUser struct {
 	Uid *int `json:"uid,omitempty"`
 }
 
+// Bootc defines model for Bootc.
+type Bootc struct {
+	Reference string `json:"reference"`
+}
+
 // BtrfsSubvolume defines model for BtrfsSubvolume.
 type BtrfsSubvolume struct {
 	// Mountpoint Mountpoint for the subvolume
@@ -826,12 +885,17 @@ type ComposeMetadata struct {
 
 // ComposeRequest defines model for ComposeRequest.
 type ComposeRequest struct {
-	Blueprint      *Blueprint      `json:"blueprint,omitempty"`
-	Customizations *Customizations `json:"customizations,omitempty"`
-	Distribution   string          `json:"distribution"`
-	ImageRequest   *ImageRequest   `json:"image_request,omitempty"`
-	ImageRequests  *[]ImageRequest `json:"image_requests,omitempty"`
-	Koji           *Koji           `json:"koji,omitempty"`
+	Blueprint *Blueprint `json:"blueprint,omitempty"`
+
+	// BlueprintId Optional blueprint ID to record in RHSM facts. This is set automatically
+	// when composing from a blueprint via image-builder.
+	BlueprintId    *openapi_types.UUID `json:"blueprint_id,omitempty"`
+	Bootc          *Bootc              `json:"bootc,omitempty"`
+	Customizations *Customizations     `json:"customizations,omitempty"`
+	Distribution   *string             `json:"distribution,omitempty"`
+	ImageRequest   *ImageRequest       `json:"image_request,omitempty"`
+	ImageRequests  *[]ImageRequest     `json:"image_requests,omitempty"`
+	Koji           *Koji               `json:"koji,omitempty"`
 }
 
 // ComposeSBOMs defines model for ComposeSBOMs.
@@ -1068,6 +1132,36 @@ type Disk struct {
 
 // DiskType Type of the partition table
 type DiskType string
+
+// DistributionDetails defines model for DistributionDetails.
+type DistributionDetails struct {
+	// Architectures Map of architecture names to their details
+	Architectures *map[string]ArchitectureInfo `json:"architectures,omitempty"`
+
+	// Codename Codename of the distribution
+	Codename *string `json:"codename,omitempty"`
+	Href     string  `json:"href"`
+	Id       string  `json:"id"`
+	Kind     string  `json:"kind"`
+
+	// ModulePlatformId Module platform ID for DNF modularity
+	ModulePlatformId *string `json:"module_platform_id,omitempty"`
+
+	// Name Name of the distribution
+	Name string `json:"name"`
+
+	// OsVersion Full OS version including minor version
+	OsVersion *string `json:"os_version,omitempty"`
+
+	// OstreeRef Default OSTree reference template
+	OstreeRef *string `json:"ostree_ref,omitempty"`
+
+	// Product Product name
+	Product *string `json:"product,omitempty"`
+
+	// Releasever Release version used in repo files
+	Releasever *string `json:"releasever,omitempty"`
+}
 
 // DistributionList Map of distributions to their architecture.
 type DistributionList map[string]map[string][]BlueprintRepository
@@ -1338,6 +1432,55 @@ type ImageStatus struct {
 
 // ImageStatusValue defines model for ImageStatusValue.
 type ImageStatusValue string
+
+// ImageTypeInfo Image type metadata from images library
+type ImageTypeInfo struct {
+	// Aliases Alternative names for this image type
+	Aliases            *[]string `json:"aliases,omitempty"`
+	BasePartitionTable *Disk     `json:"base_partition_table,omitempty"`
+
+	// BootMode Boot mode for the image
+	BootMode *ImageTypeInfoBootMode `json:"boot_mode,omitempty"`
+
+	// DefaultSize Default image size in bytes
+	DefaultSize *uint64 `json:"default_size,omitempty"`
+
+	// Exports Names of stages that produce the build output
+	Exports *[]string `json:"exports,omitempty"`
+
+	// Filename Canonical filename for the image
+	Filename *string `json:"filename,omitempty"`
+
+	// IsoLabel ISO label (only for ISO image types)
+	IsoLabel *string `json:"iso_label,omitempty"`
+
+	// MimeType MIME type of the image
+	MimeType *string `json:"mime_type,omitempty"`
+
+	// Name Image type name
+	Name string `json:"name"`
+
+	// OstreeRef Default OSTree ref for this image type
+	OstreeRef *string `json:"ostree_ref,omitempty"`
+
+	// PartitionType Partition table type
+	PartitionType *ImageTypeInfoPartitionType `json:"partition_type,omitempty"`
+
+	// PayloadPackageSets Package set names safe for custom packages via custom repos
+	PayloadPackageSets *[]string `json:"payload_package_sets,omitempty"`
+
+	// RequiredBlueprintOptions Customization options required by this image type
+	RequiredBlueprintOptions *[]string `json:"required_blueprint_options,omitempty"`
+
+	// SupportedBlueprintOptions Customization options supported by this image type
+	SupportedBlueprintOptions *[]string `json:"supported_blueprint_options,omitempty"`
+}
+
+// ImageTypeInfoBootMode Boot mode for the image
+type ImageTypeInfoBootMode string
+
+// ImageTypeInfoPartitionType Partition table type
+type ImageTypeInfoPartitionType string
 
 // ImageTypes defines model for ImageTypes.
 type ImageTypes string
@@ -1805,6 +1948,15 @@ type Page = string
 
 // Size defines model for size.
 type Size = string
+
+// GetDistributionParams defines parameters for GetDistribution.
+type GetDistributionParams struct {
+	// ImageType Filter by image type. Multiple values can be specified.
+	ImageType *[]string `form:"image_type,omitempty" json:"image_type,omitempty"`
+
+	// Architecture Filter by architecture. Multiple values can be specified.
+	Architecture *[]string `form:"architecture,omitempty" json:"architecture,omitempty"`
+}
 
 // GetErrorListParams defines parameters for GetErrorList.
 type GetErrorListParams struct {
