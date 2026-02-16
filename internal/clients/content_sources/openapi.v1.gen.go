@@ -325,6 +325,12 @@ type ApiRepositoryImportResponse struct {
 	// DistributionVersions Versions to restrict client usage to
 	DistributionVersions *[]string `json:"distribution_versions,omitempty"`
 
+	// ExtendedRelease Extended release type (eus, e4s)
+	ExtendedRelease *string `json:"extended_release,omitempty"`
+
+	// ExtendedReleaseVersion Extended release version (9.4, 9.6, etc.)
+	ExtendedReleaseVersion *string `json:"extended_release_version,omitempty"`
+
 	// FailedIntrospectionsCount Number of consecutive failed introspections
 	FailedIntrospectionsCount *int `json:"failed_introspections_count,omitempty"`
 
@@ -445,8 +451,14 @@ type ApiRepositoryParameterResponse struct {
 	// DistributionArches Architectures available for repository creation
 	DistributionArches *[]ConfigDistributionArch `json:"distribution_arches,omitempty"`
 
+	// DistributionMinorVersions Minor versions available for repository creation (filtered by subscriptions)
+	DistributionMinorVersions *[]ConfigDistributionMinorVersion `json:"distribution_minor_versions,omitempty"`
+
 	// DistributionVersions Versions available for repository creation
 	DistributionVersions *[]ConfigDistributionVersion `json:"distribution_versions,omitempty"`
+
+	// ExtendedReleaseFeatures Extended release features available (filtered by subscriptions)
+	ExtendedReleaseFeatures *[]ConfigExtendedReleaseFeature `json:"extended_release_features,omitempty"`
 }
 
 // ApiRepositoryRequest defines model for api.RepositoryRequest.
@@ -492,6 +504,12 @@ type ApiRepositoryResponse struct {
 
 	// DistributionVersions Versions to restrict client usage to
 	DistributionVersions *[]string `json:"distribution_versions,omitempty"`
+
+	// ExtendedRelease Extended release type (eus, e4s)
+	ExtendedRelease *string `json:"extended_release,omitempty"`
+
+	// ExtendedReleaseVersion Extended release version (9.4, 9.6, etc.)
+	ExtendedReleaseVersion *string `json:"extended_release_version,omitempty"`
 
 	// FailedIntrospectionsCount Number of consecutive failed introspections
 	FailedIntrospectionsCount *int `json:"failed_introspections_count,omitempty"`
@@ -1008,6 +1026,12 @@ type ApiTemplateRequest struct {
 	// Description Description of the template
 	Description *string `json:"description,omitempty"`
 
+	// ExtendedRelease Extended release type (eus, e4s)
+	ExtendedRelease *string `json:"extended_release,omitempty"`
+
+	// ExtendedReleaseVersion Extended release version (9.4, 9.6, etc.)
+	ExtendedReleaseVersion *string `json:"extended_release_version,omitempty"`
+
 	// Name Name of the template
 	Name string `json:"name"`
 
@@ -1037,6 +1061,12 @@ type ApiTemplateResponse struct {
 
 	// Description Description of the template
 	Description *string `json:"description,omitempty"`
+
+	// ExtendedRelease Extended release type (eus, e4s)
+	ExtendedRelease *string `json:"extended_release,omitempty"`
+
+	// ExtendedReleaseVersion Extended release version (9.4, 9.6, etc.)
+	ExtendedReleaseVersion *string `json:"extended_release_version,omitempty"`
 
 	// LastUpdateSnapshotError Error of last update_latest_snapshot task that updated the template
 	LastUpdateSnapshotError *string `json:"last_update_snapshot_error,omitempty"`
@@ -1171,6 +1201,14 @@ type ConfigDistributionArch struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// ConfigDistributionMinorVersion defines model for config.DistributionMinorVersion.
+type ConfigDistributionMinorVersion struct {
+	FeatureNames *[]string `json:"feature_names,omitempty"`
+	Label        *string   `json:"label,omitempty"`
+	Major        *string   `json:"major,omitempty"`
+	Name         *string   `json:"name,omitempty"`
+}
+
 // ConfigDistributionVersion defines model for config.DistributionVersion.
 type ConfigDistributionVersion struct {
 	// Label Static label of the version
@@ -1178,6 +1216,12 @@ type ConfigDistributionVersion struct {
 
 	// Name Human-readable form of the version
 	Name *string `json:"name,omitempty"`
+}
+
+// ConfigExtendedReleaseFeature defines model for config.ExtendedReleaseFeature.
+type ConfigExtendedReleaseFeature struct {
+	Label *string `json:"label,omitempty"`
+	Name  *string `json:"name,omitempty"`
 }
 
 // ErrorsErrorResponse defines model for errors.ErrorResponse.
@@ -1261,6 +1305,12 @@ type ListRepositoriesParams struct {
 
 	// ContentType content type of a repository to filter on (rpm)
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty"`
+
+	// ExtendedRelease A comma separated list of extended release types to filter on (eus, e4s), or 'none' to filter out extended release repositories
+	ExtendedRelease *string `form:"extended_release,omitempty" json:"extended_release,omitempty"`
+
+	// ExtendedReleaseVersion A comma separated list of extended release versions to filter on (e.g. 9.4,9.6)
+	ExtendedReleaseVersion *string `form:"extended_release_version,omitempty" json:"extended_release_version,omitempty"`
 }
 
 // BulkCreateRepositoriesJSONBody defines parameters for BulkCreateRepositories.
