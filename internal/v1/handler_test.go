@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -709,6 +710,190 @@ func TestGetArchitectures(t *testing.T) {
 	t.Run("Restricted, but allowed distribution", func(t *testing.T) {
 		respStatusCode, _ := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/architectures/fedora-39", &tutils.AuthString0)
 		require.Equal(t, http.StatusOK, respStatusCode)
+	})
+}
+
+func TestGetDistribution(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		var partition composer.Partition
+		err := json.Unmarshal([]byte(`{"type":"plain","fs_type":"vfat","label":"ESP","minsize":"209715200","mountpoint":"/boot/efi"}`), &partition)
+		supportedBlueprintOptions := []string{
+			"distro", "packages", "modules", "groups", "enabled_modules",
+			"customizations.disk", "customizations.dnf", "customizations.files"}
+		require.NoError(t, err)
+
+		distroDetails := composer.DistributionDetails{
+			Id:   "1",
+			Kind: "DistributionDetails",
+			Href: "/api/image-builder-composer/v2/distributions/rhel-9.6",
+			Name: "rhel-9.6",
+			Architectures: &map[string]composer.ArchitectureInfo{
+				"x86_64": {
+					Name: "x86_64",
+					ImageTypes: &map[string]composer.ImageTypeInfo{
+						"ami": {
+							Name:     "ami",
+							Filename: common.ToPtr("image.raw"),
+							MimeType: common.ToPtr("application/octet-stream"),
+							BasePartitionTable: &composer.Disk{
+								Type: common.ToPtr(composer.DiskTypeGpt),
+								Partitions: []composer.Partition{
+									partition,
+								},
+							},
+							BootMode:                  common.ToPtr(composer.Uefi),
+							DefaultSize:               common.ToPtr(uint64(10737418240)),
+							IsoLabel:                  nil,
+							PayloadPackageSets:        common.ToPtr([]string{"blueprint"}),
+							Exports:                   common.ToPtr([]string{"image"}),
+							RequiredBlueprintOptions:  nil,
+							SupportedBlueprintOptions: common.ToPtr(supportedBlueprintOptions),
+						},
+					},
+				},
+			},
+		}
+
+		apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(t, "/api/image-builder-composer/v2/distributions/rhel-9.6", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode(distroDetails)
+			require.NoError(t, err)
+		}))
+		defer apiSrv.Close()
+
+		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
+		defer srv.Shutdown(t)
+
+		respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions/rhel-9.6", &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, respStatusCode)
+
+		var result v1.DistributionDetails
+		err = json.Unmarshal([]byte(body), &result)
+		require.NoError(t, err)
+
+		require.Equal(t, "rhel-9.6", result.Name)
+
+		arch := (*result.Architectures)["x86_64"]
+		require.Equal(t, "x86_64", arch.Name)
+
+		imageType := (*arch.ImageTypes)["ami"]
+		require.Equal(t, "ami", imageType.Name)
+
+		require.Equal(t, "image.raw", *imageType.Filename)
+		require.Equal(t, "application/octet-stream", *imageType.MimeType)
+		require.Equal(t, v1.BootMode("uefi"), *imageType.BootMode)
+		require.Equal(t, uint64(10737418240), *imageType.DefaultSize)
+		require.Equal(t, partition, imageType.BasePartitionTable.Partitions[0])
+		require.Equal(t, supportedBlueprintOptions, *imageType.SupportedBlueprintOptions)
+		require.Equal(t, []string{"blueprint"}, *imageType.PayloadPackageSets)
+		require.Equal(t, []string{"image"}, *imageType.Exports)
+		require.Nil(t, imageType.RequiredBlueprintOptions)
+	})
+
+	t.Run("NotFound", func(t *testing.T) {
+		apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, `{"message": "distribution not found"}`)
+		}))
+		defer apiSrv.Close()
+
+		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
+		defer srv.Shutdown(t)
+
+		respStatusCode, _ := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions/nonexistent", &tutils.AuthString0)
+		require.Equal(t, http.StatusNotFound, respStatusCode)
+	})
+
+	t.Run("Multiple parameters", func(t *testing.T) {
+		apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode(composer.DistributionDetails{
+				Id:   "1",
+				Kind: "DistributionDetails",
+				Href: "/api/image-builder-composer/v2/distributions/rhel-9.6",
+				Name: "rhel-9.6",
+				Architectures: &map[string]composer.ArchitectureInfo{
+					"x86_64": {
+						Name: "x86_64",
+						ImageTypes: &map[string]composer.ImageTypeInfo{
+							"ami": {
+								Name: "ami",
+							},
+							"qcow2": {
+								Name: "qcow2",
+							},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		}))
+		defer apiSrv.Close()
+
+		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
+		defer srv.Shutdown(t)
+
+		respStatusCode, body := tutils.GetResponseBody(t,
+			srv.URL+"/api/image-builder/v1/distributions/rhel-9.6?image_type=ami&architecture=x86_64&image_type=qcow2", &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, respStatusCode)
+
+		var result v1.DistributionDetails
+		err := json.Unmarshal([]byte(body), &result)
+		require.NoError(t, err)
+
+		require.Equal(t, "rhel-9.6", result.Name)
+
+		arch := (*result.Architectures)["x86_64"]
+		require.Equal(t, "x86_64", arch.Name)
+
+		imageType := (*arch.ImageTypes)["ami"]
+		require.Equal(t, "ami", imageType.Name)
+
+		imageType = (*arch.ImageTypes)["qcow2"]
+		require.Equal(t, "qcow2", imageType.Name)
+
+		require.Equal(t, 2, len(*arch.ImageTypes))
+	})
+
+	t.Run("ComposerTypeAliasFieldsMatchSpec", func(t *testing.T) {
+		spec, err := v1.GetSwagger()
+		require.NoError(t, err)
+
+		for _, tt := range []struct {
+			schemaName string
+			goType     reflect.Type
+		}{
+			{"ArchitectureInfo", reflect.TypeOf(v1.ArchitectureInfo{})},
+			{"ImageTypeInfo", reflect.TypeOf(v1.ImageTypeInfo{})},
+			{"Disk", reflect.TypeOf(v1.Disk{})},
+			{"FilesystemTyped", reflect.TypeOf(v1.FilesystemTyped{})},
+			{"BtrfsSubvolume", reflect.TypeOf(v1.BtrfsSubvolume{})},
+			{"BtrfsVolume", reflect.TypeOf(v1.BtrfsVolume{})},
+			{"LogicalVolume", reflect.TypeOf(v1.LogicalVolume{})},
+			{"VolumeGroup", reflect.TypeOf(v1.VolumeGroup{})},
+		} {
+			t.Run(tt.schemaName, func(t *testing.T) {
+				schemaRef := spec.Components.Schemas[tt.schemaName]
+				require.NotNilf(t, schemaRef, "schema %q not found in OpenAPI spec", tt.schemaName)
+
+				for i := 0; i < tt.goType.NumField(); i++ {
+					field := tt.goType.Field(i)
+					jsonTag := strings.Split(field.Tag.Get("json"), ",")[0]
+					if jsonTag == "" || jsonTag == "-" {
+						continue
+					}
+					_, documented := schemaRef.Value.Properties[jsonTag]
+					require.Truef(t, documented,
+						"field %s.%s (json:%q) from composer type alias is not in the image-builder OpenAPI spec; "+
+							"it would leak in API responses without documentation",
+						tt.schemaName, field.Name, jsonTag)
+				}
+			})
+		}
 	})
 }
 
