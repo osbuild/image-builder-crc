@@ -859,7 +859,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -908,7 +908,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -981,7 +981,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1079,7 +1079,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1174,7 +1174,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1269,7 +1269,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGcp,
@@ -1372,7 +1372,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1449,7 +1449,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1530,7 +1530,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1802,7 +1802,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr("centos-9"),
 				Customizations: &composer.Customizations{
 					Packages: &[]string{
 						"some",
@@ -1970,7 +1970,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr("centos-9"),
 				Customizations: &composer.Customizations{
 					PayloadRepositories: &[]composer.Repository{
 						{
@@ -2106,7 +2106,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr("centos-9"),
 				Customizations: &composer.Customizations{
 					Packages: &[]string{
 						"pkg",
@@ -2188,7 +2188,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution:   "centos-9",
+				Distribution:   common.ToPtr("centos-9"),
 				Customizations: nil,
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
@@ -2246,7 +2246,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution:   "centos-9",
+				Distribution:   common.ToPtr("centos-9"),
 				Customizations: nil,
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
@@ -2296,7 +2296,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution:   "centos-9",
+				Distribution:   common.ToPtr("centos-9"),
 				Customizations: nil,
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
@@ -2354,7 +2354,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Filesystem: &[]composer.Filesystem{
 						{
@@ -2402,7 +2402,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesOci,
@@ -2457,7 +2457,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Filesystem: &[]composer.Filesystem{
 						{
@@ -2531,7 +2531,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Files: &[]composer.File{
 						{
@@ -2617,7 +2617,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Firewall: &composer.FirewallCustomization{
 						Ports: common.ToPtr([]string{"1"}),
@@ -2689,7 +2689,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
 						ActivationKey:       "",
@@ -2753,7 +2753,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
 						ActivationKey:       "",
@@ -2813,7 +2813,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Openscap: &composer.OpenSCAP{
 						ProfileId: "openscap-ref-id",
@@ -2877,7 +2877,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Openscap: &composer.OpenSCAP{
 						ProfileId:     "openscap-ref-id",
@@ -2936,7 +2936,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "rhel-9.5",
+				Distribution: common.ToPtr("rhel-9.5"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -2992,7 +2992,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "rhel-9.5",
+				Distribution: common.ToPtr("rhel-9.5"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3033,7 +3033,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.5",
+				Distribution: common.ToPtr("rhel-9.5"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3120,7 +3120,7 @@ func TestComposeCustomizations(t *testing.T) {
 						PatchUrl:            common.ToPtr(""),
 					},
 				},
-				Distribution: "rhel-9.5",
+				Distribution: common.ToPtr("rhel-9.5"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3167,7 +3167,7 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Files: &[]composer.File{
 						{
@@ -3261,7 +3261,7 @@ WantedBy=basic.target
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-8.10",
+				Distribution: common.ToPtr("rhel-8.10"),
 				Customizations: &composer.Customizations{
 					Files: &[]composer.File{
 						{
@@ -3399,7 +3399,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3439,7 +3439,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr("centos-9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3479,7 +3479,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr("rhel-9.7"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGcp,
