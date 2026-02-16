@@ -555,6 +555,14 @@
                         },
                         "type": "array"
                     },
+                    "extended_release": {
+                        "description": "Extended release type (eus, e4s)",
+                        "type": "string"
+                    },
+                    "extended_release_version": {
+                        "description": "Extended release version (9.4, 9.6, etc.)",
+                        "type": "string"
+                    },
                     "failed_introspections_count": {
                         "description": "Number of consecutive failed introspections",
                         "type": "integer"
@@ -750,10 +758,24 @@
                         },
                         "type": "array"
                     },
+                    "distribution_minor_versions": {
+                        "description": "Minor versions available for repository creation (filtered by subscriptions)",
+                        "items": {
+                            "$ref": "#/components/schemas/config.DistributionMinorVersion"
+                        },
+                        "type": "array"
+                    },
                     "distribution_versions": {
                         "description": "Versions available for repository creation",
                         "items": {
                             "$ref": "#/components/schemas/config.DistributionVersion"
+                        },
+                        "type": "array"
+                    },
+                    "extended_release_features": {
+                        "description": "Extended release features available (filtered by subscriptions)",
+                        "items": {
+                            "$ref": "#/components/schemas/config.ExtendedReleaseFeature"
                         },
                         "type": "array"
                     }
@@ -839,6 +861,14 @@
                             "type": "string"
                         },
                         "type": "array"
+                    },
+                    "extended_release": {
+                        "description": "Extended release type (eus, e4s)",
+                        "type": "string"
+                    },
+                    "extended_release_version": {
+                        "description": "Extended release version (9.4, 9.6, etc.)",
+                        "type": "string"
                     },
                     "failed_introspections_count": {
                         "description": "Number of consecutive failed introspections",
@@ -1721,6 +1751,14 @@
                         "description": "Description of the template",
                         "type": "string"
                     },
+                    "extended_release": {
+                        "description": "Extended release type (eus, e4s)",
+                        "type": "string"
+                    },
+                    "extended_release_version": {
+                        "description": "Extended release version (9.4, 9.6, etc.)",
+                        "type": "string"
+                    },
                     "name": {
                         "description": "Name of the template",
                         "type": "string"
@@ -1769,6 +1807,14 @@
                     },
                     "description": {
                         "description": "Description of the template",
+                        "type": "string"
+                    },
+                    "extended_release": {
+                        "description": "Extended release type (eus, e4s)",
+                        "type": "string"
+                    },
+                    "extended_release_version": {
+                        "description": "Extended release version (9.4, 9.6, etc.)",
                         "type": "string"
                     },
                     "last_update_snapshot_error": {
@@ -1987,6 +2033,26 @@
                 },
                 "type": "object"
             },
+            "config.DistributionMinorVersion": {
+                "properties": {
+                    "feature_names": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "major": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "config.DistributionVersion": {
                 "properties": {
                     "label": {
@@ -1995,6 +2061,17 @@
                     },
                     "name": {
                         "description": "Human-readable form of the version",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "config.ExtendedReleaseFeature": {
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "name": {
                         "type": "string"
                     }
                 },
@@ -2603,6 +2680,22 @@
                         "description": "content type of a repository to filter on (rpm)",
                         "in": "query",
                         "name": "content_type",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "A comma separated list of extended release types to filter on (eus, e4s), or 'none' to filter out extended release repositories",
+                        "in": "query",
+                        "name": "extended_release",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "A comma separated list of extended release versions to filter on (e.g. 9.4,9.6)",
+                        "in": "query",
+                        "name": "extended_release_version",
                         "schema": {
                             "type": "string"
                         }
