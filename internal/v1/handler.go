@@ -169,6 +169,63 @@ func (h *Handlers) GetArchitectures(ctx echo.Context, distro Distributions) erro
 	return ctx.JSON(http.StatusOK, archs)
 }
 
+func (h *Handlers) GetDistribution(ctx echo.Context, distro string, params GetDistributionParams) error {
+	var imageTypes, architectures []string
+	if params.ImageType != nil {
+		imageTypes = *params.ImageType
+	}
+	if params.Architecture != nil {
+		architectures = *params.Architecture
+	}
+
+	resp, err := h.server.cClient.GetDistribution(ctx.Request().Context(), distro, imageTypes, architectures)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get distribution details").SetInternal(err)
+	}
+	defer closeBody(ctx, resp.Body)
+
+	if resp.StatusCode == http.StatusNotFound {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to read response").SetInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusNotFound, string(body))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			ctx.Logger().Errorf("unable to read error response: %v", err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("Failed to get distribution details (code %v): %s", resp.StatusCode, body))
+	}
+
+	var composerDetails composer.DistributionDetails
+	if err := json.NewDecoder(resp.Body).Decode(&composerDetails); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to decode distribution details").SetInternal(err)
+	}
+
+	details := mapDistributionDetails(&composerDetails)
+
+	return ctx.JSON(http.StatusOK, details)
+}
+
+func mapDistributionDetails(c *composer.DistributionDetails) DistributionDetails {
+	d := DistributionDetails{
+		Name:             c.Name,
+		Codename:         c.Codename,
+		Releasever:       c.Releasever,
+		OsVersion:        c.OsVersion,
+		ModulePlatformId: c.ModulePlatformId,
+		Product:          c.Product,
+		OstreeRef:        c.OstreeRef,
+		Architectures:    c.Architectures,
+	}
+
+	return d
+}
+
 func (h *Handlers) GetPackages(ctx echo.Context, params GetPackagesParams) error {
 	d, err := h.server.getDistro(ctx, params.Distribution)
 	if err != nil {

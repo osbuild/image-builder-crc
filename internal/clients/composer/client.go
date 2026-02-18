@@ -10,6 +10,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -151,4 +152,20 @@ func (cc *ComposerClient) CloneCompose(ctx context.Context, id uuid.UUID, clone 
 
 func (cc *ComposerClient) CloneStatus(ctx context.Context, id uuid.UUID) (*http.Response, error) {
 	return cc.request(ctx, "GET", fmt.Sprintf("%s/clones/%s", cc.composerURL, id), nil, nil)
+}
+
+func (cc *ComposerClient) GetDistribution(ctx context.Context, distro string, imageTypes, architectures []string) (*http.Response, error) {
+	params := url.Values{}
+	for _, it := range imageTypes {
+		params.Add("image_type", it)
+	}
+	for _, arch := range architectures {
+		params.Add("architecture", arch)
+	}
+
+	reqURL := fmt.Sprintf("%s/distributions/%s", cc.composerURL, distro)
+	if len(params) > 0 {
+		reqURL += "?" + params.Encode()
+	}
+	return cc.request(ctx, "GET", reqURL, nil, nil)
 }
