@@ -280,6 +280,13 @@ func exports(uuids []string) (res []content_sources.ApiRepositoryExportResponse)
 			Url:    common.ToPtr("http://snappy-url/snappy/payload3"),
 		})
 	}
+	if slices.Contains(uuids, RepoSharedEpelID) {
+		res = append(res, content_sources.ApiRepositoryExportResponse{
+			GpgKey: common.ToPtr("some-epel-gpg-key"),
+			Name:   common.ToPtr("epel10"),
+			Url:    common.ToPtr("https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/"),
+		})
+	}
 	return res
 }
 

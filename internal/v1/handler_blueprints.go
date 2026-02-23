@@ -512,8 +512,42 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 
 	repoUUIDs := []string{}
 	if blueprint.Customizations.CustomRepositories != nil {
-		for _, repo := range *blueprint.Customizations.CustomRepositories {
-			repoUUIDs = append(repoUUIDs, repo.Id)
+		communityReposByURL, err := content_sources.GetCommunityReposByURL(ctx.Request().Context(), *h.server.csClient)
+		if err != nil {
+			return err
+		}
+
+		// These checks automatically exchange used custom EPEL repos to their community variant.
+		// This is done for backwards compatibility, because of the removal of custom EPEL repositories.
+		// REF: HMS-5853
+		for i, repo := range *blueprint.Customizations.CustomRepositories {
+			if repo.Baseurl == nil || len(*repo.Baseurl) == 0 {
+				repoUUIDs = append(repoUUIDs, repo.Id)
+				continue
+			}
+
+			cr, found := communityReposByURL[(*repo.Baseurl)[0]]
+			if !found || cr.Uuid == nil {
+				repoUUIDs = append(repoUUIDs, repo.Id)
+				continue
+			}
+
+			repoUUIDs = append(repoUUIDs, *cr.Uuid)
+			(*blueprint.Customizations.CustomRepositories)[i].Id = *cr.Uuid
+			(*blueprint.Customizations.CustomRepositories)[i].Name = cr.Name
+		}
+
+		if blueprint.Customizations.PayloadRepositories != nil {
+			for i, pr := range *blueprint.Customizations.PayloadRepositories {
+				if pr.Baseurl == nil {
+					continue
+				}
+
+				cr, found := communityReposByURL[*pr.Baseurl]
+				if found && cr.Uuid != nil {
+					(*blueprint.Customizations.PayloadRepositories)[i].Id = cr.Uuid
+				}
+			}
 		}
 	}
 
