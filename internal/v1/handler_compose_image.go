@@ -156,7 +156,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	}
 
 	cloudCR := composer.ComposeRequest{
-		Distribution:   distro,
+		Distribution:   &distro,
 		Customizations: customizations,
 		ImageRequest: &composer.ImageRequest{
 			Architecture:  string(composeRequest.ImageRequests[0].Architecture),
