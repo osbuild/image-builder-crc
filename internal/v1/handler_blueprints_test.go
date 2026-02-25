@@ -1327,6 +1327,71 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 	require.Equal(t, "appstream", *result2.ContentSources[1].Name)
 	require.Equal(t, "http://snappy-url/snappy/appstream", *result2.ContentSources[1].Url)
 	require.Equal(t, mocks.RhelGPG, *result2.ContentSources[1].GpgKey)
+
+	// Test community repo remapping:
+	// A custom repo whose baseurl matches an EPEL community URL should have
+	// its Id and Name remapped to the shared community repo. A non-EPEL
+	// custom repo should remain unchanged. Payload repos matching an EPEL
+	// URL should also have their Id remapped.
+	id3 := uuid.New()
+	versionId3 := uuid.New()
+	userPrivateEpelID := "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+	epelBlueprint := v1.BlueprintBody{
+		Customizations: v1.Customizations{
+			Packages: common.ToPtr([]string{"htop"}),
+			CustomRepositories: &[]v1.CustomRepository{
+				{
+					Baseurl: &[]string{"https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/"},
+					Name:    common.ToPtr("my-private-epel"),
+					Id:      userPrivateEpelID,
+				},
+				{
+					Baseurl: &[]string{"http://snappy-url/snappy/baseos"},
+					Name:    common.ToPtr("baseos"),
+					Gpgkey:  &[]string{mocks.RhelGPG},
+					Id:      mocks.RepoBaseID,
+				},
+			},
+			PayloadRepositories: &[]v1.Repository{
+				{
+					Baseurl: common.ToPtr("https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/"),
+					Id:      common.ToPtr(userPrivateEpelID),
+				},
+			},
+		},
+		Distribution: "centos-9",
+	}
+
+	var message3 []byte
+	message3, err = json.Marshal(epelBlueprint)
+	require.NoError(t, err)
+
+	err = dbase.InsertBlueprint(ctx, id3, versionId3, "000000", "000000", "blueprint-epel", "", message3, nil, nil)
+	require.NoError(t, err)
+
+	respStatusCodeEpel, bodyEpel := tutils.GetResponseBody(t, srvURL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s/export", id3.String()), &tutils.AuthString0)
+	require.Equal(t, http.StatusOK, respStatusCodeEpel)
+
+	var resultEpel BlueprintExportResponseUnmarshal
+	err = json.Unmarshal([]byte(bodyEpel), &resultEpel)
+	require.NoError(t, err)
+
+	// The EPEL custom repo should be remapped to the community repo
+	epelCustomRepo := (*resultEpel.Customizations.CustomRepositories)[0]
+	require.Equal(t, mocks.RepoSharedEpelID, epelCustomRepo.Id)
+	require.Equal(t, "epel10", *epelCustomRepo.Name)
+
+	// The non-EPEL custom repo should remain unchanged
+	nonEpelCustomRepo := (*resultEpel.Customizations.CustomRepositories)[1]
+	require.Equal(t, mocks.RepoBaseID, nonEpelCustomRepo.Id)
+	require.Equal(t, "baseos", *nonEpelCustomRepo.Name)
+
+	// The payload repo should also be remapped to the community repo
+	epelPayloadRepo := (*resultEpel.Customizations.PayloadRepositories)[0]
+	require.Equal(t, mocks.RepoSharedEpelID, *epelPayloadRepo.Id)
+
+	// Content sources should contain exports for both custom repos
+	require.Len(t, resultEpel.ContentSources, 2)
 }
 
 func TestHandlers_GetBlueprints(t *testing.T) {
