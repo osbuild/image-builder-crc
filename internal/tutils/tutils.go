@@ -32,7 +32,7 @@ func GetResponseError(url string) (*http.Response, error) {
 	return client.Do(request)
 }
 
-func responseBody(t *testing.T, method, url string, auth *string, body interface{}) (int, string) {
+func responseBody(t *testing.T, method, url string, auth *string, body any) (int, string) {
 	client := http.Client{}
 	var request *http.Request
 	var err error
@@ -68,15 +68,15 @@ func GetResponseBody(t *testing.T, url string, auth *string) (int, string) {
 	return responseBody(t, http.MethodGet, url, auth, nil)
 }
 
-func PostResponseBody(t *testing.T, url string, body interface{}) (int, string) {
+func PostResponseBody(t *testing.T, url string, body any) (int, string) {
 	return responseBody(t, http.MethodPost, url, &AuthString0, body)
 }
 
-func PostResponseBodyWithAuth(t *testing.T, url string, body interface{}, auth *string) (int, string) {
+func PostResponseBodyWithAuth(t *testing.T, url string, body any, auth *string) (int, string) {
 	return responseBody(t, http.MethodPost, url, auth, body)
 }
 
-func PutResponseBody(t *testing.T, url string, body interface{}) (int, string) {
+func PutResponseBody(t *testing.T, url string, body any) (int, string) {
 	return responseBody(t, http.MethodPut, url, &AuthString0, body)
 }
 

@@ -22,7 +22,7 @@ type Config struct {
 
 // *string means the value is not required
 // string means the value is required and should have a default value
-func LoadConfigFromEnv(intf interface{}) error {
+func LoadConfigFromEnv(intf any) error {
 	t := reflect.TypeOf(intf).Elem()
 	v := reflect.ValueOf(intf).Elem()
 

@@ -20,7 +20,7 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 	// Test cases structure
 	testCases := []struct {
 		name                 string
-		customizations       map[string]interface{}
+		customizations       map[string]any
 		expectError          bool
 		errorTitle           string
 		expectMultipleErrors bool
@@ -30,8 +30,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Files - Positive cases
 		{
 			name: "valid file customization - simple",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "/etc/myconfig.conf", "data": "config content"},
 				},
 			},
@@ -39,8 +39,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "valid file customization - with mode and user",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{
 						"path":  "/opt/app/config.json",
 						"data":  `{"key": "value"}`,
@@ -55,8 +55,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Files - Negative cases
 		{
 			name: "invalid file path - relative",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "config.txt", "data": "content"},
 				},
 			},
@@ -65,8 +65,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "invalid file path - trailing slash",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "/etc/config/", "data": "content"},
 				},
 			},
@@ -75,8 +75,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "invalid file path - restricted system path /usr/share",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "/usr/share/nginx/html/index.html", "data": "Hello World"},
 				},
 			},
@@ -85,8 +85,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "invalid file path - restricted /usr (but /usr/local allowed)",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "/usr/bin/myapp", "data": "#!/bin/bash"},
 				},
 			},
@@ -95,8 +95,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "valid file path - /usr/local is allowed",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "/usr/local/bin/myapp", "data": "#!/bin/bash"},
 				},
 			},
@@ -105,8 +105,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Directories - Positive cases
 		{
 			name: "valid directory customization - simple",
-			customizations: map[string]interface{}{
-				"directories": []map[string]interface{}{
+			customizations: map[string]any{
+				"directories": []map[string]any{
 					{"path": "/opt/myapp"},
 				},
 			},
@@ -114,8 +114,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "valid directory customization - with mode and ensure_parents",
-			customizations: map[string]interface{}{
-				"directories": []map[string]interface{}{
+			customizations: map[string]any{
+				"directories": []map[string]any{
 					{
 						"path":           "/var/lib/myservice",
 						"mode":           "755",
@@ -130,8 +130,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Directories - Negative cases
 		{
 			name: "invalid directory path - relative",
-			customizations: map[string]interface{}{
-				"directories": []map[string]interface{}{
+			customizations: map[string]any{
+				"directories": []map[string]any{
 					{"path": "mydir"},
 				},
 			},
@@ -140,8 +140,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "invalid directory path - trailing slash",
-			customizations: map[string]interface{}{
-				"directories": []map[string]interface{}{
+			customizations: map[string]any{
+				"directories": []map[string]any{
 					{"path": "/opt/myapp/"},
 				},
 			},
@@ -151,8 +151,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Filesystem - Positive cases
 		{
 			name: "valid filesystem customization - root",
-			customizations: map[string]interface{}{
-				"filesystem": []map[string]interface{}{
+			customizations: map[string]any{
+				"filesystem": []map[string]any{
 					{"mountpoint": "/", "min_size": 10737418240}, // 10GB
 				},
 			},
@@ -160,8 +160,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "valid filesystem customization - var with size",
-			customizations: map[string]interface{}{
-				"filesystem": []map[string]interface{}{
+			customizations: map[string]any{
+				"filesystem": []map[string]any{
 					{"mountpoint": "/var", "min_size": 5368709120}, // 5GB
 				},
 			},
@@ -170,8 +170,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Filesystem - Negative cases
 		{
 			name: "invalid filesystem mountpoint - relative",
-			customizations: map[string]interface{}{
-				"filesystem": []map[string]interface{}{
+			customizations: map[string]any{
+				"filesystem": []map[string]any{
 					{"mountpoint": "var", "min_size": 1073741824},
 				},
 			},
@@ -180,8 +180,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "invalid filesystem mountpoint - non-canonical",
-			customizations: map[string]interface{}{
-				"filesystem": []map[string]interface{}{
+			customizations: map[string]any{
+				"filesystem": []map[string]any{
 					{"mountpoint": "/var/../tmp", "min_size": 1073741824},
 				},
 			},
@@ -190,8 +190,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "invalid filesystem min_size - too small",
-			customizations: map[string]interface{}{
-				"filesystem": []map[string]interface{}{
+			customizations: map[string]any{
+				"filesystem": []map[string]any{
 					{"mountpoint": "/var", "min_size": 512}, // 512 bytes, less than 1MB
 				},
 			},
@@ -201,8 +201,8 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		// Multiple violations - test that all violations are collected and returned
 		{
 			name: "multiple file violations - two invalid files",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "relative.txt", "data": "content"}, // relative path
 					{"path": "/etc/config/", "data": "content"}, // trailing slash
 				},
@@ -223,14 +223,14 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 		},
 		{
 			name: "multiple violations across different types",
-			customizations: map[string]interface{}{
-				"files": []map[string]interface{}{
+			customizations: map[string]any{
+				"files": []map[string]any{
 					{"path": "badfile.txt", "data": "content"}, // relative path
 				},
-				"directories": []map[string]interface{}{
+				"directories": []map[string]any{
 					{"path": "baddir"}, // relative path
 				},
-				"filesystem": []map[string]interface{}{
+				"filesystem": []map[string]any{
 					{"mountpoint": "var", "min_size": 1073741824}, // relative mountpoint
 				},
 			},
@@ -258,18 +258,18 @@ func TestHandlers_BlueprintRuleChecking(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create blueprint request with test customizations
-			body := map[string]interface{}{
+			body := map[string]any{
 				"name":           fmt.Sprintf("test-blueprint-%d", time.Now().UnixNano()),
 				"description":    "Test blueprint for rule checking",
 				"customizations": tc.customizations,
 				"distribution":   "centos-9",
-				"image_requests": []map[string]interface{}{
+				"image_requests": []map[string]any{
 					{
 						"architecture": "x86_64",
 						"image_type":   "aws",
-						"upload_request": map[string]interface{}{
+						"upload_request": map[string]any{
 							"type": "aws",
-							"options": map[string]interface{}{
+							"options": map[string]any{
 								"share_with_accounts": []string{"test-account"},
 							},
 						},
