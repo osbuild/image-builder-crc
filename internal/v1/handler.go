@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/image-builder-crc/internal/distribution"
@@ -645,25 +644,18 @@ func (h *Handlers) CloneCompose(ctx echo.Context, composeId uuid.UUID) error {
 
 		if awsEC2CloneReq.ShareWithSources != nil {
 			for _, source := range *awsEC2CloneReq.ShareWithSources {
-				resp, err := h.server.pClient.GetUploadInfo(ctx.Request().Context(), source)
+				accountID, err := h.server.sourcesClient.ResolveSourceToAWSAccountID(ctx.Request().Context(), source)
 				if err != nil {
 					ctx.Logger().Error(err)
-					return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to request source: %s", source))
-				}
-				defer closeBody(ctx, resp.Body)
-
-				var uploadInfo provisioning.V1SourceUploadInfoResponse
-				err = json.NewDecoder(resp.Body).Decode(&uploadInfo)
-				if err != nil {
-					return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to resolve source: %s", source))
+					return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an aws account id", source))
 				}
 
-				if uploadInfo.Aws == nil || uploadInfo.Aws.AccountId == nil || len(*uploadInfo.Aws.AccountId) != 12 {
-					return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an aws account id: %v", source, uploadInfo.Aws.AccountId))
+				if len(accountID) != 12 {
+					return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an aws account id", source))
 				}
 
-				ctx.Logger().Info(fmt.Sprintf("Resolved source %s, to account id %s", strings.Replace(source, "\n", "", -1), *uploadInfo.Aws.AccountId))
-				shareWithAccounts = append(shareWithAccounts, *uploadInfo.Aws.AccountId)
+				ctx.Logger().Info(fmt.Sprintf("Resolved source %s, to account id %s", strings.Replace(source, "\n", "", -1), accountID))
+				shareWithAccounts = append(shareWithAccounts, accountID)
 			}
 		}
 

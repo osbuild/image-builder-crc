@@ -22,7 +22,7 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
+	"github.com/osbuild/image-builder-crc/internal/clients/sources"
 	"github.com/osbuild/image-builder-crc/internal/clients/recommendations"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
@@ -36,7 +36,7 @@ import (
 type Server struct {
 	echo                *echo.Echo
 	cClient             *composer.ComposerClient
-	pClient             *provisioning.ProvisioningClient
+	sourcesClient       *sources.SourcesClient
 	csClient            *content_sources.ContentSourcesClient
 	csReposURL          *url.URL
 	csReposPrefix       string
@@ -59,7 +59,7 @@ type Server struct {
 type ServerConfig struct {
 	EchoServer          *echo.Echo
 	CompClient          *composer.ComposerClient
-	ProvClient          *provisioning.ProvisioningClient
+	SourcesClient       *sources.SourcesClient
 	CSClient            *content_sources.ContentSourcesClient
 	CSReposURL          string
 	CSReposPrefix       string
@@ -116,7 +116,7 @@ func Attach(conf *ServerConfig) (*Server, error) {
 	s := Server{
 		conf.EchoServer,
 		conf.CompClient,
-		conf.ProvClient,
+		conf.SourcesClient,
 		conf.CSClient,
 		csReposURL,
 		conf.CSReposPrefix,

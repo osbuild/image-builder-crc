@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
@@ -1625,41 +1624,49 @@ func TestComposeCustomizations(t *testing.T) {
 	defer apiSrv.Close()
 
 	awsAccountId := "123456123456"
-	provSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var result provisioning.V1SourceUploadInfoResponse
-
-		if r.URL.Path == "/sources/1/upload_info" {
-			awsId := struct {
-				AccountId *string `json:"account_id,omitempty"`
-			}{
-				AccountId: &awsAccountId,
-			}
-			result.Aws = &awsId
-		}
-
-		if r.URL.Path == "/sources/2/upload_info" {
-			azureInfo := struct {
-				ResourceGroups *[]string `json:"resource_groups,omitempty"`
-				SubscriptionId *string   `json:"subscription_id,omitempty"`
-				TenantId       *string   `json:"tenant_id,omitempty"`
-			}{
-				SubscriptionId: common.ToPtr("id"),
-				TenantId:       common.ToPtr("tenant"),
-				ResourceGroups: &[]string{"group"},
-			}
-			result.Azure = &azureInfo
-		}
-
-		require.Equal(t, tutils.AuthString0, r.Header.Get("x-rh-identity"))
+	sourcesSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		err := json.NewEncoder(w).Encode(result)
-		require.NoError(t, err)
+
+		// Mock Sources API: GET /sources/{id}/authentications
+		if r.URL.Path == "/sources/1/authentications" {
+			result := map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"authtype":      "provisioning-arn",
+						"username":      "arn:aws:iam::" + awsAccountId + ":role/test-role",
+						"resource_type": "Application",
+						"resource_id":   "1",
+					},
+				},
+			}
+			err := json.NewEncoder(w).Encode(result)
+			require.NoError(t, err)
+			return
+		}
+
+		if r.URL.Path == "/sources/2/authentications" {
+			result := map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"authtype":      "provisioning_lighthouse_subscription_id",
+						"username":      "id",
+						"resource_type": "Application",
+						"resource_id":   "2",
+					},
+				},
+			}
+			err := json.NewEncoder(w).Encode(result)
+			require.NoError(t, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
 	}))
 
 	srv := startServer(t, &testServerClientsConf{
 		ComposerURL: apiSrv.URL,
-		ProvURL:     provSrv.URL,
+		ProvURL:     sourcesSrv.URL,
 	}, nil)
 	defer srv.Shutdown(t)
 

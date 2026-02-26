@@ -16,7 +16,6 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/distribution"
 	"github.com/osbuild/image-builder-crc/internal/tmpl"
@@ -718,25 +717,18 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 
 		if uo.ShareWithSources != nil {
 			for _, source := range *uo.ShareWithSources {
-				resp, err := h.server.pClient.GetUploadInfo(ctx.Request().Context(), source)
+				accountID, err := h.server.sourcesClient.ResolveSourceToAWSAccountID(ctx.Request().Context(), source)
 				if err != nil {
 					ctx.Logger().Error(err)
-					return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to request source: %s", source))
-				}
-				defer closeBody(ctx, resp.Body)
-
-				var uploadInfo provisioning.V1SourceUploadInfoResponse
-				err = json.NewDecoder(resp.Body).Decode(&uploadInfo)
-				if err != nil {
-					return uploadOptions, "", echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to resolve source: %s", source))
-				}
-
-				if uploadInfo.Aws == nil || uploadInfo.Aws.AccountId == nil || len(*uploadInfo.Aws.AccountId) != 12 {
 					return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an aws account id", source))
 				}
 
-				ctx.Logger().Info(fmt.Sprintf("Resolved source %s, to account id %s", strings.Replace(source, "\n", "", -1), *uploadInfo.Aws.AccountId))
-				shareWithAccounts = append(shareWithAccounts, *uploadInfo.Aws.AccountId)
+				if len(accountID) != 12 {
+					return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an aws account id", source))
+				}
+
+				ctx.Logger().Info(fmt.Sprintf("Resolved source %s, to account id %s", strings.Replace(source, "\n", "", -1), accountID))
+				shareWithAccounts = append(shareWithAccounts, accountID)
 			}
 		}
 		err = uploadOptions.FromAWSEC2UploadOptions(composer.AWSEC2UploadOptions{
