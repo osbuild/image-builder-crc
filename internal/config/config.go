@@ -34,6 +34,10 @@ type ImageBuilderConfig struct {
 	SplunkPort               string `env:"SPLUNK_HEC_PORT"`
 	SplunkToken              string `env:"SPLUNK_HEC_TOKEN"`
 	ProvisioningURL          string `env:"PROVISIONING_URL"`
+	SourcesURL               string `env:"SOURCES_URL"`
+	SourcesAWSAccessKeyID    string `env:"SOURCES_AWS_ACCESS_KEY_ID"`
+	SourcesAWSSecretKey      string `env:"SOURCES_AWS_SECRET_ACCESS_KEY"`
+	SourcesAWSDefaultRegion  string `env:"SOURCES_AWS_DEFAULT_REGION"`
 	ContentSourcesURL        string `env:"CONTENT_SOURCES_URL"`
 	ContentSourcesRepoURL    string `env:"CONTENT_SOURCES_REPO_URL"`
 	ContentSourcesRepoPrefix string `env:"CONTENT_SOURCES_REPO_PREFIX"`
