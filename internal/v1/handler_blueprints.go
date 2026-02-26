@@ -696,7 +696,7 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 			ImageDescription: &blueprintEntry.Description,
 			ClientId:         &clientId,
 		}
-		composesResponse, err := h.handleCommonCompose(ctx, composeRequest, &blueprintEntry.VersionId)
+		composesResponse, err := h.handleCommonCompose(ctx, composeRequest, &blueprintEntry.Id, &blueprintEntry.VersionId)
 		if err != nil {
 			return err
 		}
