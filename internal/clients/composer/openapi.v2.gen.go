@@ -548,12 +548,16 @@ type ComposeMetadata struct {
 
 // ComposeRequest defines model for ComposeRequest.
 type ComposeRequest struct {
-	Blueprint      *Blueprint      `json:"blueprint,omitempty"`
-	Customizations *Customizations `json:"customizations,omitempty"`
-	Distribution   string          `json:"distribution"`
-	ImageRequest   *ImageRequest   `json:"image_request,omitempty"`
-	ImageRequests  *[]ImageRequest `json:"image_requests,omitempty"`
-	Koji           *Koji           `json:"koji,omitempty"`
+	Blueprint *Blueprint `json:"blueprint,omitempty"`
+
+	// BlueprintId Optional blueprint ID to record in RHSM facts. This is set automatically
+	// when composing from a blueprint via image-builder.
+	BlueprintId    *openapi_types.UUID `json:"blueprint_id,omitempty"`
+	Customizations *Customizations     `json:"customizations,omitempty"`
+	Distribution   string              `json:"distribution"`
+	ImageRequest   *ImageRequest       `json:"image_request,omitempty"`
+	ImageRequests  *[]ImageRequest     `json:"image_requests,omitempty"`
+	Koji           *Koji               `json:"koji,omitempty"`
 }
 
 // ComposeSBOMs defines model for ComposeSBOMs.
