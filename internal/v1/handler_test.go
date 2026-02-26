@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
@@ -488,25 +487,26 @@ func TestGetClones(t *testing.T) {
 	}))
 	defer apiSrv.Close()
 
-	provSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		awsId := struct {
-			AccountId *string `json:"account_id,omitempty"`
-		}{
-			AccountId: &awsAccountId,
-		}
-		result := provisioning.V1SourceUploadInfoResponse{
-			Aws: &awsId,
-		}
-
-		require.Equal(t, tutils.AuthString0, r.Header.Get("x-rh-identity"))
+	sourcesSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
+		// Mock Sources API: GET /sources/1/authentications
+		result := map[string]interface{}{
+			"data": []map[string]interface{}{
+				{
+					"authtype":      "provisioning-arn",
+					"username":      "arn:aws:iam::" + awsAccountId + ":role/test-role",
+					"resource_type": "Application",
+					"resource_id":   "1",
+				},
+			},
+		}
 		err := json.NewEncoder(w).Encode(result)
 		require.NoError(t, err)
 	}))
-	defer provSrv.Close()
+	defer sourcesSrv.Close()
 
-	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL, ProvURL: provSrv.URL}, &v1.ServerConfig{
+	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL, ProvURL: sourcesSrv.URL}, &v1.ServerConfig{
 		DistributionsDir: "../../distributions",
 	})
 	defer srv.Shutdown(t)

@@ -19,7 +19,7 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
+	"github.com/osbuild/image-builder-crc/internal/clients/sources"
 	"github.com/osbuild/image-builder-crc/internal/clients/recommendations"
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
@@ -140,7 +140,7 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	})
 	require.NoError(t, err)
 
-	provClient, err := provisioning.NewClient(provisioning.ProvisioningClientConfig{
+	sourcesClient, err := sources.NewClient(sources.SourcesClientConfig{
 		URL: tscc.ProvURL,
 	})
 	require.NoError(t, err)
@@ -193,7 +193,7 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	}
 	serverConfig.EchoServer = echoServer
 	serverConfig.CompClient = compClient
-	serverConfig.ProvClient = provClient
+	serverConfig.SourcesClient = sourcesClient
 	serverConfig.CSClient = csClient
 	serverConfig.CSReposURL = "https://content-sources.org"
 	serverConfig.CSReposPrefix = "/api/neat"

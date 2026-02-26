@@ -770,6 +770,76 @@ paths:
         404:
           description: blueprint was not found
 
+  /sources:
+    get:
+      summary: list sources available for image sharing
+      description: |
+        Lists cloud sources associated with the provisioning application type.
+        These sources hold the credentials needed to share images with cloud accounts.
+      operationId: getSourceList
+      tags:
+        - source
+      parameters:
+        - in: query
+          name: provider
+          schema:
+            type: string
+            enum:
+              - aws
+              - azure
+              - gcp
+          description: Filter sources by cloud provider.
+      responses:
+        '200':
+          description: list of sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceListResponse'
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPErrorList'
+
+  /sources/{id}/upload_info:
+    get:
+      summary: get upload info for a source
+      description: |
+        Returns the cloud account details associated with a source, such as
+        the AWS account ID. This information is needed to share images with
+        that account.
+      operationId: getSourceUploadInfo
+      tags:
+        - source
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Source ID
+      responses:
+        '200':
+          description: source upload info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceUploadInfoResponse'
+        '400':
+          description: the source could not be resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPErrorList'
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPErrorList'
+
 components:
   schemas:
     HTTPError:
@@ -789,6 +859,64 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HTTPError'
+    SourceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        provider:
+          type: string
+          description: "One of ('aws', 'azure', 'gcp')"
+        status:
+          type: string
+        uid:
+          type: string
+    SourceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceResponse'
+        metadata:
+          type: object
+          properties:
+            links:
+              type: object
+              properties:
+                next:
+                  type: string
+                previous:
+                  type: string
+            total:
+              type: integer
+    SourceUploadInfoResponse:
+      type: object
+      properties:
+        provider:
+          type: string
+        aws:
+          nullable: true
+          type: object
+          properties:
+            account_id:
+              type: string
+        azure:
+          nullable: true
+          type: object
+          properties:
+            tenant_id:
+              type: string
+            subscription_id:
+              type: string
+            resource_groups:
+              type: array
+              items:
+                type: string
+        gcp:
+          nullable: true
     Version:
       required:
         - version
