@@ -651,7 +651,8 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: "centos-9",
+		Distribution:  "centos-9",
+		BlueprintId: &id,
 		ImageRequest: &composer.ImageRequest{
 			Architecture: "x86_64",
 			ImageType:    composer.ImageTypesAws,
@@ -675,7 +676,8 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: "centos-9",
+		Distribution:  "centos-9",
+		BlueprintId: &id,
 		ImageRequest: &composer.ImageRequest{
 			Architecture: "aarch64",
 			ImageType:    composer.ImageTypesAws,
@@ -699,7 +701,8 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: "centos-9",
+		Distribution:  "centos-9",
+		BlueprintId: &id,
 		ImageRequest: &composer.ImageRequest{
 			Architecture:  "aarch64",
 			ImageType:     composer.ImageTypesGuestImage,

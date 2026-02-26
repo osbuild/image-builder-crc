@@ -36,7 +36,7 @@ func (h *Handlers) ComposeImage(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	composeResponse, err := h.handleCommonCompose(ctx, composeRequest, nil)
+	composeResponse, err := h.handleCommonCompose(ctx, composeRequest, nil, nil)
 	if err != nil {
 		ctx.Logger().Errorf("Failed to compose image: %v", err)
 		return err
@@ -45,7 +45,7 @@ func (h *Handlers) ComposeImage(ctx echo.Context) error {
 	return ctx.JSON(http.StatusCreated, composeResponse)
 }
 
-func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeRequest, blueprintVersionId *uuid.UUID) (ComposeResponse, error) {
+func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeRequest, blueprintId *uuid.UUID, blueprintVersionId *uuid.UUID) (ComposeResponse, error) {
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
 		return ComposeResponse{}, err
@@ -158,6 +158,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	cloudCR := composer.ComposeRequest{
 		Distribution:   distro,
 		Customizations: customizations,
+		BlueprintId:    blueprintId,
 		ImageRequest: &composer.ImageRequest{
 			Architecture:  string(composeRequest.ImageRequests[0].Architecture),
 			ImageType:     imageType,
