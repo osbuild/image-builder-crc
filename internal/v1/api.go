@@ -509,6 +509,27 @@ func (e GetPackagesParamsArchitecture) Valid() bool {
 	}
 }
 
+// Defines values for GetSourceListParamsProvider.
+const (
+	Aws   GetSourceListParamsProvider = "aws"
+	Azure GetSourceListParamsProvider = "azure"
+	Gcp   GetSourceListParamsProvider = "gcp"
+)
+
+// Valid indicates whether the value is a known member of the GetSourceListParamsProvider enum.
+func (e GetSourceListParamsProvider) Valid() bool {
+	switch e {
+	case Aws:
+		return true
+	case Azure:
+		return true
+	case Gcp:
+		return true
+	default:
+		return false
+	}
+}
+
 // AAPRegistration defines model for AAPRegistration.
 type AAPRegistration struct {
 	AnsibleCallbackUrl string `json:"ansible_callback_url"`
@@ -1358,6 +1379,43 @@ type Services struct {
 	Masked *[]string `json:"masked,omitempty"`
 }
 
+// SourceListResponse defines model for SourceListResponse.
+type SourceListResponse struct {
+	Data     *[]SourceResponse `json:"data,omitempty"`
+	Metadata *struct {
+		Links *struct {
+			Next     *string `json:"next,omitempty"`
+			Previous *string `json:"previous,omitempty"`
+		} `json:"links,omitempty"`
+		Total *int `json:"total,omitempty"`
+	} `json:"metadata,omitempty"`
+}
+
+// SourceResponse defines model for SourceResponse.
+type SourceResponse struct {
+	Id   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
+
+	// Provider One of ('aws', 'azure', 'gcp')
+	Provider *string `json:"provider,omitempty"`
+	Status   *string `json:"status,omitempty"`
+	Uid      *string `json:"uid,omitempty"`
+}
+
+// SourceUploadInfoResponse defines model for SourceUploadInfoResponse.
+type SourceUploadInfoResponse struct {
+	Aws *struct {
+		AccountId *string `json:"account_id,omitempty"`
+	} `json:"aws,omitempty"`
+	Azure *struct {
+		ResourceGroups *[]string `json:"resource_groups,omitempty"`
+		SubscriptionId *string   `json:"subscription_id,omitempty"`
+		TenantId       *string   `json:"tenant_id,omitempty"`
+	} `json:"azure,omitempty"`
+	Gcp      interface{} `json:"gcp,omitempty"`
+	Provider *string     `json:"provider,omitempty"`
+}
+
 // SubProgress defines model for SubProgress.
 type SubProgress struct {
 	// Done Amount of completed steps in the build.
@@ -1536,6 +1594,15 @@ type GetPackagesParams struct {
 
 // GetPackagesParamsArchitecture defines parameters for GetPackages.
 type GetPackagesParamsArchitecture string
+
+// GetSourceListParams defines parameters for GetSourceList.
+type GetSourceListParams struct {
+	// Provider Filter sources by cloud provider.
+	Provider *GetSourceListParamsProvider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// GetSourceListParamsProvider defines parameters for GetSourceList.
+type GetSourceListParamsProvider string
 
 // CreateBlueprintJSONRequestBody defines body for CreateBlueprint for application/json ContentType.
 type CreateBlueprintJSONRequestBody = CreateBlueprintRequest
@@ -2398,6 +2465,12 @@ type ServerInterface interface {
 	// return the readiness
 	// (GET /ready)
 	GetReadiness(ctx echo.Context) error
+	// list sources available for image sharing
+	// (GET /sources)
+	GetSourceList(ctx echo.Context, params GetSourceListParams) error
+	// get upload info for a source
+	// (GET /sources/{id}/upload_info)
+	GetSourceUploadInfo(ctx echo.Context, id string) error
 	// get the service version
 	// (GET /version)
 	GetVersion(ctx echo.Context) error
@@ -2913,6 +2986,40 @@ func (w *ServerInterfaceWrapper) GetReadiness(ctx echo.Context) error {
 	return err
 }
 
+// GetSourceList converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSourceList(ctx echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSourceListParams
+	// ------------- Optional query parameter "provider" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "provider", ctx.QueryParams(), &params.Provider, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter provider: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetSourceList(ctx, params)
+	return err
+}
+
+// GetSourceUploadInfo converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSourceUploadInfo(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetSourceUploadInfo(ctx, id)
+	return err
+}
+
 // GetVersion converts echo context to params.
 func (w *ServerInterfaceWrapper) GetVersion(ctx echo.Context) error {
 	var err error
@@ -2975,6 +3082,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/oscap/:policy/:distribution/policy_customizations", wrapper.GetOscapCustomizationsForPolicy)
 	router.GET(baseURL+"/packages", wrapper.GetPackages)
 	router.GET(baseURL+"/ready", wrapper.GetReadiness)
+	router.GET(baseURL+"/sources", wrapper.GetSourceList)
+	router.GET(baseURL+"/sources/:id/upload_info", wrapper.GetSourceUploadInfo)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
 
 }

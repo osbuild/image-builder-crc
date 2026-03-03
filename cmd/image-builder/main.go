@@ -11,7 +11,7 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/clients/compliance"
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
 	"github.com/osbuild/image-builder-crc/internal/clients/content_sources"
-	"github.com/osbuild/image-builder-crc/internal/clients/provisioning"
+	"github.com/osbuild/image-builder-crc/internal/clients/sources"
 	"github.com/osbuild/image-builder-crc/internal/clients/recommendations"
 	"github.com/osbuild/image-builder-crc/internal/config"
 	"github.com/osbuild/image-builder-crc/internal/db"
@@ -152,8 +152,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	provClient, err := provisioning.NewClient(provisioning.ProvisioningClientConfig{
-		URL: conf.ProvisioningURL,
+	sourcesClient, err := sources.NewClient(sources.SourcesClientConfig{
+		URL:              conf.SourcesURL,
+		AWSAccessKeyID:   conf.SourcesAWSAccessKeyID,
+		AWSSecretKey:     conf.SourcesAWSSecretKey,
+		AWSDefaultRegion: conf.SourcesAWSDefaultRegion,
 	})
 	if err != nil {
 		panic(err)
@@ -206,7 +209,7 @@ func main() {
 	serverConfig := &v1.ServerConfig{
 		EchoServer:       echoServer,
 		CompClient:       compClient,
-		ProvClient:       provClient,
+		SourcesClient:    sourcesClient,
 		RecommendClient:  recommendClient,
 		ComplianceClient: complianceClient,
 		CSClient:         csClient,
