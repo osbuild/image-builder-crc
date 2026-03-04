@@ -36,7 +36,7 @@ func (h *Handlers) ComposeImage(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	composeResponse, err := h.handleCommonCompose(ctx, composeRequest, nil, nil)
+	composeResponse, err := h.handleCommonCompose(ctx, composeRequest, composeOpts{})
 	if err != nil {
 		ctx.Logger().Errorf("Failed to compose image: %v", err)
 		return err
@@ -45,7 +45,12 @@ func (h *Handlers) ComposeImage(ctx echo.Context) error {
 	return ctx.JSON(http.StatusCreated, composeResponse)
 }
 
-func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeRequest, blueprintId *uuid.UUID, blueprintVersionId *uuid.UUID) (ComposeResponse, error) {
+type composeOpts struct {
+	BlueprintId        *uuid.UUID
+	BlueprintVersionId *uuid.UUID
+}
+
+func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeRequest, opts composeOpts) (ComposeResponse, error) {
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
 		return ComposeResponse{}, err
@@ -158,7 +163,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	cloudCR := composer.ComposeRequest{
 		Distribution:   common.ToPtr(distro),
 		Customizations: customizations,
-		BlueprintId:    blueprintId,
+		BlueprintId:    opts.BlueprintId,
 		ImageRequest: &composer.ImageRequest{
 			Architecture:  string(composeRequest.ImageRequests[0].Architecture),
 			ImageType:     imageType,
@@ -217,7 +222,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 
 	clientIdString := string(*composeRequest.ClientId)
 
-	err = h.server.db.InsertCompose(ctx.Request().Context(), composeResult.Id, userID.AccountNumber(), userID.Email(), userID.OrgID(), composeRequest.ImageName, rawCR, &clientIdString, blueprintVersionId)
+	err = h.server.db.InsertCompose(ctx.Request().Context(), composeResult.Id, userID.AccountNumber(), userID.Email(), userID.OrgID(), composeRequest.ImageName, rawCR, &clientIdString, opts.BlueprintVersionId)
 	if err != nil {
 		ctx.Logger().Error("Error inserting id into db", err)
 		return ComposeResponse{}, err
