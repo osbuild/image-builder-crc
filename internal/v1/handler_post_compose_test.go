@@ -1277,8 +1277,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						{
 							Baseurl:     common.ToPtr("https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable"),
 							Rhsm:        common.ToPtr(false),
-							Gpgkey:      common.ToPtr(mocks.GcpGPG),
-							CheckGpg:    common.ToPtr(true),
+							CheckGpg:    common.ToPtr(false),
 							IgnoreSsl:   nil,
 							Metalink:    nil,
 							Mirrorlist:  nil,
@@ -1287,8 +1286,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 						{
 							Baseurl:     common.ToPtr("https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64"),
 							Rhsm:        common.ToPtr(false),
-							Gpgkey:      common.ToPtr(mocks.GcpGPG),
-							CheckGpg:    common.ToPtr(true),
+							CheckGpg:    common.ToPtr(false),
 							IgnoreSsl:   nil,
 							Metalink:    nil,
 							Mirrorlist:  nil,
@@ -3501,14 +3499,12 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 						{
 							Baseurl:  common.ToPtr("https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable"),
 							Rhsm:     common.ToPtr(false),
-							Gpgkey:   common.ToPtr(mocks.GcpGPG),
-							CheckGpg: common.ToPtr(true),
+							CheckGpg: common.ToPtr(false),
 						},
 						{
 							Baseurl:  common.ToPtr("https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64"),
 							Rhsm:     common.ToPtr(false),
-							Gpgkey:   common.ToPtr(mocks.GcpGPG),
-							CheckGpg: common.ToPtr(true),
+							CheckGpg: common.ToPtr(false),
 						},
 					},
 					UploadOptions: makeUploadOptions(t, composer.GCPUploadOptions{
