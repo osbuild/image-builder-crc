@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
@@ -373,9 +374,9 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		}
 	}
 
-	repoUUIDs := make([]string, 0, len(repoMap))
-	for id, repo := range repoMap {
-		repoUUIDs = append(repoUUIDs, id)
+	repoUUIDs := slices.Collect(maps.Keys(repoMap))
+	for _, id := range repoUUIDs {
+		repo := repoMap[id]
 		if !*repo.Snapshot {
 			return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Repository %s (id: %s) has snapshotting disabled", *repo.Url, id))
 		}

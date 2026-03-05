@@ -1,7 +1,6 @@
 package v1_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,7 +17,7 @@ import (
 )
 
 func TestComposeStatus(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	composeId := uuid.New()
 	var composerStatus composer.ComposeStatus
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
