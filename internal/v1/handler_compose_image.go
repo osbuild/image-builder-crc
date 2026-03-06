@@ -526,6 +526,32 @@ func (h *Handlers) buildPayloadRepositories(ctx echo.Context, payloadRepos []Rep
 	return res, nil
 }
 
+func (h *Handlers) getLabelsFromRepositories(ctx echo.Context, repoIDs []string) ([]string, error) {
+	if len(repoIDs) == 0 {
+		return nil, nil
+	}
+
+	repoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), nil, repoIDs, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var labels []string
+	for _, repoID := range repoIDs {
+		if repo, ok := repoMap[repoID]; ok {
+			if repo.Label != nil && *repo.Label != "" {
+				if strings.Contains(*repo.Label, "baseos") || strings.Contains(*repo.Label, "appstream") {
+					continue
+				}
+
+				labels = append(labels, *repo.Label)
+			}
+		}
+	}
+
+	return labels, nil
+}
+
 func (h *Handlers) buildCustomRepositories(ctx echo.Context, custRepos []CustomRepository) ([]composer.CustomRepository, error) {
 	res := make([]composer.CustomRepository, len(custRepos))
 
@@ -947,6 +973,26 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			} else {
 				res.Subscription.PatchUrl = &h.server.patchURL
 				res.Subscription.TemplateUuid = cr.ImageRequests[0].ContentTemplate
+			}
+		}
+
+		// Retrieve content labels from any additional Red Hat repositories (not baseos/appstream) and set as ContentSets in subscription
+		if cust.CustomRepositories != nil {
+			var repoIDs []string
+
+			for _, repo := range *cust.CustomRepositories {
+				if repo.Id != "" {
+					repoIDs = append(repoIDs, repo.Id)
+				}
+			}
+
+			if len(repoIDs) > 0 {
+				labels, err := h.getLabelsFromRepositories(ctx, repoIDs)
+				if err != nil {
+					ctx.Logger().Warnf("Failed to get labels from repositories: %v", err)
+				} else if len(labels) > 0 {
+					res.Subscription.ContentSets = &labels
+				}
 			}
 		}
 	}
