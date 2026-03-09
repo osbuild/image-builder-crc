@@ -224,8 +224,10 @@ func main() {
 		QuotaFile:           conf.QuotaFile,
 		AllowFile:           conf.AllowFile,
 		AllDistros:          adr,
-		DistributionsDir:    conf.DistributionsDir,
-		FedoraAuth:          conf.FedoraAuth,
+		DistributionsDir:          conf.DistributionsDir,
+		BootcDistributionsFile: conf.BootcDistributionsFile,
+		EcrURL:                     conf.EcrURL,
+		FedoraAuth:                 conf.FedoraAuth,
 		InsightsClientProxy: conf.InsightsClientProxy,
 		PatchURL:            conf.PatchURL,
 	}

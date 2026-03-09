@@ -81,7 +81,19 @@ func (h *Handlers) GetOpenapiJson(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, h.server.spec)
 }
 
-func (h *Handlers) GetDistributions(ctx echo.Context) error {
+func (h *Handlers) GetDistributions(ctx echo.Context, params GetDistributionsParams) error {
+	if params.Kind != nil && *params.Kind == Bootc {
+		resp := make(BootcDistributionsResponse, 0, len(h.server.bootcDistributions))
+		for _, e := range h.server.bootcDistributions {
+			resp = append(resp, BootcDistributionItem{
+				Id:    e.ID,
+				Name:  e.Name,
+				Type:  e.Type,
+				Image: e.Image,
+			})
+		}
+		return ctx.JSON(http.StatusOK, resp)
+	}
 	dr := h.server.distroRegistry(ctx)
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {

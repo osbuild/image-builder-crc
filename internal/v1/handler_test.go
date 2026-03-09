@@ -913,6 +913,45 @@ func TestGetDistributions(t *testing.T) {
 	})
 }
 
+func TestGetBootcDistributions(t *testing.T) {
+	distsDir := "../../distributions"
+	allowFile := "../common/testdata/allow.json"
+	bootcFile := "../distribution/testdata/bootc_distributions.json"
+
+	t.Run("returns list from config", func(t *testing.T) {
+		srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
+			DistributionsDir:       distsDir,
+			AllowFile:              allowFile,
+			BootcDistributionsFile: bootcFile,
+		})
+		defer srv.Shutdown(t)
+		respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions?kind=bootc", &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, respStatusCode)
+		var result v1.BootcDistributionsResponse
+		err := json.Unmarshal([]byte(body), &result)
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+		require.Equal(t, "rhel-10.0-ec2", result[0].Id)
+		require.Equal(t, "Red Hat Enterprise Linux 10.0", result[0].Name)
+		require.Equal(t, "ec2", result[0].Type)
+		require.Equal(t, "rhel/10.0-ec2", result[0].Image)
+	})
+
+	t.Run("returns empty when no config file", func(t *testing.T) {
+		srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
+			DistributionsDir: distsDir,
+			AllowFile:        allowFile,
+		})
+		defer srv.Shutdown(t)
+		respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions?kind=bootc", &tutils.AuthString0)
+		require.Equal(t, http.StatusOK, respStatusCode)
+		var result v1.BootcDistributionsResponse
+		err := json.Unmarshal([]byte(body), &result)
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+}
+
 func TestGetProfiles(t *testing.T) {
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"

@@ -985,6 +985,9 @@ type ImageRequest struct {
 	Ostree       *OSTree      `json:"ostree,omitempty"`
 	Repositories []Repository `json:"repositories"`
 
+	// ImageRef Full container image reference for bootc/image-mode composes (e.g. ecr host + image from immutable config).
+	ImageRef *string `json:"image_ref,omitempty"`
+
 	// Size Size of image, in bytes. When set to 0 the image size is a minimum
 	// defined by the image type.
 	Size *uint64 `json:"size,omitempty"`

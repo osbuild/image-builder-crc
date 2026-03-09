@@ -60,15 +60,27 @@ paths:
       operationId: getDistributions
       tags:
         - distribution
+      parameters:
+        - in: query
+          name: kind
+          required: false
+          schema:
+            $ref: '#/components/schemas/DistributionKind'
+          description: |
+            Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
+            distributions (each with id, name, type, and image). Defaults to classic distributions.
       responses:
         '200':
           description: |
-            A list of distributions this user has access to. Some distributions are restricted, so
-            this list might not correspond to the Distributions (enum) schema for a given user.
+            A list of distributions. The response shape depends on the 'kind' parameter:
+            when kind is 'bootc', returns BootcDistributionsResponse; otherwise
+            returns DistributionsResponse (classic distributions filtered by user access).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DistributionsResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/DistributionsResponse'
+                  - $ref: '#/components/schemas/BootcDistributionsResponse'
   /architectures/{distribution}:
     get:
       summary: get the architectures and their image types available for a given distribution
@@ -841,6 +853,36 @@ components:
         name:
           type: string
           example: 'rhel-84'
+    DistributionKind:
+      type: string
+      description: Kind of distributions to return.
+      enum:
+        - bootc
+    BootcDistributionsResponse:
+      type: array
+      description: List of bootc image distributions for Image mode.
+      items:
+        $ref: '#/components/schemas/BootcDistributionItem'
+    BootcDistributionItem:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - image
+      properties:
+        id:
+          type: string
+          example: 'rhel-10.0-ec2'
+        name:
+          type: string
+          example: 'Red Hat Enterprise Linux 10.0'
+        type:
+          type: string
+          example: 'ec2'
+        image:
+          type: string
+          example: 'registry.example.com/rhel-10.0:ec2'
     Architectures:
       type: array
       items:
@@ -1262,6 +1304,11 @@ components:
           type: string
           description: |
             Name of the content template. Used when registering the system to Insights.
+        bootc_ref:
+          type: string
+          description: |
+            Unique id from the bootc distributions list (Image mode). Must be a recognized id.
+          example: 'rhel-10.0-ec2'
     ImageTypes:
       type: string
       enum:

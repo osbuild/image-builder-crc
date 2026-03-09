@@ -18,8 +18,10 @@ type ImageBuilderConfig struct {
 	OsbuildRegion            string `env:"OSBUILD_AWS_REGION"`
 	OsbuildGCPRegion         string `env:"OSBUILD_GCP_REGION"`
 	OsbuildGCPBucket         string `env:"OSBUILD_GCP_BUCKET"`
-	DistributionsDir         string `env:"DISTRIBUTIONS_DIR"`
-	MigrationsDir            string `env:"MIGRATIONS_DIR"`
+	DistributionsDir            string `env:"DISTRIBUTIONS_DIR"`
+	BootcDistributionsFile     string `env:"BOOTC_DISTRIBUTIONS_FILE"`
+	EcrURL                      string `env:"ECR_URL"`
+	MigrationsDir               string `env:"MIGRATIONS_DIR"`
 	TernExecutable           string `env:"TERN_EXECUTABLE"`
 	TernMigrationsDir        string `env:"TERN_MIGRATIONS_DIR"`
 	PGHost                   string `env:"PGHOST"`

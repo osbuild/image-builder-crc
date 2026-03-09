@@ -1,0 +1,10 @@
+{
+  "distributions": [
+    {
+      "id": "rhel-10.0-ec2",
+      "name": "Red Hat Enterprise Linux 10.0",
+      "type": "ec2",
+      "image": "rhel/10.0-ec2"
+    }
+  ]
+}

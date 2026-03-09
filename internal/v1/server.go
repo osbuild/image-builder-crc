@@ -51,30 +51,34 @@ type Server struct {
 	allowList           common.AllowList
 	allDistros          *distribution.AllDistroRegistry
 	distributionsDir    string
+	bootcDistributions  []distribution.BootcDistributionEntry
+	ecrURL              string
 	fedoraAuth          bool
 	insightsClientProxy string
 	patchURL            string
 }
 
 type ServerConfig struct {
-	EchoServer          *echo.Echo
-	CompClient          *composer.ComposerClient
-	ProvClient          *provisioning.ProvisioningClient
-	CSClient            *content_sources.ContentSourcesClient
-	CSReposURL          string
-	CSReposPrefix       string
-	RecommendClient     *recommendations.RecommendationsClient
-	ComplianceClient    *compliance.ComplianceClient
-	DBase               db.DB
-	AwsConfig           AWSConfig
-	GcpConfig           GCPConfig
-	QuotaFile           string
-	AllowFile           string
-	AllDistros          *distribution.AllDistroRegistry
-	DistributionsDir    string
-	FedoraAuth          bool
-	InsightsClientProxy string
-	PatchURL            string
+	EchoServer             *echo.Echo
+	CompClient             *composer.ComposerClient
+	ProvClient             *provisioning.ProvisioningClient
+	CSClient               *content_sources.ContentSourcesClient
+	CSReposURL             string
+	CSReposPrefix          string
+	RecommendClient        *recommendations.RecommendationsClient
+	ComplianceClient       *compliance.ComplianceClient
+	DBase                  db.DB
+	AwsConfig              AWSConfig
+	GcpConfig              GCPConfig
+	QuotaFile              string
+	AllowFile              string
+	AllDistros             *distribution.AllDistroRegistry
+	DistributionsDir       string
+	BootcDistributionsFile string
+	EcrURL                 string
+	FedoraAuth             bool
+	InsightsClientProxy    string
+	PatchURL               string
 }
 
 type AWSConfig struct {
@@ -108,6 +112,11 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		return nil, err
 	}
 
+	bootcDistributions, err := distribution.LoadBootcDistributions(conf.BootcDistributionsFile)
+	if err != nil {
+		return nil, err
+	}
+
 	csReposURL, err := url.Parse(conf.CSReposURL)
 	if err != nil {
 		return nil, err
@@ -131,6 +140,8 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		allowList,
 		conf.AllDistros,
 		conf.DistributionsDir,
+		bootcDistributions,
+		conf.EcrURL,
 		conf.FedoraAuth,
 		conf.InsightsClientProxy,
 		conf.PatchURL,

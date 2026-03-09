@@ -1,0 +1,28 @@
+{
+  "distributions": [
+    {
+      "id": "rhel-10.0-ec2",
+      "name": "Red Hat Enterprise Linux 10.0",
+      "type": "ec2",
+      "image": "rhel/10.0-ec2"
+    },
+    {
+      "id": "rhel-10.0-gcp",
+      "name": "Red Hat Enterprise Linux 10.0",
+      "type": "gcp",
+      "image": "rhel/10.0-gcp"
+    },
+    {
+      "id": "rhel-10.0-oci",
+      "name": "Red Hat Enterprise Linux 10.0",
+      "type": "oci",
+      "image": "rhel/10.0-oci"
+    },
+    {
+      "id": "rhel-10.0-qcow2",
+      "name": "Red Hat Enterprise Linux 10.0",
+      "type": "qcow2",
+      "image": "rhel/10.0-qcow2"
+    }
+  ]
+}

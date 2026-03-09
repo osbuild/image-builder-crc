@@ -643,6 +643,23 @@ type Distributions string
 // DistributionsResponse List of distributions this user is allowed to build.
 type DistributionsResponse = []DistributionItem
 
+// DistributionKind Kind of distributions to return.
+type DistributionKind string
+
+const (
+	Bootc DistributionKind = "bootc"
+)
+
+type BootcDistributionItem struct {
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Image string `json:"image"`
+}
+
+// BootcDistributionsResponse List of bootc image distributions for Image mode.
+type BootcDistributionsResponse = []BootcDistributionItem
+
 // FDO FIDO device onboard configuration
 type FDO struct {
 	DiunPubKeyHash         *string `json:"diun_pub_key_hash,omitempty"`
@@ -795,6 +812,10 @@ type IgnitionFirstboot struct {
 type ImageRequest struct {
 	// Architecture CPU architecture of the image, x86_64 and aarch64 are currently supported.
 	Architecture ImageRequestArchitecture `json:"architecture"`
+
+	// BootcRef Unique id from the bootc distributions list (Image mode). When set, the compose
+	// uses the configured container image for this OS-version-type. Must be a recognized id.
+	BootcRef *string `json:"bootc_ref,omitempty"`
 
 	// ContentTemplate ID of the content template. A content template and snapshot date cannot both be specified.
 	// If a content template is specified, the snapshot date used will be the one from the content template.
@@ -1179,6 +1200,11 @@ type GetPackagesParams struct {
 
 // GetPackagesParamsArchitecture defines parameters for GetPackages.
 type GetPackagesParamsArchitecture string
+
+// GetDistributionsParams defines parameters for GetDistributions.
+type GetDistributionsParams struct {
+	Kind *DistributionKind `form:"kind,omitempty" json:"kind,omitempty"`
+}
 
 // CreateBlueprintJSONRequestBody defines body for CreateBlueprint for application/json ContentType.
 type CreateBlueprintJSONRequestBody = CreateBlueprintRequest
@@ -2019,7 +2045,7 @@ type ServerInterface interface {
 	GetComposeMetadata(ctx echo.Context, composeId openapi_types.UUID) error
 	// get the distributions available to this user
 	// (GET /distributions)
-	GetDistributions(ctx echo.Context) error
+	GetDistributions(ctx echo.Context, params GetDistributionsParams) error
 	// Apply linter fixes to blueprint
 	// (POST /experimental/blueprints/{id}/fixup)
 	FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
@@ -2406,9 +2432,13 @@ func (w *ServerInterfaceWrapper) GetComposeMetadata(ctx echo.Context) error {
 // GetDistributions converts echo context to params.
 func (w *ServerInterfaceWrapper) GetDistributions(ctx echo.Context) error {
 	var err error
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetDistributions(ctx)
+	var params GetDistributionsParams
+	err = runtime.BindQueryParameter("form", true, false, "kind", ctx.QueryParams(), &params.Kind)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter kind: %s", err))
+	}
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetDistributions(ctx, params)
 	return err
 }
 
