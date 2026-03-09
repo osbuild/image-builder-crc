@@ -60,11 +60,43 @@ paths:
       operationId: getDistributions
       tags:
         - distribution
+      parameters:
+        - in: query
+          name: kind
+          required: false
+          schema:
+            $ref: '#/components/schemas/DistributionKind'
+          description: |
+            Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
+            distributions (each with id, name, type, arch, and image). Defaults to classic distributions.
+        - in: query
+          name: distro
+          required: false
+          schema:
+            type: string
+            example: 'rhel-10.0'
+          description: |
+            Filter bootc distributions by distribution name. Only applies when kind=bootc.
+        - in: query
+          name: arch
+          required: false
+          schema:
+            type: string
+            example: 'x86_64'
+          description: |
+            Filter bootc distributions by CPU architecture. Only applies when kind=bootc.
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            example: 'ec2'
+          description: |
+            Filter bootc distributions by image type. Only applies when kind=bootc.
       responses:
         '200':
           description: |
-            A list of distributions this user has access to. Some distributions are restricted, so
-            this list might not correspond to the Distributions (enum) schema for a given user.
+            A list of distributions. The items in the array depend on the 'kind' parameter.
           content:
             application/json:
               schema:
@@ -787,7 +819,9 @@ components:
       description: |
         List of distributions this user is allowed to build.
       items:
-        $ref: '#/components/schemas/DistributionItem'
+        oneOf:
+          - $ref: '#/components/schemas/DistributionItem'
+          - $ref: '#/components/schemas/BootcDistributionItem'
     DistributionItem:
       type: object
       required:
@@ -800,6 +834,54 @@ components:
         name:
           type: string
           example: 'rhel-84'
+    DistributionKind:
+      type: string
+      description: Kind of distributions to return.
+      enum:
+        - bootc
+    BootcDistributionItem:
+      type: object
+      required:
+        - id
+        - distro
+        - name
+        - type
+        - arch
+        - image_name
+      properties:
+        id:
+          type: string
+          example: 'rhel-10.0-ec2'
+        distro:
+          type: string
+          example: 'rhel-10.0'
+        name:
+          type: string
+          example: 'Red Hat Enterprise Linux 10.0'
+        type:
+          type: string
+          example: 'ec2'
+        arch:
+          type: string
+          example: 'x86_64'
+        image_name:
+          type: string
+          description: 'part of the container image name used as the base for composing'
+          example: 'rhel/10.0-ec2'
+    BootcBody:
+      type: object
+      description: |
+        Bootc/Image Mode compose parameters. When present, the compose builds from the
+        specified bootc base image instead of the classic package-based flow.
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
+          description: |
+            Image name from the bootc distributions list. Must match an image_name
+            returned by GET /distributions?kind=bootc.
+          example: 'rhel/10.0-ec2'
     Architectures:
       type: array
       items:
@@ -950,6 +1032,8 @@ components:
       properties:
         distribution:
           $ref: '#/components/schemas/Distributions'
+        bootc:
+          $ref: '#/components/schemas/BootcBody'
         image_name:
           type: string
           example: "MyImageName"

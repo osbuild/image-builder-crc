@@ -74,6 +74,21 @@ func (e CustomizationsPartitioningMode) Valid() bool {
 	}
 }
 
+// Defines values for DistributionKind.
+const (
+	Bootc DistributionKind = "bootc"
+)
+
+// Valid indicates whether the value is a known member of the DistributionKind enum.
+func (e DistributionKind) Valid() bool {
+	switch e {
+	case Bootc:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DistributionProfileItem.
 const (
 	XccdfOrgSsgprojectContentProfileAnssiBp28Enhanced     DistributionProfileItem = "xccdf_org.ssgproject.content_profile_anssi_bp28_enhanced"
@@ -643,6 +658,26 @@ type BlueprintsResponse struct {
 // BootMode defines model for BootMode.
 type BootMode = composer.ImageTypeInfoBootMode
 
+// BootcBody Bootc/Image Mode compose parameters. When present, the compose builds from the
+// specified bootc base image instead of the classic package-based flow.
+type BootcBody struct {
+	// Reference Image name from the bootc distributions list. Must match an image_name
+	// returned by GET /distributions?kind=bootc.
+	Reference string `json:"reference"`
+}
+
+// BootcDistributionItem defines model for BootcDistributionItem.
+type BootcDistributionItem struct {
+	Arch   string `json:"arch"`
+	Distro string `json:"distro"`
+	Id     string `json:"id"`
+
+	// ImageName part of the container image name used as the base for composing
+	ImageName string `json:"image_name"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+}
+
 // BtrfsSubvolume defines model for BtrfsSubvolume.
 type BtrfsSubvolume = composer.BtrfsSubvolume
 
@@ -668,6 +703,9 @@ type ComposeMetadata struct {
 
 // ComposeRequest defines model for ComposeRequest.
 type ComposeRequest struct {
+	// Bootc Bootc/Image Mode compose parameters. When present, the compose builds from the
+	// specified bootc base image instead of the classic package-based flow.
+	Bootc          *BootcBody      `json:"bootc,omitempty"`
 	ClientId       *ClientId       `json:"client_id,omitempty"`
 	Customizations *Customizations `json:"customizations,omitempty"`
 
@@ -920,6 +958,9 @@ type DistributionItem struct {
 	Name        string `json:"name"`
 }
 
+// DistributionKind Kind of distributions to return.
+type DistributionKind string
+
 // DistributionProfileItem defines model for DistributionProfileItem.
 type DistributionProfileItem string
 
@@ -933,7 +974,12 @@ type DistributionProfileResponse = []DistributionProfileItem
 type Distributions string
 
 // DistributionsResponse List of distributions this user is allowed to build.
-type DistributionsResponse = []DistributionItem
+type DistributionsResponse = []DistributionsResponse_Item
+
+// DistributionsResponse_Item defines model for DistributionsResponse.Item.
+type DistributionsResponse_Item struct {
+	union json.RawMessage
+}
 
 // FDO FIDO device onboard configuration
 type FDO struct {
@@ -1468,6 +1514,22 @@ type GetComposesParams struct {
 	IgnoreImageTypes *[]ImageTypes `form:"ignoreImageTypes,omitempty" json:"ignoreImageTypes,omitempty"`
 }
 
+// GetDistributionsParams defines parameters for GetDistributions.
+type GetDistributionsParams struct {
+	// Kind Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
+	// distributions (each with id, name, type, arch, and image). Defaults to classic distributions.
+	Kind *DistributionKind `form:"kind,omitempty" json:"kind,omitempty"`
+
+	// Distro Filter bootc distributions by distribution name. Only applies when kind=bootc.
+	Distro *string `form:"distro,omitempty" json:"distro,omitempty"`
+
+	// Arch Filter bootc distributions by CPU architecture. Only applies when kind=bootc.
+	Arch *string `form:"arch,omitempty" json:"arch,omitempty"`
+
+	// Type Filter bootc distributions by image type. Only applies when kind=bootc.
+	Type *string `form:"type,omitempty" json:"type,omitempty"`
+}
+
 // GetDistributionParams defines parameters for GetDistribution.
 type GetDistributionParams struct {
 	// ImageType Filter by image type. Multiple values can be specified.
@@ -1633,6 +1695,68 @@ func (t Directory_User) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Directory_User) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDistributionItem returns the union data inside the DistributionsResponse_Item as a DistributionItem
+func (t DistributionsResponse_Item) AsDistributionItem() (DistributionItem, error) {
+	var body DistributionItem
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDistributionItem overwrites any union data inside the DistributionsResponse_Item as the provided DistributionItem
+func (t *DistributionsResponse_Item) FromDistributionItem(v DistributionItem) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDistributionItem performs a merge with any union data inside the DistributionsResponse_Item, using the provided DistributionItem
+func (t *DistributionsResponse_Item) MergeDistributionItem(v DistributionItem) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsBootcDistributionItem returns the union data inside the DistributionsResponse_Item as a BootcDistributionItem
+func (t DistributionsResponse_Item) AsBootcDistributionItem() (BootcDistributionItem, error) {
+	var body BootcDistributionItem
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromBootcDistributionItem overwrites any union data inside the DistributionsResponse_Item as the provided BootcDistributionItem
+func (t *DistributionsResponse_Item) FromBootcDistributionItem(v BootcDistributionItem) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeBootcDistributionItem performs a merge with any union data inside the DistributionsResponse_Item, using the provided BootcDistributionItem
+func (t *DistributionsResponse_Item) MergeBootcDistributionItem(v BootcDistributionItem) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DistributionsResponse_Item) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DistributionsResponse_Item) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -2149,7 +2273,7 @@ type ServerInterface interface {
 	GetComposeMetadata(ctx echo.Context, composeId openapi_types.UUID) error
 	// get the distributions available to this user
 	// (GET /distributions)
-	GetDistributions(ctx echo.Context) error
+	GetDistributions(ctx echo.Context, params GetDistributionsParams) error
 	// Get details for a specific distribution
 	// (GET /distributions/{distro})
 	GetDistribution(ctx echo.Context, distro string, params GetDistributionParams) error
@@ -2476,8 +2600,38 @@ func (w *ServerInterfaceWrapper) GetComposeMetadata(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetDistributions(ctx echo.Context) error {
 	var err error
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDistributionsParams
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", ctx.QueryParams(), &params.Kind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter kind: %s", err))
+	}
+
+	// ------------- Optional query parameter "distro" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "distro", ctx.QueryParams(), &params.Distro, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter distro: %s", err))
+	}
+
+	// ------------- Optional query parameter "arch" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "arch", ctx.QueryParams(), &params.Arch, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter arch: %s", err))
+	}
+
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", ctx.QueryParams(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter type: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetDistributions(ctx)
+	err = w.Handler.GetDistributions(ctx, params)
 	return err
 }
 

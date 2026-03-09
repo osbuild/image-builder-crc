@@ -79,7 +79,32 @@ func (h *Handlers) GetOpenapiJson(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, h.server.spec)
 }
 
-func (h *Handlers) GetDistributions(ctx echo.Context) error {
+func (h *Handlers) GetDistributions(ctx echo.Context, params GetDistributionsParams) error {
+	if params.Kind != nil && *params.Kind == Bootc {
+		resp := make(DistributionsResponse, 0, len(h.server.bootcDistributions))
+		for _, e := range h.server.bootcDistributions {
+			if params.Distro != nil && e.Distro != *params.Distro {
+				continue
+			}
+			if params.Arch != nil && e.Arch != *params.Arch {
+				continue
+			}
+			if params.Type != nil && e.Type != *params.Type {
+				continue
+			}
+			var item DistributionsResponse_Item
+			_ = item.FromBootcDistributionItem(BootcDistributionItem{
+				Id:        e.ID,
+				Distro:    e.Distro,
+				Name:      e.Name,
+				Type:      e.Type,
+				Arch:      e.Arch,
+				ImageName: e.ImageName,
+			})
+			resp = append(resp, item)
+		}
+		return ctx.JSON(http.StatusOK, resp)
+	}
 	dr := h.server.distroRegistry(ctx)
 	userID, err := h.server.getIdentity(ctx)
 	if err != nil {
@@ -94,8 +119,8 @@ func (h *Handlers) GetDistributions(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, distributions)
 }
 
-func (h *Handlers) filterDistributions(orgID string, distroMap *distribution.DistroRegistry) (DistributionsResponse, error) {
-	var distributions DistributionsResponse
+func (h *Handlers) filterDistributions(orgID string, distroMap *distribution.DistroRegistry) ([]DistributionItem, error) {
+	var distributions []DistributionItem
 	for k, d := range distroMap.Map() {
 		if d.IsRestricted() {
 			allowed, err := h.server.allowList.IsAllowed(orgID, d.Distribution.Name)

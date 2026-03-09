@@ -15,12 +15,14 @@ func TestDistroRegistry_List(t *testing.T) {
 		"restricted-access",
 		"rhel-1.2",
 		"standard",
+		"with-bootc",
 	}
 	notEntitledDistros := []string{
 		"no-packages",
 		"restricted-access",
 		"rhel-1.2",
 		"standard",
+		"with-bootc",
 	}
 
 	dr, err := LoadDistroRegistry("./testdata/distributions")
