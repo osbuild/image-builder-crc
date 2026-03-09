@@ -1,0 +1,15 @@
+{
+  "module_platform_id": "platform:el10",
+  "distribution": {
+    "name": "with-bootc",
+    "description": "Test distro with bootc entries",
+    "no_package_list": true
+  },
+  "x86_64": {
+    "image_types": ["qcow2"],
+    "repositories": [],
+    "bootc": [
+      { "id": "with-bootc-ec2", "type": "ec2", "image_name": "test/ec2" }
+    ]
+  }
+}

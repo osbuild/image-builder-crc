@@ -38,9 +38,21 @@ type DistributionFile struct {
 	OscapName        string           `json:"oscap_name"`
 }
 
+type BootcImage struct {
+	// ID identifies the bootc entry, combining distribution version
+	// and target type (e.g. "rhel-10.1-ec2", "rhel-10.1-qcow2").
+	ID string `json:"id"`
+	// Type is the target image type (e.g. "ec2", "gcp", "qcow2").
+	Type string `json:"type"`
+	// ImageName is the part of the container image reference used as the base for composing
+	// (e.g. "rhel/10.1-ec2")
+	ImageName string `json:"image_name"`
+}
+
 type Architecture struct {
 	ImageTypes   []string     `json:"image_types"`
 	Repositories []Repository `json:"repositories"`
+	Bootc        []BootcImage `json:"bootc,omitempty"`
 
 	// not part of distro.json, loaded dynamically in ReadDistribution
 	Packages map[string][]Package

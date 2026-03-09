@@ -813,7 +813,7 @@ func TestGetDistributions(t *testing.T) {
 	t.Run("Access to restricted distributions", func(t *testing.T) {
 		respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions", &tutils.AuthString0)
 		require.Equal(t, http.StatusOK, respStatusCode)
-		var result v1.DistributionsResponse
+		var result []v1.DistributionItem
 		err := json.Unmarshal([]byte(body), &result)
 		require.NoError(t, err)
 		distros := []string{}
@@ -870,7 +870,7 @@ func TestGetDistributions(t *testing.T) {
 	t.Run("No access to restricted distributions except global filter", func(t *testing.T) {
 		respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions", &tutils.AuthString1)
 		require.Equal(t, http.StatusOK, respStatusCode)
-		var result v1.DistributionsResponse
+		var result []v1.DistributionItem
 		err := json.Unmarshal([]byte(body), &result)
 		require.NoError(t, err)
 		distros := []string{}
@@ -915,6 +915,109 @@ func TestGetDistributions(t *testing.T) {
 			},
 			distros)
 	})
+}
+
+func TestGetBootcDistributions(t *testing.T) {
+	distsDir := "../../distributions"
+	allowFile := "../common/testdata/allow.json"
+
+	tests := []struct {
+		name     string
+		distsDir string
+		query    string
+		wantLen  int
+		check    func(t *testing.T, result []v1.BootcDistributionItem)
+	}{
+		{
+			name:    "returns list from distribution JSON bootc field",
+			query:   "kind=bootc",
+			wantLen: 4,
+			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				require.Equal(t, "rhel-10.1-ec2", result[0].Id)
+				require.Equal(t, "rhel-10.1", result[0].Distro)
+				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
+				require.Equal(t, "ec2", result[0].Type)
+				require.Equal(t, "rhel/10.1-ec2", result[0].ImageName)
+			},
+		},
+		{
+			name:    "filters by distro",
+			query:   "kind=bootc&distro=rhel-10.1",
+			wantLen: 4,
+			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				for _, item := range result {
+					require.Equal(t, "rhel-10.1", item.Distro)
+				}
+			},
+		},
+		{
+			name:    "filters by distro returns empty for unmatched",
+			query:   "kind=bootc&distro=rhel-9.0",
+			wantLen: 0,
+		},
+		{
+			name:    "filters by arch",
+			query:   "kind=bootc&arch=x86_64",
+			wantLen: 4,
+			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				for _, item := range result {
+					require.Equal(t, "x86_64", item.Arch)
+				}
+			},
+		},
+		{
+			name:    "filters by arch returns empty for unmatched",
+			query:   "kind=bootc&arch=aarch64",
+			wantLen: 0,
+		},
+		{
+			name:    "filters by type",
+			query:   "kind=bootc&type=ec2",
+			wantLen: 1,
+			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				require.Equal(t, "ec2", result[0].Type)
+			},
+		},
+		{
+			name:    "combines arch and type filters",
+			query:   "kind=bootc&arch=x86_64&type=qcow2",
+			wantLen: 1,
+			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				require.Equal(t, "rhel-10.1-qcow2", result[0].Id)
+				require.Equal(t, "x86_64", result[0].Arch)
+				require.Equal(t, "qcow2", result[0].Type)
+			},
+		},
+		{
+			name:     "returns empty when distributions dir has no bootc entries",
+			distsDir: "TEMPDIR",
+			query:    "kind=bootc",
+			wantLen:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dd := distsDir
+			if tt.distsDir == "TEMPDIR" {
+				dd = t.TempDir()
+			}
+			srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
+				DistributionsDir: dd,
+				AllowFile:        allowFile,
+			})
+			defer srv.Shutdown(t)
+			respStatusCode, body := tutils.GetResponseBody(t, srv.URL+"/api/image-builder/v1/distributions?"+tt.query, &tutils.AuthString0)
+			require.Equal(t, http.StatusOK, respStatusCode)
+			var result []v1.BootcDistributionItem
+			err := json.Unmarshal([]byte(body), &result)
+			require.NoError(t, err)
+			require.Len(t, result, tt.wantLen)
+			if tt.check != nil {
+				tt.check(t, result)
+			}
+		})
+	}
 }
 
 func TestGetProfiles(t *testing.T) {

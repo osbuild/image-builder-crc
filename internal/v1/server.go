@@ -51,6 +51,7 @@ type Server struct {
 	allowList           common.AllowList
 	allDistros          *distribution.AllDistroRegistry
 	distributionsDir    string
+	bootcDistributions  []distribution.BootcDistributionEntry
 	fedoraAuth          bool
 	insightsClientProxy string
 	patchURL            string
@@ -108,6 +109,11 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		return nil, err
 	}
 
+	var bootcDistributions []distribution.BootcDistributionEntry
+	if conf.AllDistros != nil {
+		bootcDistributions = conf.AllDistros.CollectBootcFromRegistry()
+	}
+
 	csReposURL, err := url.Parse(conf.CSReposURL)
 	if err != nil {
 		return nil, err
@@ -131,6 +137,7 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		allowList,
 		conf.AllDistros,
 		conf.DistributionsDir,
+		bootcDistributions,
 		conf.FedoraAuth,
 		conf.InsightsClientProxy,
 		conf.PatchURL,

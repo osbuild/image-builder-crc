@@ -33,6 +33,37 @@ func LoadDistroRegistry(distsDir string) (*AllDistroRegistry, error) {
 	return dr, nil
 }
 
+func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntry {
+	var all []BootcDistributionEntry
+	seenDistros := make(map[string]bool)
+	for _, d := range adr.distros {
+		if seenDistros[d.Distribution.Name] {
+			continue
+		}
+		seenDistros[d.Distribution.Name] = true
+		displayName := d.Distribution.Description
+		if displayName == "" {
+			displayName = d.Distribution.Name
+		}
+		for archName, arch := range map[string]*Architecture{"x86_64": d.ArchX86, "aarch64": d.Aarch64} {
+			if arch == nil {
+				continue
+			}
+			for _, b := range arch.Bootc {
+				all = append(all, BootcDistributionEntry{
+					ID:        b.ID,
+					Distro:    d.Distribution.Name,
+					Name:      displayName,
+					Type:      b.Type,
+					Arch:      archName,
+					ImageName: b.ImageName,
+				})
+			}
+		}
+	}
+	return all
+}
+
 // Available returns DistroRegistry. The registry contains distribution that
 // need entitlement only if isEntitled is set to true. Otherwise, they are
 // omitted from the registry.
