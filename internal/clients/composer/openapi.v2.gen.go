@@ -1840,7 +1840,10 @@ type SubProgress struct {
 type Subscription struct {
 	ActivationKey string `json:"activation_key"`
 	BaseUrl       string `json:"base_url"`
-	Insights      bool   `json:"insights"`
+
+	// ContentSets Optional list of repository IDs to enable with subscription-manager when registering the system with Insights.
+	ContentSets *[]string `json:"content_sets,omitempty"`
+	Insights    bool      `json:"insights"`
 
 	// InsightsClientProxy Optional value to set proxy option when registering the system to Insights
 	InsightsClientProxy *string `json:"insights_client_proxy,omitempty"`
