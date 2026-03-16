@@ -1120,6 +1120,9 @@ type ApiTemplateUpdateRequest struct {
 	// Description Description of the template
 	Description *string `json:"description,omitempty"`
 
+	// ExtendedReleaseVersion Extended release version (9.4, 9.6, etc.)
+	ExtendedReleaseVersion *string `json:"extended_release_version,omitempty"`
+
 	// Name Name of the template
 	Name *string `json:"name,omitempty"`
 
@@ -1453,6 +1456,9 @@ type ListTasksParams struct {
 
 // ListTemplatesParams defines parameters for ListTemplates.
 type ListTemplatesParams struct {
+	// Search Term to filter and retrieve items that match the specified search criteria. Search term can include name.
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
 	// Offset Starting point for retrieving a subset of results. Determines how many items to skip from the beginning of the result set. Default value:`0`.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 
