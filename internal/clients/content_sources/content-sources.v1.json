@@ -1906,6 +1906,10 @@
                         "description": "Description of the template",
                         "type": "string"
                     },
+                    "extended_release_version": {
+                        "description": "Extended release version (9.4, 9.6, etc.)",
+                        "type": "string"
+                    },
                     "name": {
                         "description": "Name of the template",
                         "type": "string"
@@ -5837,6 +5841,14 @@
                 "description": "This operation enables users to retrieve a list of templates.",
                 "operationId": "listTemplates",
                 "parameters": [
+                    {
+                        "description": "Term to filter and retrieve items that match the specified search criteria. Search term can include name.",
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     {
                         "description": "Starting point for retrieving a subset of results. Determines how many items to skip from the beginning of the result set. Default value:`0`.",
                         "in": "query",
