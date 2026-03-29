@@ -612,7 +612,7 @@ func testGetBlueprintComposes(ctx context.Context, t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fns := []func(context.Context, *testing.T){
 		testInsertCompose,
 		testGetCompose,
