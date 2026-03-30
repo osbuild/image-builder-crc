@@ -64,6 +64,20 @@ type ApiCreateUploadRequest struct {
 	Size int `json:"size"`
 }
 
+// ApiExtendedReleaseArchitecture defines model for api.ExtendedReleaseArchitecture.
+type ApiExtendedReleaseArchitecture struct {
+	Entitled *bool   `json:"entitled,omitempty"`
+	Label    *string `json:"label,omitempty"`
+	Name     *string `json:"name,omitempty"`
+}
+
+// ApiExtendedReleaseStream defines model for api.ExtendedReleaseStream.
+type ApiExtendedReleaseStream struct {
+	Architectures *[]ApiExtendedReleaseArchitecture `json:"architectures,omitempty"`
+	Label         *string                           `json:"label,omitempty"`
+	Name          *string                           `json:"name,omitempty"`
+}
+
 // ApiFeature defines model for api.Feature.
 type ApiFeature struct {
 	// Accessible Whether the current user can access the feature
@@ -451,14 +465,14 @@ type ApiRepositoryParameterResponse struct {
 	// DistributionArches Architectures available for repository creation
 	DistributionArches *[]ConfigDistributionArch `json:"distribution_arches,omitempty"`
 
-	// DistributionMinorVersions Minor versions available for repository creation (filtered by subscriptions)
+	// DistributionMinorVersions Minor versions available for repository creation
 	DistributionMinorVersions *[]ConfigDistributionMinorVersion `json:"distribution_minor_versions,omitempty"`
 
 	// DistributionVersions Versions available for repository creation
 	DistributionVersions *[]ConfigDistributionVersion `json:"distribution_versions,omitempty"`
 
-	// ExtendedReleaseFeatures Extended release features available (filtered by subscriptions)
-	ExtendedReleaseFeatures *[]ConfigExtendedReleaseFeature `json:"extended_release_features,omitempty"`
+	// ExtendedReleaseStreams Extended release streams available
+	ExtendedReleaseStreams *[]ApiExtendedReleaseStream `json:"extended_release_streams,omitempty"`
 }
 
 // ApiRepositoryRequest defines model for api.RepositoryRequest.
@@ -1206,10 +1220,10 @@ type ConfigDistributionArch struct {
 
 // ConfigDistributionMinorVersion defines model for config.DistributionMinorVersion.
 type ConfigDistributionMinorVersion struct {
-	FeatureNames *[]string `json:"feature_names,omitempty"`
-	Label        *string   `json:"label,omitempty"`
-	Major        *string   `json:"major,omitempty"`
-	Name         *string   `json:"name,omitempty"`
+	ExtendedReleaseStreams *[]string `json:"extended_release_streams,omitempty"`
+	Label                  *string   `json:"label,omitempty"`
+	Major                  *string   `json:"major,omitempty"`
+	Name                   *string   `json:"name,omitempty"`
 }
 
 // ConfigDistributionVersion defines model for config.DistributionVersion.
@@ -1219,12 +1233,6 @@ type ConfigDistributionVersion struct {
 
 	// Name Human-readable form of the version
 	Name *string `json:"name,omitempty"`
-}
-
-// ConfigExtendedReleaseFeature defines model for config.ExtendedReleaseFeature.
-type ConfigExtendedReleaseFeature struct {
-	Label *string `json:"label,omitempty"`
-	Name  *string `json:"name,omitempty"`
 }
 
 // ErrorsErrorResponse defines model for errors.ErrorResponse.

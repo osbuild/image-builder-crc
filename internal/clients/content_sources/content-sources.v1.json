@@ -101,6 +101,37 @@
                 ],
                 "type": "object"
             },
+            "api.ExtendedReleaseArchitecture": {
+                "properties": {
+                    "entitled": {
+                        "type": "boolean"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "api.ExtendedReleaseStream": {
+                "properties": {
+                    "architectures": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.ExtendedReleaseArchitecture"
+                        },
+                        "type": "array"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "api.Feature": {
                 "properties": {
                     "accessible": {
@@ -759,7 +790,7 @@
                         "type": "array"
                     },
                     "distribution_minor_versions": {
-                        "description": "Minor versions available for repository creation (filtered by subscriptions)",
+                        "description": "Minor versions available for repository creation",
                         "items": {
                             "$ref": "#/components/schemas/config.DistributionMinorVersion"
                         },
@@ -772,10 +803,10 @@
                         },
                         "type": "array"
                     },
-                    "extended_release_features": {
-                        "description": "Extended release features available (filtered by subscriptions)",
+                    "extended_release_streams": {
+                        "description": "Extended release streams available",
                         "items": {
-                            "$ref": "#/components/schemas/config.ExtendedReleaseFeature"
+                            "$ref": "#/components/schemas/api.ExtendedReleaseStream"
                         },
                         "type": "array"
                     }
@@ -2039,7 +2070,7 @@
             },
             "config.DistributionMinorVersion": {
                 "properties": {
-                    "feature_names": {
+                    "extended_release_streams": {
                         "items": {
                             "type": "string"
                         },
@@ -2065,17 +2096,6 @@
                     },
                     "name": {
                         "description": "Human-readable form of the version",
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            },
-            "config.ExtendedReleaseFeature": {
-                "properties": {
-                    "label": {
-                        "type": "string"
-                    },
-                    "name": {
                         "type": "string"
                     }
                 },
