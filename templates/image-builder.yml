@@ -235,12 +235,6 @@ objects:
         from
           blueprint_versions v
           left outer join blueprints b ON v.blueprint_id = b.id
-    - prefix: ${FLOORIST_QUERY_PREFIX}/clones
-      query: >-
-        select
-          compose_id, created_at
-        from
-          clones
 
 - apiVersion: v1
   kind: Service
@@ -362,4 +356,3 @@ parameters:
     value: ""
   - name: PATCH_URL
     value: ""
-
