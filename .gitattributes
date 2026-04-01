@@ -1,0 +1,8 @@
+# Collapse by default on GitHub (linguist-generated)
+go.sum linguist-generated
+
+internal/v1/api.go linguist-generated
+internal/**/*.gen.go linguist-generated
+
+distributions/**/*-packages.json linguist-generated
+distributions/**/oscap/**/customizations.json linguist-generated
