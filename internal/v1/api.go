@@ -173,6 +173,7 @@ const (
 	Fedora42       Distributions = "fedora-42"
 	Fedora43       Distributions = "fedora-43"
 	Fedora44       Distributions = "fedora-44"
+	ImageMode      Distributions = "image-mode"
 	Rhel10         Distributions = "rhel-10"
 	Rhel100        Distributions = "rhel-10.0"
 	Rhel100Nightly Distributions = "rhel-10.0-nightly"
@@ -230,6 +231,8 @@ func (e Distributions) Valid() bool {
 	case Fedora43:
 		return true
 	case Fedora44:
+		return true
+	case ImageMode:
 		return true
 	case Rhel10:
 		return true
@@ -579,6 +582,10 @@ type AzureUploadStatus struct {
 
 // BlueprintExportResponse defines model for BlueprintExportResponse.
 type BlueprintExportResponse struct {
+	// Bootc Bootc/Image Mode compose parameters. When present, the compose builds from the
+	// specified bootc base image instead of the classic package-based flow.
+	Bootc *BootcBody `json:"bootc,omitempty"`
+
 	// ContentSources List of custom repositories including all the repository details needed in order
 	// to recreate the repositories.
 	ContentSources *[]map[string]interface{} `json:"content_sources,omitempty"`
@@ -629,6 +636,9 @@ type BlueprintMetadata struct {
 
 // BlueprintResponse defines model for BlueprintResponse.
 type BlueprintResponse struct {
+	// Bootc Bootc/Image Mode compose parameters. When present, the compose builds from the
+	// specified bootc base image instead of the classic package-based flow.
+	Bootc          *BootcBody     `json:"bootc,omitempty"`
 	Customizations Customizations `json:"customizations"`
 	Description    string         `json:"description"`
 
@@ -771,6 +781,9 @@ type Container struct {
 
 // CreateBlueprintRequest defines model for CreateBlueprintRequest.
 type CreateBlueprintRequest struct {
+	// Bootc Bootc/Image Mode compose parameters. When present, the compose builds from the
+	// specified bootc base image instead of the classic package-based flow.
+	Bootc          *BootcBody     `json:"bootc,omitempty"`
 	Customizations Customizations `json:"customizations"`
 	Description    *string        `json:"description,omitempty"`
 

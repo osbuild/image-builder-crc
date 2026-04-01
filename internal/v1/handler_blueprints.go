@@ -34,6 +34,7 @@ type BlueprintBody struct {
 	Customizations Customizations `json:"customizations"`
 	Distribution   Distributions  `json:"distribution"`
 	ImageRequests  []ImageRequest `json:"image_requests"`
+	Bootc          *BootcBody     `json:"bootc,omitempty"`
 }
 
 type BlueprintBodyOption func(*BlueprintBody)
@@ -238,6 +239,7 @@ func BlueprintFromAPI(cbr CreateBlueprintRequest) (BlueprintBody, error) {
 		Customizations: cbr.Customizations,
 		Distribution:   cbr.Distribution,
 		ImageRequests:  cbr.ImageRequests,
+		Bootc:          cbr.Bootc,
 	}
 	err := bb.CryptPasswords()
 	if err != nil {
@@ -432,6 +434,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		Description:    blueprintEntry.Description,
 		ImageRequests:  blueprint.ImageRequests,
 		Distribution:   blueprint.Distribution,
+		Bootc:          blueprint.Bootc,
 		Customizations: blueprint.Customizations,
 		Lint: BlueprintLint{
 			Errors:   lintErrors,
@@ -499,6 +502,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 		Name:           blueprintEntry.Name,
 		Description:    blueprintEntry.Description,
 		Distribution:   blueprint.Distribution,
+		Bootc:          blueprint.Bootc,
 		Customizations: blueprint.Customizations,
 		Metadata: BlueprintMetadata{
 			ExportedAt: time.Now().UTC().String(),
