@@ -2538,7 +2538,7 @@ components:
             type: string
             example: 'content-label-1'
           description: |
-            Optional list of repository IDs to enable with subscription-manager on first boot.
+            Optional list of repository IDs to enable with subscription-manager when registering the system with Insights.
     User:
       type: object
       additionalProperties: false
