@@ -34,6 +34,7 @@
       "cups",
       "nfs-server",
       "rpcbind",
+      "dnsmasq",
       "avahi-daemon",
       "autofs",
       "bluetooth",

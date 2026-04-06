@@ -42,6 +42,7 @@
     "sudo",
     "gnutls-utils",
     "nss-tools",
+    "sequoia-sq",
     "subscription-manager",
     "opensc",
     "pcsc-lite-ccid",

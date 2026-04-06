@@ -14,6 +14,7 @@
     "profile_name": "Health Insurance Portability and Accountability Act (HIPAA)"
   },
   "packages": [
+    "sequoia-sq",
     "rsyslog",
     "cronie",
     "audit"
