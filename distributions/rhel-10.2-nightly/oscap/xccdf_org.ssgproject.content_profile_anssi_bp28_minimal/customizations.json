@@ -8,6 +8,7 @@
     "profile_name": "ANSSI-BP-028 (minimal)"
   },
   "packages": [
+    "sequoia-sq",
     "dnf-automatic"
   ],
   "services": {

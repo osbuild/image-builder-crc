@@ -33,6 +33,7 @@
     "masked": [
       "nfs-server",
       "rpcbind",
+      "dnsmasq",
       "nftables"
     ]
   }

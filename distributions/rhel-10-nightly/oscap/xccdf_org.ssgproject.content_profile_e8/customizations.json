@@ -8,6 +8,7 @@
     "profile_name": "Australian Cyber Security Centre (ACSC) Essential Eight"
   },
   "packages": [
+    "sequoia-sq",
     "rsyslog",
     "firewalld",
     "fapolicyd"
