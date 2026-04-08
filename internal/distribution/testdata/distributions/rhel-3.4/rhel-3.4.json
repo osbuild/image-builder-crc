@@ -1,0 +1,17 @@
+{
+  "module_platform_id": "platform:rhel",
+  "distribution": {
+    "name": "rhel-34",
+    "composer_name": "rhel-3.4",
+    "description": "A distribution for rhel major/minor discovery with composer_name",
+    "no_package_list": true
+  },
+  "x86_64": {
+    "image_types": ["rhel"],
+    "repositories": []
+  },
+  "aarch64": {
+    "image_types": ["rhel"],
+    "repositories": []
+  }
+}

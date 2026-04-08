@@ -107,6 +107,7 @@ type testServerClientsConf struct {
 	RecommendURL string
 	OAuthURL     string
 	Proxy        string
+	CSHandler    http.HandlerFunc
 }
 
 type testServer struct {
@@ -144,7 +145,11 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	})
 	require.NoError(t, err)
 
-	csSrv := httptest.NewServer(http.HandlerFunc(mocks.ContentSources))
+	csHandler := http.HandlerFunc(mocks.ContentSources)
+	if tscc.CSHandler != nil {
+		csHandler = tscc.CSHandler
+	}
+	csSrv := httptest.NewServer(csHandler)
 	csClient, err := content_sources.NewClient(content_sources.ContentSourcesClientConfig{
 		URL: csSrv.URL,
 	})

@@ -3532,3 +3532,56 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 		composerRequest = composer.ComposeRequest{}
 	}
 }
+
+// TestComposeWithSnapshotDetectedOsVersion verifies that when content-sources returns a
+// detected_os_version on a snapshot, the compose request to osbuild-composer uses the
+// matching minor-version distribution instead of the distribution selected by the user.
+// This prevents builds from failing when osbuild-composer tries to install packages (e.g.
+// system-reinstall-bootc) that are only available in a newer minor version.
+func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
+	var composerRequest composer.ComposeRequest
+	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
+		err := json.NewDecoder(r.Body).Decode(&composerRequest)
+		require.NoError(t, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(composer.ComposeId{Id: uuid.New()})
+		require.NoError(t, err)
+	}))
+	defer apiSrv.Close()
+
+	// Use a CS mock that reports detected_os_version "9.4" for snapshots.
+	// The user requests "rhel-9" which normally maps to composer distribution "rhel-9.7",
+	// but the detected version should override it to "rhel-94".
+	srv := startServer(t, &testServerClientsConf{
+		ComposerURL: apiSrv.URL,
+		CSHandler:   mocks.ContentSourcesWithOsVersion(common.ToPtr("9.4")),
+	}, nil)
+	defer srv.Shutdown(t)
+
+	var uo v1.UploadRequest_Options
+	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+
+	ibRequest := v1.ComposeRequest{
+		Distribution: "rhel-9",
+		ImageRequests: []v1.ImageRequest{
+			{
+				Architecture: "x86_64",
+				ImageType:    v1.ImageTypesGuestImage,
+				SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
+				UploadRequest: v1.UploadRequest{
+					Type:    v1.UploadTypesAwsS3,
+					Options: uo,
+				},
+			},
+		},
+	}
+
+	respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", ibRequest)
+	require.Equal(t, http.StatusCreated, respStatusCode, "body: %s", body)
+
+	// The compose request should use "rhel-94" (the 9.4 minor-version distribution),
+	// NOT "rhel-9.7" which is what "rhel-9" would normally resolve to.
+	require.Equal(t, common.ToPtr("rhel-94"), composerRequest.Distribution)
+}

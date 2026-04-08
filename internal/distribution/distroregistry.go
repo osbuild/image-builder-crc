@@ -2,6 +2,8 @@ package distribution
 
 import (
 	"os"
+	"strconv"
+	"strings"
 )
 
 // AllDistroRegistry holds all distribution that image-builder knows
@@ -114,4 +116,39 @@ func (dr DistroRegistry) Get(name string) (*DistributionFile, error) {
 	}
 
 	return df, nil
+}
+
+// FindByMajorMinor returns the first RHEL distribution in the registry matching
+// the given major and minor version. Returns nil if no match is found.
+func (dr DistroRegistry) FindByMajorMinor(major, minor int) *DistributionFile {
+	for _, d := range dr.distros {
+		m, mn, err := d.RHELMajorMinor()
+		if err == nil && m == major && mn == minor {
+			return d
+		}
+	}
+	return nil
+}
+
+// FindByMajorMinorStr parses a "major.minor" version string (e.g. "9.4") and
+// returns the composer distribution name for the matching RHEL distribution.
+// Returns an empty string if the version cannot be parsed or no match is found.
+func (dr DistroRegistry) FindByMajorMinorStr(majorMinor string) string {
+	parts := strings.SplitN(majorMinor, ".", 2)
+	if len(parts) != 2 {
+		return ""
+	}
+	major, errMaj := strconv.Atoi(parts[0])
+	minor, errMin := strconv.Atoi(parts[1])
+	if errMaj != nil || errMin != nil {
+		return ""
+	}
+	d := dr.FindByMajorMinor(major, minor)
+	if d == nil {
+		return ""
+	}
+	if d.Distribution.ComposerName != nil {
+		return *d.Distribution.ComposerName
+	}
+	return d.Distribution.Name
 }
