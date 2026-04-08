@@ -95,6 +95,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	}
 
 	var repositories []composer.Repository
+	var detectedOsVersion *string
 	// We should only build repository snapshots in the case where there is a snapshot date and no content template
 	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate == nil {
 		repoURLs := []string{}
@@ -117,11 +118,12 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			}
 		}
 
-		snapshotRepos, _, err := h.buildRepositorySnapshots(ctx, repoURLs, nil, false, *composeRequest.ImageRequests[0].SnapshotDate)
+		snapshotRepos, _, snapshotOsVersion, err := h.buildRepositorySnapshots(ctx, repoURLs, nil, false, *composeRequest.ImageRequests[0].SnapshotDate)
 		if err != nil {
 			return ComposeResponse{}, err
 		}
 		repositories = append(repositories, snapshotRepos...)
+		detectedOsVersion = snapshotOsVersion
 
 		// A sanity check to make sure there's a snapshot for each repo
 		expected := 0
@@ -134,10 +136,12 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			return ComposeResponse{}, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
 		}
 	} else if composeRequest.ImageRequests[0].ContentTemplate != nil {
-		_, _, repositories, err = h.buildTemplateRepositories(ctx, *composeRequest.ImageRequests[0].ContentTemplate)
+		var templateOsVersion *string
+		_, _, repositories, templateOsVersion, err = h.buildTemplateRepositories(ctx, *composeRequest.ImageRequests[0].ContentTemplate)
 		if err != nil {
 			return ComposeResponse{}, err
 		}
+		detectedOsVersion = templateOsVersion
 	} else {
 		repositories, err = h.buildRepositoriesWithLatestSnapshots(ctx, arch, composeRequest.ImageRequests[0].ImageType)
 		if err != nil {
@@ -158,6 +162,16 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	distro := d.Distribution.Name
 	if d.Distribution.ComposerName != nil {
 		distro = *d.Distribution.ComposerName
+	}
+
+	// When the snapshot contains a detected OS version (e.g. "9.4"), override the
+	// distribution sent to osbuild-composer with the matching minor-version
+	// distribution. This prevents composer from requesting packages that are only
+	// available in a newer minor version (e.g. system-reinstall-bootc in 9.6+).
+	if detectedOsVersion != nil {
+		if v := h.server.distroRegistry(ctx).FindByMajorMinorStr(*detectedOsVersion); v != "" {
+			distro = v
+		}
 	}
 
 	cloudCR := composer.ComposeRequest{
@@ -339,14 +353,17 @@ func (h *Handlers) buildComposerRepositoryFromSnapshot(snapshotPath string, useP
 	return composerRepo, nil
 }
 
-func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string, repoIDs []string, external bool, snapshotDate string) ([]composer.Repository, []composer.CustomRepository, error) {
+// buildRepositorySnapshots resolves repository snapshots for the given date.
+// The third return value is the detected OS version (e.g. "9.4") reported by
+// content-sources for the snapshot if available.
+func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string, repoIDs []string, external bool, snapshotDate string) ([]composer.Repository, []composer.CustomRepository, *string, error) {
 	date, err := time.Parse(time.RFC3339, snapshotDate)
 	if err != nil {
 		date, err = time.Parse(time.DateOnly, snapshotDate)
 	}
 
 	if err != nil {
-		return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Snapshot date %s is not in DateOnly (yyyy-mm-dd) or RFC3339 (yyyy-mm-ddThh:mm:ssZ) format", snapshotDate))
+		return nil, nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Snapshot date %s is not in DateOnly (yyyy-mm-dd) or RFC3339 (yyyy-mm-ddThh:mm:ssZ) format", snapshotDate))
 	}
 
 	repoMap := content_sources.RepositoryByID{}
@@ -355,7 +372,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
 		if err != nil {
 			ctx.Logger().Warnf("Unable to get RH repositories for base urls: %v", err)
-			return nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+			return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
 		} else {
 			for id, repo := range rhRepoMap {
 				repoMap[id] = repo
@@ -365,7 +382,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		nonRHRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, true)
 		if err != nil {
 			ctx.Logger().Warnf("Unable to get non-RH repositories for base urls: %v", err)
-			return nil, nil, fmt.Errorf("unable to retrieve non-RH repositories: %v", err)
+			return nil, nil, nil, fmt.Errorf("unable to retrieve non-RH repositories: %v", err)
 		} else {
 			for id, repo := range nonRHRepoMap {
 				repoMap[id] = repo
@@ -375,7 +392,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		repoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, external)
 		if err != nil {
 			ctx.Logger().Warnf("Unable to get repositories for base urls: %v", err)
-			return nil, nil, fmt.Errorf("unable to retrieve repositories: %v", err)
+			return nil, nil, nil, fmt.Errorf("unable to retrieve repositories: %v", err)
 		}
 	}
 
@@ -383,7 +400,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 	for id, repo := range repoMap {
 		repoUUIDs = append(repoUUIDs, id)
 		if !*repo.Snapshot {
-			return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Repository %s (id: %s) has snapshotting disabled", *repo.Url, id))
+			return nil, nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Repository %s (id: %s) has snapshotting disabled", *repo.Url, id))
 		}
 	}
 
@@ -392,7 +409,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		RepositoryUuids: repoUUIDs,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	defer closeBody(ctx, snapResp.Body)
 
@@ -400,22 +417,23 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		if snapResp.StatusCode != http.StatusUnauthorized {
 			body, err := io.ReadAll(snapResp.Body)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 			ctx.Logger().Warnf("Unable to resolve snapshots: %s", body)
 		}
-		return nil, nil, fmt.Errorf("unable to fetch snapshots for date, got %v response", snapResp.StatusCode)
+		return nil, nil, nil, fmt.Errorf("unable to fetch snapshots for date, got %v response", snapResp.StatusCode)
 	}
 
 	var csSnapshots content_sources.ApiListSnapshotByDateResponse
 	err = json.NewDecoder(snapResp.Body).Decode(&csSnapshots)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var repositories []composer.Repository
 	var customRepositories []composer.CustomRepository
 	var errs []error
+	var detectedOsVersion *string
 
 	for _, snap := range *csSnapshots.Data {
 		repo, ok := repoMap[*snap.RepositoryUuid]
@@ -445,14 +463,19 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		customRepo.ModuleHotfixes = repo.ModuleHotfixes
 		customRepo.CheckRepoGpg = repo.MetadataVerification
 		customRepositories = append(customRepositories, customRepo)
+
+		// Capture the first detected OS version seen across all snapshots.
+		if detectedOsVersion == nil && snap.Match.DetectedOsVersion != nil {
+			detectedOsVersion = snap.Match.DetectedOsVersion
+		}
 	}
 
 	if len(errs) > 0 {
-		return repositories, customRepositories, errors.Join(errs...)
+		return repositories, customRepositories, detectedOsVersion, errors.Join(errs...)
 	}
 
 	ctx.Logger().Debugf("Resolved snapshots: %v", repositories)
-	return repositories, customRepositories, nil
+	return repositories, customRepositories, detectedOsVersion, nil
 }
 
 func (h *Handlers) buildPayloadRepositories(ctx echo.Context, payloadRepos []Repository) ([]composer.Repository, error) {
@@ -611,22 +634,22 @@ func (h *Handlers) buildCustomRepositories(ctx echo.Context, custRepos []CustomR
 	return res, nil
 }
 
-func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string) ([]composer.Repository, []composer.CustomRepository, []composer.Repository, error) {
+func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string) ([]composer.Repository, []composer.CustomRepository, []composer.Repository, *string, error) {
 	var customRepoIDs []string
 	var rhRepoIDs []string
 
 	template, err := h.server.csClient.GetTemplateByID(ctx.Request().Context(), templateID)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Unable to retrieve template: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("Unable to retrieve template: %v", err)
 	}
 
 	if template == nil || template.RepositoryUuids == nil {
-		return nil, nil, nil, fmt.Errorf("Template %v has no repositories", templateID)
+		return nil, nil, nil, nil, fmt.Errorf("Template %v has no repositories", templateID)
 	}
 
 	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, false)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
 	}
 	for repoID := range rhRepoMap {
 		rhRepoIDs = append(rhRepoIDs, repoID)
@@ -634,7 +657,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	customRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, true)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Unable to retrieve custom repositories: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("Unable to retrieve custom repositories: %v", err)
 	}
 	for repoID := range customRepoMap {
 		customRepoIDs = append(customRepoIDs, repoID)
@@ -646,20 +669,26 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 	payloadRepositories := []composer.Repository{}
 	customRepositories := []composer.CustomRepository{}
 	var rhRepositories []composer.Repository
+	var detectedOsVersion *string
 
 	// We should never hit this condition, but checking just in case
 	if template.Snapshots == nil {
-		return nil, nil, nil, fmt.Errorf("Template %v has no snapshots", templateID)
+		return nil, nil, nil, nil, fmt.Errorf("Template %v has no snapshots", templateID)
 	}
 	for _, snap := range *template.Snapshots {
 		if snap.RepositoryUuid == nil {
-			return payloadRepositories, customRepositories, rhRepositories, fmt.Errorf("No repository UUID is associated with this snapshot")
+			return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("No repository UUID is associated with this snapshot")
+		}
+
+		// Capture the first detected OS version seen across all template snapshots.
+		if detectedOsVersion == nil && snap.DetectedOsVersion != nil {
+			detectedOsVersion = snap.DetectedOsVersion
 		}
 
 		if slices.Contains(customRepoIDs, *snap.RepositoryUuid) {
 			repo, ok := customRepoMap[*snap.RepositoryUuid]
 			if !ok {
-				return payloadRepositories, customRepositories, rhRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+				return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
 			}
 			// We don't want to set custom repositories when using a template, so here we only set the payload repositories
 			composerRepo := composer.Repository{
@@ -680,7 +709,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 			// Set the Red Hat repositories from the template
 			repo, ok := rhRepoMap[*snap.RepositoryUuid]
 			if !ok {
-				return payloadRepositories, customRepositories, rhRepositories, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+				return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
 			}
 			rhRepo := composer.Repository{
 				Baseurl:  common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.RepositoryPath).String()),
@@ -692,7 +721,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 		}
 	}
 
-	return payloadRepositories, customRepositories, rhRepositories, nil
+	return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, nil
 }
 
 func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it ImageTypes) (composer.UploadOptions, composer.ImageTypes, error) {
@@ -905,7 +934,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	res := &composer.Customizations{}
 
 	if cr.ImageRequests[0].ContentTemplate != nil {
-		templatePayloadRepositories, templateCustomRepositories, _, err := h.buildTemplateRepositories(ctx, *cr.ImageRequests[0].ContentTemplate)
+		templatePayloadRepositories, templateCustomRepositories, _, _, err := h.buildTemplateRepositories(ctx, *cr.ImageRequests[0].ContentTemplate)
 		if err != nil {
 			return nil, err
 		}
@@ -979,7 +1008,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 					repoIDs = append(repoIDs, *payloadRepository.Id)
 				}
 			}
-			payloadRepositories, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
+			payloadRepositories, _, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
 			if err != nil {
 				return nil, err
 			}
@@ -1002,7 +1031,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 					repoIDs = append(repoIDs, repo.Id)
 				}
 			}
-			_, customRepositories, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
+			_, customRepositories, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
 			if err != nil {
 				return nil, err
 			}

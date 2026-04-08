@@ -156,17 +156,19 @@ func communityRepos(ids []string, urls []string) (res []content_sources.ApiRepos
 	return res
 }
 
-func snaps(uuids []string) (res []content_sources.ApiSnapshotForDate) {
+func snapsWithOsVersion(uuids []string, detectedOsVersion *string) (res []content_sources.ApiSnapshotForDate) {
 	if slices.Contains(uuids, RepoBaseID) {
-		res = append(res, content_sources.ApiSnapshotForDate{
+		snap := content_sources.ApiSnapshotForDate{
 			IsAfter: common.ToPtr(false),
 			Match: &content_sources.ApiSnapshotResponse{
-				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
-				RepositoryPath: common.ToPtr("/snappy/baseos"),
-				Url:            common.ToPtr("http://snappy-url/snappy/baseos"),
+				CreatedAt:         common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath:    common.ToPtr("/snappy/baseos"),
+				Url:               common.ToPtr("http://snappy-url/snappy/baseos"),
+				DetectedOsVersion: detectedOsVersion,
 			},
 			RepositoryUuid: common.ToPtr(RepoBaseID),
-		})
+		}
+		res = append(res, snap)
 	}
 
 	if slices.Contains(uuids, RepoAppstrID) {
@@ -377,77 +379,91 @@ func templateByID(uuid string) (res content_sources.ApiTemplateResponse) {
 }
 
 func ContentSources(w http.ResponseWriter, r *http.Request) {
-	if tutils.AuthString0 != r.Header.Get("x-rh-identity") {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	contentSourcesHandler(nil)(w, r)
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	switch r.URL.Path {
-	case "/repositories/":
-		urlForm := r.URL.Query().Get("url")
-		urls := strings.Split(urlForm, ",")
+// ContentSourcesWithOsVersion returns a handler identical to ContentSources but
+// embeds the given detectedOsVersion in every snapshot-for-date response.
+// Pass a non-nil string to simulate content-sources reporting a specific OS
+// minor version (e.g. "9.4") for an older snapshot date.
+func ContentSourcesWithOsVersion(detectedOsVersion *string) http.HandlerFunc {
+	return contentSourcesHandler(detectedOsVersion)
+}
 
-		idForm := r.URL.Query().Get("uuid")
-		ids := strings.Split(idForm, ",")
+func contentSourcesHandler(detectedOsVersion *string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if tutils.AuthString0 != r.Header.Get("x-rh-identity") {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-		repos := []content_sources.ApiRepositoryResponse{}
-		switch r.URL.Query().Get("origin") {
-		case "red_hat":
-			repos = append(repos, rhRepos(ids, urls)...)
-		case "external,upload,community":
-			repos = append(repos, extRepos(ids, urls)...)
-			repos = append(repos, uploadRepos(ids, urls)...)
-			repos = append(repos, communityRepos(ids, urls)...)
-		}
-		err := json.NewEncoder(w).Encode(content_sources.ApiRepositoryCollectionResponse{
-			Data: &repos,
-		})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	case "/snapshots/for_date/":
-		var body content_sources.ApiListSnapshotByDateRequest
-		err := json.NewDecoder(r.Body).Decode(&body)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if body.Date != "1999-01-30T00:00:00Z" {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		err = json.NewEncoder(w).Encode(content_sources.ApiListSnapshotByDateResponse{
-			Data: common.ToPtr(snaps(body.RepositoryUuids)),
-		})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	case "/repositories/bulk_export/":
-		var body content_sources.ApiRepositoryExportRequest
-		err := json.NewDecoder(r.Body).Decode(&body)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		err = json.NewEncoder(w).Encode(exports(body.RepositoryUuids))
-		if err != nil {
-			w.WriteHeader(http.StatusInsufficientStorage)
-			return
-		}
-	}
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/repositories/":
+			urlForm := r.URL.Query().Get("url")
+			urls := strings.Split(urlForm, ",")
 
-	if strings.HasPrefix(r.URL.Path, "/templates/") {
-		pathParts := strings.Split(strings.TrimPrefix(r.URL.Path, "/templates/"), "/")
-		if len(pathParts) == 1 {
-			uuid := pathParts[0]
-			err := json.NewEncoder(w).Encode(templateByID(uuid))
+			idForm := r.URL.Query().Get("uuid")
+			ids := strings.Split(idForm, ",")
+
+			repos := []content_sources.ApiRepositoryResponse{}
+			switch r.URL.Query().Get("origin") {
+			case "red_hat":
+				repos = append(repos, rhRepos(ids, urls)...)
+			case "external,upload,community":
+				repos = append(repos, extRepos(ids, urls)...)
+				repos = append(repos, uploadRepos(ids, urls)...)
+				repos = append(repos, communityRepos(ids, urls)...)
+			}
+			err := json.NewEncoder(w).Encode(content_sources.ApiRepositoryCollectionResponse{
+				Data: &repos,
+			})
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		case "/snapshots/for_date/":
+			var body content_sources.ApiListSnapshotByDateRequest
+			err := json.NewDecoder(r.Body).Decode(&body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if body.Date != "1999-01-30T00:00:00Z" {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			err = json.NewEncoder(w).Encode(content_sources.ApiListSnapshotByDateResponse{
+				Data: common.ToPtr(snapsWithOsVersion(body.RepositoryUuids, detectedOsVersion)),
+			})
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		case "/repositories/bulk_export/":
+			var body content_sources.ApiRepositoryExportRequest
+			err := json.NewDecoder(r.Body).Decode(&body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			err = json.NewEncoder(w).Encode(exports(body.RepositoryUuids))
 			if err != nil {
 				w.WriteHeader(http.StatusInsufficientStorage)
+				return
 			}
-			return
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/templates/") {
+			pathParts := strings.Split(strings.TrimPrefix(r.URL.Path, "/templates/"), "/")
+			if len(pathParts) == 1 {
+				uuid := pathParts[0]
+				err := json.NewEncoder(w).Encode(templateByID(uuid))
+				if err != nil {
+					w.WriteHeader(http.StatusInsufficientStorage)
+				}
+				return
+			}
 		}
 	}
 }

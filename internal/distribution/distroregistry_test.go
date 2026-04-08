@@ -14,6 +14,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"no-packages",
 		"restricted-access",
 		"rhel-1.2",
+		"rhel-34",
 		"standard",
 		"with-bootc",
 	}
@@ -21,6 +22,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"no-packages",
 		"restricted-access",
 		"rhel-1.2",
+		"rhel-34",
 		"standard",
 		"with-bootc",
 	}
@@ -132,4 +134,34 @@ func TestDistroRegistry_Get(t *testing.T) {
 	result, err = dr.Available(false).Get("toucan-42")
 	require.Nil(t, result)
 	require.Equal(t, ErrDistributionNotFound, err)
+}
+
+func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
+	dr, err := LoadDistroRegistry("./testdata/distributions")
+	require.NoError(t, err)
+	registry := dr.Available(true)
+
+	cases := []struct {
+		input    string
+		expected string
+		desc     string
+	}{
+		// rhel-1.2 has no composer_name → returns distribution name
+		{"1.2", "rhel-1.2", "returns distribution name when no composer_name is set"},
+		// rhel-3.4 has composer_name "rhel-3.4" → returns composer_name
+		{"3.4", "rhel-3.4", "returns composer_name when set"},
+		// no distribution matches this version
+		{"9.99", "", "returns empty string for unknown version"},
+		// malformed inputs
+		{"notanumber", "", "returns empty string for non-numeric input"},
+		{"1", "", "returns empty string when minor version is missing"},
+		{"1.2.3", "", "returns empty string when minor part is not a plain integer"},
+		{"", "", "returns empty string for empty input"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			require.Equal(t, tc.expected, registry.FindByMajorMinorStr(tc.input))
+		})
+	}
 }
