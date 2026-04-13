@@ -274,38 +274,40 @@ func (e ImageTypeInfoPartitionType) Valid() bool {
 
 // Defines values for ImageTypes.
 const (
-	ImageTypesAws                    ImageTypes = "aws"
-	ImageTypesAwsCvm                 ImageTypes = "aws-cvm"
-	ImageTypesAwsHaRhui              ImageTypes = "aws-ha-rhui"
-	ImageTypesAwsRhui                ImageTypes = "aws-rhui"
-	ImageTypesAwsSapRhui             ImageTypes = "aws-sap-rhui"
-	ImageTypesAzure                  ImageTypes = "azure"
-	ImageTypesAzureCvm               ImageTypes = "azure-cvm"
-	ImageTypesAzureEap7Rhui          ImageTypes = "azure-eap7-rhui"
-	ImageTypesAzureRhui              ImageTypes = "azure-rhui"
-	ImageTypesAzureSapRhui           ImageTypes = "azure-sap-rhui"
-	ImageTypesAzureSapappsRhui       ImageTypes = "azure-sapapps-rhui"
-	ImageTypesEdgeCommit             ImageTypes = "edge-commit"
-	ImageTypesEdgeContainer          ImageTypes = "edge-container"
-	ImageTypesEdgeInstaller          ImageTypes = "edge-installer"
-	ImageTypesGcp                    ImageTypes = "gcp"
-	ImageTypesGcpRhui                ImageTypes = "gcp-rhui"
-	ImageTypesGuestImage             ImageTypes = "guest-image"
-	ImageTypesImageInstaller         ImageTypes = "image-installer"
-	ImageTypesIotBootableContainer   ImageTypes = "iot-bootable-container"
-	ImageTypesIotCommit              ImageTypes = "iot-commit"
-	ImageTypesIotContainer           ImageTypes = "iot-container"
-	ImageTypesIotInstaller           ImageTypes = "iot-installer"
-	ImageTypesIotRawImage            ImageTypes = "iot-raw-image"
-	ImageTypesIotSimplifiedInstaller ImageTypes = "iot-simplified-installer"
-	ImageTypesLiveInstaller          ImageTypes = "live-installer"
-	ImageTypesMinimalRaw             ImageTypes = "minimal-raw"
-	ImageTypesNetworkInstaller       ImageTypes = "network-installer"
-	ImageTypesOci                    ImageTypes = "oci"
-	ImageTypesPxeTarXz               ImageTypes = "pxe-tar-xz"
-	ImageTypesVsphere                ImageTypes = "vsphere"
-	ImageTypesVsphereOva             ImageTypes = "vsphere-ova"
-	ImageTypesWsl                    ImageTypes = "wsl"
+	ImageTypesAws                        ImageTypes = "aws"
+	ImageTypesAwsCvm                     ImageTypes = "aws-cvm"
+	ImageTypesAwsHaRhui                  ImageTypes = "aws-ha-rhui"
+	ImageTypesAwsRhui                    ImageTypes = "aws-rhui"
+	ImageTypesAwsSapRhui                 ImageTypes = "aws-sap-rhui"
+	ImageTypesAzure                      ImageTypes = "azure"
+	ImageTypesAzureCvm                   ImageTypes = "azure-cvm"
+	ImageTypesAzureEap7Rhui              ImageTypes = "azure-eap7-rhui"
+	ImageTypesAzureRhui                  ImageTypes = "azure-rhui"
+	ImageTypesAzureSapRhui               ImageTypes = "azure-sap-rhui"
+	ImageTypesAzureSapappsRhui           ImageTypes = "azure-sapapps-rhui"
+	ImageTypesEdgeCommit                 ImageTypes = "edge-commit"
+	ImageTypesEdgeContainer              ImageTypes = "edge-container"
+	ImageTypesEdgeInstaller              ImageTypes = "edge-installer"
+	ImageTypesEverythingNetworkInstaller ImageTypes = "everything-network-installer"
+	ImageTypesGcp                        ImageTypes = "gcp"
+	ImageTypesGcpRhui                    ImageTypes = "gcp-rhui"
+	ImageTypesGuestImage                 ImageTypes = "guest-image"
+	ImageTypesImageInstaller             ImageTypes = "image-installer"
+	ImageTypesIotBootableContainer       ImageTypes = "iot-bootable-container"
+	ImageTypesIotCommit                  ImageTypes = "iot-commit"
+	ImageTypesIotContainer               ImageTypes = "iot-container"
+	ImageTypesIotInstaller               ImageTypes = "iot-installer"
+	ImageTypesIotRawImage                ImageTypes = "iot-raw-image"
+	ImageTypesIotSimplifiedInstaller     ImageTypes = "iot-simplified-installer"
+	ImageTypesLiveInstaller              ImageTypes = "live-installer"
+	ImageTypesMinimalRaw                 ImageTypes = "minimal-raw"
+	ImageTypesNetworkInstaller           ImageTypes = "network-installer"
+	ImageTypesOci                        ImageTypes = "oci"
+	ImageTypesPxeTarXz                   ImageTypes = "pxe-tar-xz"
+	ImageTypesServerNetworkInstaller     ImageTypes = "server-network-installer"
+	ImageTypesVsphere                    ImageTypes = "vsphere"
+	ImageTypesVsphereOva                 ImageTypes = "vsphere-ova"
+	ImageTypesWsl                        ImageTypes = "wsl"
 )
 
 // Valid indicates whether the value is a known member of the ImageTypes enum.
@@ -339,6 +341,8 @@ func (e ImageTypes) Valid() bool {
 		return true
 	case ImageTypesEdgeInstaller:
 		return true
+	case ImageTypesEverythingNetworkInstaller:
+		return true
 	case ImageTypesGcp:
 		return true
 	case ImageTypesGcpRhui:
@@ -368,6 +372,8 @@ func (e ImageTypes) Valid() bool {
 	case ImageTypesOci:
 		return true
 	case ImageTypesPxeTarXz:
+		return true
+	case ImageTypesServerNetworkInstaller:
 		return true
 	case ImageTypesVsphere:
 		return true
