@@ -1488,6 +1488,12 @@ type ListTemplatesParams struct {
 	// SnapshotUuids Filter templates by associated snapshots using a comma separated list of snapshot UUIDs
 	SnapshotUuids *string `form:"snapshot_uuids,omitempty" json:"snapshot_uuids,omitempty"`
 
+	// ExtendedRelease Filter templates by extended release type. Valid values: eus, e4s, eeus. Supports comma-separated lists (e.g., 'eus,e4s'). Use 'none' to filter templates without extended release.
+	ExtendedRelease *string `form:"extended_release,omitempty" json:"extended_release,omitempty"`
+
+	// ExtendedReleaseVersion Filter templates by extended release version (e.g., 9.4)
+	ExtendedReleaseVersion *string `form:"extended_release_version,omitempty" json:"extended_release_version,omitempty"`
+
 	// SortBy Sort the response data based on specific parameters. Sort criteria can include `name`, `arch`, and `version`.
 	SortBy *string `form:"sort_by,omitempty" json:"sort_by,omitempty"`
 }
