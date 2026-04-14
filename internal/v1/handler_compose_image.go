@@ -463,8 +463,10 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		customRepo.CheckRepoGpg = repo.MetadataVerification
 		customRepositories = append(customRepositories, customRepo)
 
-		// Capture the first detected OS version seen across all snapshots.
-		if detectedOsVersion == nil && snap.Match.DetectedOsVersion != nil {
+		// Capture the first non-empty detected OS version seen across all snapshots.
+		// Only baseos snapshots carry a meaningful version; other snapshots may
+		// return an empty string, so we skip those.
+		if detectedOsVersion == nil && snap.Match.DetectedOsVersion != nil && *snap.Match.DetectedOsVersion != "" {
 			detectedOsVersion = snap.Match.DetectedOsVersion
 		}
 	}
@@ -679,8 +681,10 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 			return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("No repository UUID is associated with this snapshot")
 		}
 
-		// Capture the first detected OS version seen across all template snapshots.
-		if detectedOsVersion == nil && snap.DetectedOsVersion != nil {
+		// Capture the first non-empty detected OS version seen across all template
+		// snapshots. Only baseos snapshots carry a meaningful version; other
+		// snapshots may return an empty string, so we skip those.
+		if detectedOsVersion == nil && snap.DetectedOsVersion != nil && *snap.DetectedOsVersion != "" {
 			detectedOsVersion = snap.DetectedOsVersion
 		}
 

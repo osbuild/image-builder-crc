@@ -3585,3 +3585,52 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 	// NOT "rhel-9.7" which is what "rhel-9" would normally resolve to.
 	require.Equal(t, common.ToPtr("rhel-94"), composerRequest.Distribution)
 }
+
+// TestComposeWithSnapshotEmptyDetectedOsVersion verifies that when content-sources
+// returns an empty string for detected_os_version (e.g. for non-baseos repos), the
+// distribution is not overridden. Empty strings are non-nil in Go and must be skipped
+// to avoid blocking a valid version from a later snapshot.
+func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
+	var composerRequest composer.ComposeRequest
+	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
+		err := json.NewDecoder(r.Body).Decode(&composerRequest)
+		require.NoError(t, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(composer.ComposeId{Id: uuid.New()})
+		require.NoError(t, err)
+	}))
+	defer apiSrv.Close()
+
+	srv := startServer(t, &testServerClientsConf{
+		ComposerURL: apiSrv.URL,
+		CSHandler:   mocks.ContentSourcesWithOsVersion(common.ToPtr("")),
+	}, nil)
+	defer srv.Shutdown(t)
+
+	var uo v1.UploadRequest_Options
+	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+
+	ibRequest := v1.ComposeRequest{
+		Distribution: "rhel-9",
+		ImageRequests: []v1.ImageRequest{
+			{
+				Architecture: "x86_64",
+				ImageType:    v1.ImageTypesGuestImage,
+				SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
+				UploadRequest: v1.UploadRequest{
+					Type:    v1.UploadTypesAwsS3,
+					Options: uo,
+				},
+			},
+		},
+	}
+
+	respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", ibRequest)
+	require.Equal(t, http.StatusCreated, respStatusCode, "body: %s", body)
+
+	// Empty detected_os_version should be ignored — the compose should use the
+	// default "rhel-9.7" distribution, not attempt to look up an empty version.
+	require.Equal(t, common.ToPtr("rhel-9.7"), composerRequest.Distribution)
+}

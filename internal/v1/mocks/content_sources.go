@@ -175,9 +175,10 @@ func snapsWithOsVersion(uuids []string, detectedOsVersion *string) (res []conten
 		res = append(res, content_sources.ApiSnapshotForDate{
 			IsAfter: common.ToPtr(false),
 			Match: &content_sources.ApiSnapshotResponse{
-				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
-				RepositoryPath: common.ToPtr("/snappy/appstream"),
-				Url:            common.ToPtr("http://snappy-url/snappy/appstream"),
+				CreatedAt:         common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath:    common.ToPtr("/snappy/appstream"),
+				Url:               common.ToPtr("http://snappy-url/snappy/appstream"),
+				DetectedOsVersion: common.ToPtr(""),
 			},
 			RepositoryUuid: common.ToPtr(RepoAppstrID),
 		})
@@ -187,9 +188,10 @@ func snapsWithOsVersion(uuids []string, detectedOsVersion *string) (res []conten
 		res = append(res, content_sources.ApiSnapshotForDate{
 			IsAfter: common.ToPtr(false),
 			Match: &content_sources.ApiSnapshotResponse{
-				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
-				RepositoryPath: common.ToPtr("/snappy/payload"),
-				Url:            common.ToPtr("http://snappy-url/snappy/payload"),
+				CreatedAt:         common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath:    common.ToPtr("/snappy/payload"),
+				Url:               common.ToPtr("http://snappy-url/snappy/payload"),
+				DetectedOsVersion: common.ToPtr(""),
 			},
 			RepositoryUuid: common.ToPtr(RepoPLID),
 		})
@@ -199,9 +201,10 @@ func snapsWithOsVersion(uuids []string, detectedOsVersion *string) (res []conten
 		res = append(res, content_sources.ApiSnapshotForDate{
 			IsAfter: common.ToPtr(false),
 			Match: &content_sources.ApiSnapshotResponse{
-				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
-				RepositoryPath: common.ToPtr("/snappy/payload2"),
-				Url:            common.ToPtr("http://snappy-url/snappy/payload2"),
+				CreatedAt:         common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath:    common.ToPtr("/snappy/payload2"),
+				Url:               common.ToPtr("http://snappy-url/snappy/payload2"),
+				DetectedOsVersion: common.ToPtr(""),
 			},
 			RepositoryUuid: common.ToPtr(RepoPLID2),
 		})
@@ -211,9 +214,10 @@ func snapsWithOsVersion(uuids []string, detectedOsVersion *string) (res []conten
 		res = append(res, content_sources.ApiSnapshotForDate{
 			IsAfter: common.ToPtr(false),
 			Match: &content_sources.ApiSnapshotResponse{
-				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
-				RepositoryPath: common.ToPtr("/snappy/payload3"),
-				Url:            common.ToPtr("http://snappy-url/snappy/payload3"),
+				CreatedAt:         common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath:    common.ToPtr("/snappy/payload3"),
+				Url:               common.ToPtr("http://snappy-url/snappy/payload3"),
+				DetectedOsVersion: common.ToPtr(""),
 			},
 			RepositoryUuid: common.ToPtr(RepoPLID3),
 		})
@@ -223,9 +227,10 @@ func snapsWithOsVersion(uuids []string, detectedOsVersion *string) (res []conten
 		res = append(res, content_sources.ApiSnapshotForDate{
 			IsAfter: common.ToPtr(false),
 			Match: &content_sources.ApiSnapshotResponse{
-				CreatedAt:      common.ToPtr("1998-01-30T00:00:00Z"),
-				RepositoryPath: common.ToPtr("/snappy/epel10"),
-				Url:            common.ToPtr("http://snappy-url/snappy/epel10"),
+				CreatedAt:         common.ToPtr("1998-01-30T00:00:00Z"),
+				RepositoryPath:    common.ToPtr("/snappy/epel10"),
+				Url:               common.ToPtr("http://snappy-url/snappy/epel10"),
+				DetectedOsVersion: common.ToPtr(""),
 			},
 			RepositoryUuid: common.ToPtr(RepoSharedEpelID),
 		})
