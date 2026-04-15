@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"net/url"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/tern/v2/migrate"
 
 	"github.com/osbuild/image-builder-crc/internal/db"
 )
@@ -189,29 +193,60 @@ type TernMigrateOptions struct {
 	SSLMode       string
 }
 
-func callTernMigrate(ctx context.Context, opt TernMigrateOptions) ([]byte, error) {
-	args := []string{
-		"migrate",
+// ternVersionTable matches the default in the tern CLI (see tern LoadConfig).
+const ternVersionTable = "public.schema_version"
+
+func pgURLForTern(opt TernMigrateOptions) string {
+	sslmode := opt.SSLMode
+	if sslmode == "" {
+		sslmode = "disable"
+	}
+	u := &url.URL{
+		Scheme: "postgres",
+		Host:   net.JoinHostPort(opt.Hostname, opt.DBPort),
+		Path:   "/" + opt.DBName,
+	}
+	if opt.DBPassword != "" {
+		u.User = url.UserPassword(opt.DBUser, opt.DBPassword)
+	} else {
+		u.User = url.User(opt.DBUser)
+	}
+	q := url.Values{}
+	q.Set("sslmode", sslmode)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+// callTernMigrate runs the same migration logic as `tern migrate` (destination "last")
+// by using the tern [migrate] package directly instead of shelling out to the tern binary.
+func callTernMigrate(ctx context.Context, opt TernMigrateOptions) error {
+	migDir, err := filepath.Abs(opt.MigrationsDir)
+	if err != nil {
+		return fmt.Errorf("tern migrations path: %w", err)
 	}
 
-	addArg := func(flag, value string) {
-		if value != "" {
-			args = append(args, flag, value)
-		}
+	conn, err := pgx.Connect(ctx, pgURLForTern(opt))
+	if err != nil {
+		return fmt.Errorf("tern connect: %w", err)
 	}
+	defer conn.Close(ctx)
 
-	addArg("--migrations", opt.MigrationsDir)
-	addArg("--host", opt.Hostname)
-	addArg("--database", opt.DBName)
-	addArg("--port", opt.DBPort)
-	addArg("--user", opt.DBUser)
-	addArg("--password", opt.DBPassword)
-	addArg("--sslmode", opt.SSLMode)
+	migrator, err := migrate.NewMigrator(ctx, conn, ternVersionTable)
+	if err != nil {
+		return fmt.Errorf("tern new migrator: %w", err)
+	}
+	migrator.Data = map[string]interface{}{}
 
-	/* #nosec G204 */
-	cmd := exec.CommandContext(ctx, "tern", args...)
-
-	return cmd.CombinedOutput()
+	if err := migrator.LoadMigrations(os.DirFS(migDir)); err != nil {
+		return fmt.Errorf("tern load migrations: %w", err)
+	}
+	if len(migrator.Migrations) == 0 {
+		return fmt.Errorf("tern: no migrations found in %s", migDir)
+	}
+	if err := migrator.Migrate(ctx); err != nil {
+		return fmt.Errorf("tern migrate: %w", err)
+	}
+	return nil
 }
 
 func (p *PSQLContainer) NewDB(ctx context.Context) (db.DB, error) {
@@ -221,7 +256,7 @@ func (p *PSQLContainer) NewDB(ctx context.Context) (db.DB, error) {
 		return nil, err
 	}
 
-	out, err := callTernMigrate(
+	if err := callTernMigrate(
 		ctx,
 		TernMigrateOptions{
 			MigrationsDir: "../db/migrations-tern/",
@@ -230,10 +265,8 @@ func (p *PSQLContainer) NewDB(ctx context.Context) (db.DB, error) {
 			DBPort:        fmt.Sprintf("%d", p.port),
 			DBUser:        user,
 		},
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("tern command error: %w, output: %s", err, out)
+	); err != nil {
+		return nil, err
 	}
 	return db.InitDBConnectionPool(ctx, fmt.Sprintf("postgres://postgres@localhost:%d/%s", p.port, dbName))
 }
