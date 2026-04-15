@@ -31,6 +31,11 @@ import (
 
 var dbc *tutils.PSQLContainer
 
+const defaultTestDistributionsDir = "../../distributions"
+
+// testDistributionsRegistry is loaded once for tests that use defaultTestDistributionsDir.
+var testDistributionsRegistry = distribution.MustLoadDistroRegistry(defaultTestDistributionsDir)
+
 func TestMain(m *testing.M) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	slog.SetDefault(logger)
@@ -207,12 +212,16 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 		serverConfig.QuotaFile = quotaFile
 	}
 	if serverConfig.DistributionsDir == "" {
-		serverConfig.DistributionsDir = "../../distributions"
+		serverConfig.DistributionsDir = defaultTestDistributionsDir
 	}
 	if serverConfig.AllDistros == nil {
-		adr, err := distribution.LoadDistroRegistry(serverConfig.DistributionsDir)
-		require.NoError(t, err)
-		serverConfig.AllDistros = adr
+		if serverConfig.DistributionsDir == defaultTestDistributionsDir {
+			serverConfig.AllDistros = testDistributionsRegistry
+		} else {
+			adr, err := distribution.LoadDistroRegistry(serverConfig.DistributionsDir)
+			require.NoError(t, err)
+			serverConfig.AllDistros = adr
+		}
 	}
 
 	server, err := v1.Attach(serverConfig)
