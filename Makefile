@@ -68,8 +68,13 @@ generate-openscap-blueprints:
 dev-prerequisites:
 	go install github.com/jackc/tern@latest
 
+ifeq ($(CI),true)
 UNIT_TEST_ARGS = -v -race
 UNIT_TEST_COVERAGE_ARGS = $(UNIT_TEST_ARGS) -covermode=atomic -coverprofile=coverage.txt -coverpkg=./...
+else
+UNIT_TEST_ARGS =
+UNIT_TEST_COVERAGE_ARGS =
+endif
 
 .PHONY: unit-tests
 unit-tests: dev-prerequisites
