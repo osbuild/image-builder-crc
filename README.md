@@ -40,6 +40,12 @@ To run the tests locally just call
 make unit-tests
 ```
 
+To run tests with coverage call
+
+```sh
+make coverage-dump
+```
+
 Before pushing something for a pull request you should run this check to avoid problems with required github actions
 
 ```sh
