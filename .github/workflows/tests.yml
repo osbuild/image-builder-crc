@@ -47,8 +47,8 @@ jobs:
         with:
           version: v1.64.6
 
-      - name: Run unit tests
-        run: make unit-tests
+      - name: Run unit tests with coverage
+        run: make coverage-dump
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v4
