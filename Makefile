@@ -68,16 +68,23 @@ generate-openscap-blueprints:
 dev-prerequisites:
 	go install github.com/jackc/tern@latest
 
+UNIT_TEST_ARGS = -v -race
+UNIT_TEST_COVERAGE_ARGS = $(UNIT_TEST_ARGS) -covermode=atomic -coverprofile=coverage.txt -coverpkg=./...
+
 .PHONY: unit-tests
 unit-tests: dev-prerequisites
-	go test -v -race -covermode=atomic -coverprofile=coverage.txt -coverpkg=./... ./...
+	go test $(UNIT_TEST_ARGS) ./...
+
+.PHONY: unit-tests-coverage
+unit-tests-coverage: dev-prerequisites
+	go test $(UNIT_TEST_COVERAGE_ARGS) ./...
 
 .PHONY: coverage-dump
-coverage-dump: unit-tests
+coverage-dump: unit-tests-coverage
 	go tool cover -func=coverage.txt
 
 .PHONY: coverage-report
-coverage-report: unit-tests
+coverage-report: unit-tests-coverage
 	go tool cover -o coverage.html -html coverage.txt
 
 .PHONY: generate
