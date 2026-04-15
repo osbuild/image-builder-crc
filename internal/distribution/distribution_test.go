@@ -9,16 +9,15 @@ import (
 )
 
 func TestDistributionFile_Architecture(t *testing.T) {
-	adr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-	d, err := adr.Available(false).Get("standard")
+	d, err := distroReg.Available(false).Get("standard")
 	require.NoError(t, err)
 
 	arch, err := d.Architecture("x86_64")
 	require.NoError(t, err)
 
-	// don't test packages, they are huge
-	arch.Packages = nil
+	// don't test packages, they are huge — copy so we don't mutate the shared test registry
+	archForCompare := *arch
+	archForCompare.Packages = nil
 
 	require.Equal(t, &Architecture{
 		ImageTypes: []string{"std", "std2"},
@@ -39,7 +38,7 @@ func TestDistributionFile_Architecture(t *testing.T) {
 				ImageTypeTags: []string{"std2"},
 			},
 		},
-	}, arch,
+	}, &archForCompare,
 	)
 
 	arch, err = d.Architecture("unsupported")
@@ -48,26 +47,21 @@ func TestDistributionFile_Architecture(t *testing.T) {
 }
 
 func TestRHELMajorMinor(t *testing.T) {
-	adr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-
-	d, err := adr.Available(true).Get("rhel-1.2")
+	d, err := distroReg.Available(true).Get("rhel-1.2")
 	require.NoError(t, err)
 	major, minor, err := d.RHELMajorMinor()
 	require.NoError(t, err)
 	require.Equal(t, 1, major)
 	require.Equal(t, 2, minor)
 
-	d, err = adr.Available(true).Get("standard")
+	d, err = distroReg.Available(true).Get("standard")
 	require.NoError(t, err)
 	_, _, err = d.RHELMajorMinor()
 	require.Error(t, err, ErrMajorMinor)
 }
 
 func TestArchitecture_FindPackages(t *testing.T) {
-	adr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-	d, err := adr.Available(false).Get("standard")
+	d, err := distroReg.Available(false).Get("standard")
 	require.NoError(t, err)
 
 	arch, err := d.Architecture("x86_64")
@@ -92,11 +86,8 @@ func TestArchitecture_FindPackages(t *testing.T) {
 	pkgs = arch.FindPackages("other")
 	require.Empty(t, pkgs)
 
-	// load the test distributions and check that a distro with no_package_list == true works
-	adr, err = LoadDistroRegistry("testdata/distributions")
-	require.NoError(t, err)
-
-	d, err = adr.Available(true).Get("no-packages")
+	// check that a distro with no_package_list == true works
+	d, err = distroReg.Available(true).Get("no-packages")
 	require.NoError(t, err)
 
 	arch, err = d.Architecture("x86_64")

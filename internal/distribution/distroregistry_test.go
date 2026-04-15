@@ -8,6 +8,9 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 )
 
+// distroReg is shared by tests that use internal/distribution/testdata/distributions.
+var distroReg = MustLoadDistroRegistry("testdata/distributions")
+
 func TestDistroRegistry_List(t *testing.T) {
 	allDistros := []string{
 		"needs-entitlement",
@@ -31,8 +34,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"bootc-only",
 	}
 
-	dr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
+	dr := distroReg
 
 	result := dr.Available(true).List()
 	require.Len(t, result, len(allDistros))
@@ -48,8 +50,7 @@ func TestDistroRegistry_List(t *testing.T) {
 }
 
 func TestDistroRegistry_Get(t *testing.T) {
-	dr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
+	dr := distroReg
 
 	result, err := dr.Available(true).Get("standard")
 	require.NoError(t, err)
