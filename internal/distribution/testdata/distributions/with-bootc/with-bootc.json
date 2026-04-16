@@ -9,7 +9,7 @@
     "image_types": ["qcow2"],
     "repositories": [],
     "bootc": [
-      { "id": "with-bootc-ec2", "type": "ec2", "image_name": "test/ec2" }
+      { "id": "with-bootc-ec2", "type": "ec2", "reference": "test/ec2" }
     ]
   }
 }

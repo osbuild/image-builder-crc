@@ -17,7 +17,7 @@ func TestCollectBootcFromRegistry(t *testing.T) {
 		require.Equal(t, "Test distro with bootc entries", list[0].Name)
 		require.Equal(t, "ec2", list[0].Type)
 		require.Equal(t, "x86_64", list[0].Arch)
-		require.Equal(t, "test/ec2", list[0].ImageName)
+		require.Equal(t, "test/ec2", list[0].Reference)
 	})
 
 	t.Run("empty registry returns empty list", func(t *testing.T) {

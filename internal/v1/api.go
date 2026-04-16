@@ -671,7 +671,7 @@ type BootMode = composer.ImageTypeInfoBootMode
 // BootcBody Bootc/Image Mode compose parameters. When present, the compose builds from the
 // specified bootc base image instead of the classic package-based flow.
 type BootcBody struct {
-	// Reference Image name from the bootc distributions list. Must match an image_name
+	// Reference Image name from the bootc distributions list. Must match a reference
 	// returned by GET /distributions?kind=bootc.
 	Reference string `json:"reference"`
 }
@@ -681,10 +681,10 @@ type BootcDistributionItem struct {
 	Arch   string `json:"arch"`
 	Distro string `json:"distro"`
 	Id     string `json:"id"`
+	Name   string `json:"name"`
 
-	// ImageName part of the container image name used as the base for composing
-	ImageName string `json:"image_name"`
-	Name      string `json:"name"`
+	// Reference part of the container image reference used as the base for composing
+	Reference string `json:"reference"`
 	Type      string `json:"type"`
 }
 
@@ -1530,7 +1530,7 @@ type GetComposesParams struct {
 // GetDistributionsParams defines parameters for GetDistributions.
 type GetDistributionsParams struct {
 	// Kind Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
-	// distributions (each with id, name, type, arch, and image). Defaults to classic distributions.
+	// distributions (each with id, name, type, arch, and reference). Defaults to classic distributions.
 	Kind *DistributionKind `form:"kind,omitempty" json:"kind,omitempty"`
 
 	// Distro Filter bootc distributions by distribution name. Only applies when kind=bootc.
