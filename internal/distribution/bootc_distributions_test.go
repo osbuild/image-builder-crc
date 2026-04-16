@@ -6,6 +6,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestArchitectureValidateBootcReference(t *testing.T) {
+	t.Run("returns nil when reference matches a bootc entry", func(t *testing.T) {
+		arch := Architecture{
+			Bootc: []BootcImage{
+				{Type: "ec2", Reference: "ref-ec2"},
+				{Type: "gcp", Reference: "ref-gcp"},
+			},
+		}
+		require.NoError(t, arch.ValidateBootcReference("ref-ec2"))
+		require.NoError(t, arch.ValidateBootcReference("ref-gcp"))
+	})
+
+	t.Run("returns error when reference is not in bootc list", func(t *testing.T) {
+		arch := Architecture{
+			Bootc: []BootcImage{{Type: "ec2", Reference: "r"}},
+		}
+		err := arch.ValidateBootcReference("other-ref")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "bootc reference 'other-ref' not found")
+	})
+
+	t.Run("returns error when bootc list is empty", func(t *testing.T) {
+		arch := Architecture{Bootc: []BootcImage{}}
+		err := arch.ValidateBootcReference("any-ref")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "bootc reference 'any-ref' not found")
+	})
+}
+
 func TestCollectBootcFromRegistry(t *testing.T) {
 	t.Run("collects bootc from distro architectures", func(t *testing.T) {
 		adr, err := LoadDistroRegistry("testdata/distributions")
