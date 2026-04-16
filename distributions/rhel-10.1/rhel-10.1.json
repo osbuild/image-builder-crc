@@ -9,10 +9,10 @@
   },
   "x86_64": {
     "bootc": [
-      { "type": "ec2", "reference": "rhel/10.1-ec2" },
-      { "type": "gcp", "reference": "rhel/10.1-gcp" },
-      { "type": "azure", "reference": "rhel/10.1-azure" },
-      { "type": "qcow2", "reference": "rhel/10.1-qcow2" }
+      { "type": "aws", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest" },
+      { "type": "gcp", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-gcp:latest" },
+      { "type": "azure", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-azure:latest" },
+      { "type": "guest-image", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest" }
     ],
     "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "network-installer", "oci", "pxe-tar-xz", "vsphere", "vsphere-ova", "wsl"],
     "repositories": [{
