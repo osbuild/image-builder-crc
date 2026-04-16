@@ -99,7 +99,7 @@ func (h *Handlers) GetDistributions(ctx echo.Context, params GetDistributionsPar
 				Name:      e.Name,
 				Type:      e.Type,
 				Arch:      e.Arch,
-				ImageName: e.ImageName,
+				Reference: e.Reference,
 			})
 			resp = append(resp, item)
 		}

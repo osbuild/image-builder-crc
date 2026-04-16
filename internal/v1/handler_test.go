@@ -936,7 +936,7 @@ func TestGetBootcDistributions(t *testing.T) {
 				require.Equal(t, "rhel-10.1", result[0].Distro)
 				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
 				require.Equal(t, "ec2", result[0].Type)
-				require.Equal(t, "rhel/10.1-ec2", result[0].ImageName)
+				require.Equal(t, "rhel/10.1-ec2", result[0].Reference)
 			},
 		},
 		{

@@ -68,7 +68,7 @@ paths:
             $ref: '#/components/schemas/DistributionKind'
           description: |
             Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
-            distributions (each with id, name, type, arch, and image). Defaults to classic distributions.
+            distributions (each with id, name, type, arch, and reference). Defaults to classic distributions.
         - in: query
           name: distro
           required: false
@@ -847,7 +847,7 @@ components:
         - name
         - type
         - arch
-        - image_name
+        - reference
       properties:
         id:
           type: string
@@ -864,9 +864,9 @@ components:
         arch:
           type: string
           example: 'x86_64'
-        image_name:
+        reference:
           type: string
-          description: 'part of the container image name used as the base for composing'
+          description: 'part of the container image reference used as the base for composing'
           example: 'rhel/10.0-ec2'
     BootcBody:
       type: object
@@ -879,7 +879,7 @@ components:
         reference:
           type: string
           description: |
-            Image name from the bootc distributions list. Must match an image_name
+            Image name from the bootc distributions list. Must match a reference
             returned by GET /distributions?kind=bootc.
           example: 'rhel/10.0-ec2'
     Architectures:

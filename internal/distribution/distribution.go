@@ -44,9 +44,9 @@ type BootcImage struct {
 	ID string `json:"id"`
 	// Type is the target image type (e.g. "ec2", "gcp", "qcow2").
 	Type string `json:"type"`
-	// ImageName is the part of the container image reference used as the base for composing
+	// Reference is the part of the container image reference used as the base for composing
 	// (e.g. "rhel/10.1-ec2")
-	ImageName string `json:"image_name"`
+	Reference string `json:"reference"`
 }
 
 type Architecture struct {

@@ -58,7 +58,7 @@ func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntr
 					Name:      displayName,
 					Type:      b.Type,
 					Arch:      archName,
-					ImageName: b.ImageName,
+					Reference: b.Reference,
 				})
 			}
 		}
