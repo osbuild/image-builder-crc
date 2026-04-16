@@ -85,6 +85,17 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, err
 	}
 
+	var bootc *composer.Bootc
+	if composeRequest.Bootc != nil {
+		err := arch.ValidateBootcReference(composeRequest.Bootc.Reference)
+		if err != nil {
+			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		bootc = &composer.Bootc{
+			Reference: composeRequest.Bootc.Reference,
+		}
+	}
+
 	var customizations *composer.Customizations
 	customizations, err = h.buildCustomizations(ctx, &composeRequest, d)
 	if err != nil {
@@ -179,6 +190,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		Distribution:   common.ToPtr(distro),
 		Customizations: customizations,
 		BlueprintId:    opts.BlueprintId,
+		Bootc:          bootc,
 		ImageRequest: &composer.ImageRequest{
 			Architecture:  string(composeRequest.ImageRequests[0].Architecture),
 			ImageType:     imageType,
