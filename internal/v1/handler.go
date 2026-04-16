@@ -94,7 +94,6 @@ func (h *Handlers) GetDistributions(ctx echo.Context, params GetDistributionsPar
 			}
 			var item DistributionsResponse_Item
 			_ = item.FromBootcDistributionItem(BootcDistributionItem{
-				Id:        e.ID,
 				Distro:    e.Distro,
 				Name:      e.Name,
 				Type:      e.Type,

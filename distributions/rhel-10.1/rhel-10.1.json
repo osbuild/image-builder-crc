@@ -9,10 +9,10 @@
   },
   "x86_64": {
     "bootc": [
-      { "id": "rhel-10.1-ec2", "type": "ec2", "reference": "rhel/10.1-ec2" },
-      { "id": "rhel-10.1-gcp", "type": "gcp", "reference": "rhel/10.1-gcp" },
-      { "id": "rhel-10.1-azure", "type": "azure", "reference": "rhel/10.1-azure" },
-      { "id": "rhel-10.1-qcow2", "type": "qcow2", "reference": "rhel/10.1-qcow2" }
+      { "type": "ec2", "reference": "rhel/10.1-ec2" },
+      { "type": "gcp", "reference": "rhel/10.1-gcp" },
+      { "type": "azure", "reference": "rhel/10.1-azure" },
+      { "type": "qcow2", "reference": "rhel/10.1-qcow2" }
     ],
     "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "network-installer", "oci", "pxe-tar-xz", "vsphere", "vsphere-ova", "wsl"],
     "repositories": [{

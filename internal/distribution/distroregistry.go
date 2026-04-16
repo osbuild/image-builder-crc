@@ -53,7 +53,6 @@ func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntr
 			}
 			for _, b := range arch.Bootc {
 				all = append(all, BootcDistributionEntry{
-					ID:        b.ID,
 					Distro:    d.Distribution.Name,
 					Name:      displayName,
 					Type:      b.Type,
