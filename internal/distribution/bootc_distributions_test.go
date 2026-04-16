@@ -12,7 +12,6 @@ func TestCollectBootcFromRegistry(t *testing.T) {
 		require.NoError(t, err)
 		list := adr.CollectBootcFromRegistry()
 		require.Len(t, list, 1)
-		require.Equal(t, "with-bootc-ec2", list[0].ID)
 		require.Equal(t, "with-bootc", list[0].Distro)
 		require.Equal(t, "Test distro with bootc entries", list[0].Name)
 		require.Equal(t, "ec2", list[0].Type)

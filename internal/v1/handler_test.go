@@ -934,7 +934,6 @@ func TestGetBootcDistributions(t *testing.T) {
 			query:   "kind=bootc",
 			wantLen: 4,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, "rhel-10.1-ec2", result[0].Id)
 				require.Equal(t, "rhel-10.1", result[0].Distro)
 				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
 				require.Equal(t, "aws", result[0].Type)

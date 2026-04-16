@@ -39,13 +39,10 @@ type DistributionFile struct {
 }
 
 type BootcImage struct {
-	// ID identifies the bootc entry, combining distribution version
-	// and target type (e.g. "rhel-10.1-ec2", "rhel-10.1-qcow2").
-	ID string `json:"id"`
 	// Type is the target image type (e.g. "ec2", "gcp", "qcow2").
 	Type string `json:"type"`
+
 	// Reference is the part of the container image reference used as the base for composing
-	// (e.g. "rhel/10.1-ec2")
 	Reference string `json:"reference"`
 }
 

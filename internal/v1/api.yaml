@@ -68,7 +68,7 @@ paths:
             $ref: '#/components/schemas/DistributionKind'
           description: |
             Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
-            distributions (each with id, name, type, arch, and reference). Defaults to classic distributions.
+            distributions (each with distro, name, type, arch, and reference). Defaults to classic distributions.
         - in: query
           name: distro
           required: false
@@ -842,16 +842,12 @@ components:
     BootcDistributionItem:
       type: object
       required:
-        - id
         - distro
         - name
         - type
         - arch
         - reference
       properties:
-        id:
-          type: string
-          example: 'rhel-10.0-ec2'
         distro:
           type: string
           example: 'rhel-10.0'

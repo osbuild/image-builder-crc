@@ -680,7 +680,6 @@ type BootcBody struct {
 type BootcDistributionItem struct {
 	Arch   string `json:"arch"`
 	Distro string `json:"distro"`
-	Id     string `json:"id"`
 	Name   string `json:"name"`
 
 	// Reference Derived container image reference, only references listed in the bootc distributions list are allowed.
@@ -1530,7 +1529,7 @@ type GetComposesParams struct {
 // GetDistributionsParams defines parameters for GetDistributions.
 type GetDistributionsParams struct {
 	// Kind Kind of distributions to return. When set to 'bootc', returns bootc/image-mode
-	// distributions (each with id, name, type, arch, and reference). Defaults to classic distributions.
+	// distributions (each with distro, name, type, arch, and reference). Defaults to classic distributions.
 	Kind *DistributionKind `form:"kind,omitempty" json:"kind,omitempty"`
 
 	// Distro Filter bootc distributions by distribution name. Only applies when kind=bootc.
