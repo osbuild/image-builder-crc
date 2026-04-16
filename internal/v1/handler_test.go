@@ -919,6 +919,8 @@ func TestGetDistributions(t *testing.T) {
 func TestGetBootcDistributions(t *testing.T) {
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
+	rhel101BootcAWSRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
+	rhel101BootcGuestImageRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"
 
 	tests := []struct {
 		name     string
@@ -935,8 +937,8 @@ func TestGetBootcDistributions(t *testing.T) {
 				require.Equal(t, "rhel-10.1-ec2", result[0].Id)
 				require.Equal(t, "rhel-10.1", result[0].Distro)
 				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
-				require.Equal(t, "ec2", result[0].Type)
-				require.Equal(t, "rhel/10.1-ec2", result[0].Reference)
+				require.Equal(t, "aws", result[0].Type)
+				require.Equal(t, rhel101BootcAWSRef, result[0].Reference)
 			},
 		},
 		{
@@ -971,20 +973,20 @@ func TestGetBootcDistributions(t *testing.T) {
 		},
 		{
 			name:    "filters by type",
-			query:   "kind=bootc&type=ec2",
+			query:   "kind=bootc&type=aws",
 			wantLen: 1,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, "ec2", result[0].Type)
+				require.Equal(t, "aws", result[0].Type)
 			},
 		},
 		{
 			name:    "combines arch and type filters",
-			query:   "kind=bootc&arch=x86_64&type=qcow2",
+			query:   "kind=bootc&arch=x86_64&type=guest-image",
 			wantLen: 1,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, "rhel-10.1-qcow2", result[0].Id)
+				require.Equal(t, rhel101BootcGuestImageRef, result[0].Reference)
 				require.Equal(t, "x86_64", result[0].Arch)
-				require.Equal(t, "qcow2", result[0].Type)
+				require.Equal(t, "guest-image", result[0].Type)
 			},
 		},
 		{

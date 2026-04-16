@@ -683,7 +683,7 @@ type BootcDistributionItem struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
 
-	// Reference part of the container image reference used as the base for composing
+	// Reference Derived container image reference, only references listed in the bootc distributions list are allowed.
 	Reference string `json:"reference"`
 	Type      string `json:"type"`
 }

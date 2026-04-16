@@ -90,7 +90,7 @@ paths:
           required: false
           schema:
             type: string
-            example: 'ec2'
+            example: 'aws'
           description: |
             Filter bootc distributions by image type. Only applies when kind=bootc.
       responses:
@@ -860,14 +860,14 @@ components:
           example: 'Red Hat Enterprise Linux 10.0'
         type:
           type: string
-          example: 'ec2'
+          example: 'aws'
         arch:
           type: string
           example: 'x86_64'
         reference:
           type: string
-          description: 'part of the container image reference used as the base for composing'
-          example: 'rhel/10.0-ec2'
+          description: 'Derived container image reference, only references listed in the bootc distributions list are allowed.'
+          example: 'quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest'
     BootcBody:
       type: object
       description: |
@@ -881,7 +881,7 @@ components:
           description: |
             Image name from the bootc distributions list. Must match a reference
             returned by GET /distributions?kind=bootc.
-          example: 'rhel/10.0-ec2'
+          example: 'quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest'
     Architectures:
       type: array
       items:
