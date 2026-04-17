@@ -13,6 +13,7 @@ import (
 )
 
 func TestRecommendPackage(t *testing.T) {
+	t.Parallel()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 
