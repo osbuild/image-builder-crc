@@ -7,6 +7,7 @@ import (
 )
 
 func TestArchitectureValidateBootcReference(t *testing.T) {
+	t.Parallel()
 	archBoth := Architecture{
 		Bootc: []BootcImage{
 			{Type: "ec2", Reference: "ref-ec2"},
@@ -52,7 +53,9 @@ func TestArchitectureValidateBootcReference(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.arch.ValidateBootcReference(tt.reference)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -65,6 +68,7 @@ func TestArchitectureValidateBootcReference(t *testing.T) {
 }
 
 func TestCollectBootcFromRegistry(t *testing.T) {
+	t.Parallel()
 	loaded, err := LoadDistroRegistry("testdata/distributions")
 	require.NoError(t, err)
 
@@ -95,7 +99,9 @@ func TestCollectBootcFromRegistry(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			list := tt.registry.CollectBootcFromRegistry()
 			if tt.wantEmpty {
 				require.Empty(t, list)

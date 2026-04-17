@@ -9,6 +9,7 @@ import (
 )
 
 func TestDistributionFile_Architecture(t *testing.T) {
+	t.Parallel()
 	d, err := distroReg.Available(false).Get("standard")
 	require.NoError(t, err)
 
@@ -47,6 +48,7 @@ func TestDistributionFile_Architecture(t *testing.T) {
 }
 
 func TestRHELMajorMinor(t *testing.T) {
+	t.Parallel()
 	d, err := distroReg.Available(true).Get("rhel-1.2")
 	require.NoError(t, err)
 	major, minor, err := d.RHELMajorMinor()
@@ -61,6 +63,7 @@ func TestRHELMajorMinor(t *testing.T) {
 }
 
 func TestArchitecture_FindPackages(t *testing.T) {
+	t.Parallel()
 	d, err := distroReg.Available(false).Get("standard")
 	require.NoError(t, err)
 
@@ -98,14 +101,17 @@ func TestArchitecture_FindPackages(t *testing.T) {
 }
 
 func TestInvalidDistribution(t *testing.T) {
+	t.Parallel()
 	_, err := readDistribution("./testdata/distributions", "none")
 	require.Error(t, err, ErrDistributionNotFound)
 }
 
 func TestDistributionFileIsRestricted(t *testing.T) {
+	t.Parallel()
 	distsDir := "testdata/distributions"
 
 	t.Run("distro is not restricted, has no restricted_access field", func(t *testing.T) {
+		t.Parallel()
 		d, err := readDistribution(distsDir, "standard")
 		require.NoError(t, err)
 		actual := d.IsRestricted()
@@ -114,6 +120,7 @@ func TestDistributionFileIsRestricted(t *testing.T) {
 	})
 
 	t.Run("distro is not restricted, restricted_access field is false", func(t *testing.T) {
+		t.Parallel()
 		d, err := readDistribution(distsDir, "needs-entitlement")
 		require.NoError(t, err)
 		actual := d.IsRestricted()
@@ -122,6 +129,7 @@ func TestDistributionFileIsRestricted(t *testing.T) {
 	})
 
 	t.Run("distro is restricted, restricted_access field is true", func(t *testing.T) {
+		t.Parallel()
 		d, err := readDistribution(distsDir, "restricted-access")
 		require.NoError(t, err)
 		actual := d.IsRestricted()
@@ -131,6 +139,7 @@ func TestDistributionFileIsRestricted(t *testing.T) {
 }
 
 func TestArchitecture_validate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		arch Architecture
@@ -175,7 +184,9 @@ func TestArchitecture_validate(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.arch.validate()
 			require.Equal(t, tt.err, err)
 		})
