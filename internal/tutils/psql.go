@@ -260,7 +260,7 @@ func (p *PSQLContainer) NewDB(ctx context.Context) (db.DB, error) {
 		ctx,
 		TernMigrateOptions{
 			MigrationsDir: "../db/migrations-tern/",
-			Hostname:      "localhost",
+			Hostname:      "127.0.0.1",
 			DBName:        dbName,
 			DBPort:        fmt.Sprintf("%d", p.port),
 			DBUser:        user,
@@ -268,5 +268,5 @@ func (p *PSQLContainer) NewDB(ctx context.Context) (db.DB, error) {
 	); err != nil {
 		return nil, err
 	}
-	return db.InitDBConnectionPool(ctx, fmt.Sprintf("postgres://postgres@localhost:%d/%s", p.port, dbName))
+	return db.InitDBConnectionPool(ctx, fmt.Sprintf("postgres://postgres@127.0.0.1:%d/%s", p.port, dbName))
 }
