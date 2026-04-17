@@ -200,6 +200,12 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			UploadOptions: &uploadOptions,
 		},
 	}
+	// XXX/HACK: Composer expects either bootc or distribution to be set, but not both. Ideally
+	// distribution is marked as no longer required in the API.
+	if cloudCR.Bootc != nil {
+		ctx.Logger().Infof("Dropped distribution %s from compose request, because bootc ref %s is set", cloudCR.Distribution, cloudCR.Bootc.Reference)
+		cloudCR.Distribution = nil
+	}
 
 	resp, err := h.server.cClient.Compose(ctx.Request().Context(), cloudCR)
 	if err != nil {

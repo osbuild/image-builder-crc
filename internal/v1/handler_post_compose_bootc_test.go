@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
-	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
 )
@@ -110,7 +109,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 
 			require.NotNil(t, gotComposer.Bootc)
 			require.Equal(t, tt.wantReference, gotComposer.Bootc.Reference)
-			require.Equal(t, common.ToPtr("rhel-10.1"), gotComposer.Distribution)
+			require.Nil(t, gotComposer.Distribution)
 		})
 	}
 }
