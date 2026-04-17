@@ -53,6 +53,7 @@ func makeTestServer(t *testing.T, apiSrv *string) (dbase db.DB, srvURL string, s
 }
 
 func TestHandlers_CreateBlueprint(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("crypt() not supported on darwin")
 	}
@@ -130,6 +131,7 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 }
 
 func TestUser_MergeForUpdate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		newUser       v1.User
@@ -355,6 +357,7 @@ func TestUser_MergeForUpdate(t *testing.T) {
 }
 
 func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
+	t.Parallel()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
@@ -410,7 +413,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].SshKey)
 	// keep ssh key and remove password = SUCCESS
 	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": ""}}}
-	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("http://localhost:8086/api/image-builder/v1/blueprints/%s", result.Id), body)
+	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
 	// add ssh key and remove password = SUCCESS
@@ -470,6 +473,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 }
 
 func TestHandlers_UpdateBlueprint(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("crypt() not supported on darwin")
 	}
@@ -516,6 +520,7 @@ func TestHandlers_UpdateBlueprint(t *testing.T) {
 }
 
 func TestHandlers_ComposeBlueprint(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 
 	composeRequests := []composer.ComposeRequest{}
@@ -757,6 +762,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 }
 
 func TestHandlers_GetBlueprintComposes(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	blueprintId := uuid.New()
 	versionId := uuid.New()
@@ -842,6 +848,7 @@ func TestHandlers_GetBlueprintComposes(t *testing.T) {
 }
 
 func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
+	t.Parallel()
 	t.Run("plain password", func(t *testing.T) {
 		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"users": [{"name": "user", "password": "foo"}]}, "distribution": "centos-9"}`)
 		be := &db.BlueprintEntry{
@@ -872,6 +879,7 @@ func TestHandlers_BlueprintFromEntryWithRedactedPasswords(t *testing.T) {
 }
 
 func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
+	t.Parallel()
 	t.Run("bp with cacerts and only satellite files", func(t *testing.T) {
 		body := []byte(`{"name": "Blueprint", "description": "desc", "customizations": {"cacerts":  { "pemcerts": ["---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---"] },
 				"files": [
@@ -947,6 +955,7 @@ func TestHandlers_BlueprintFromEntryRedactedForExport(t *testing.T) {
 }
 
 func TestHandlers_GetBlueprint(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
@@ -1098,6 +1107,7 @@ func compareOutputExportBlueprint(t *testing.T, jsonResponse string) {
 }
 
 func TestHandlers_ExportBlueprint(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 
 	var composeId uuid.UUID
@@ -1397,6 +1407,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 }
 
 func TestHandlers_GetBlueprints(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
@@ -1433,6 +1444,7 @@ func TestHandlers_GetBlueprints(t *testing.T) {
 }
 
 func TestHandlers_DeleteBlueprint(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	blueprintId := uuid.New()
 	versionId := uuid.New()
@@ -1506,6 +1518,7 @@ func TestHandlers_DeleteBlueprint(t *testing.T) {
 }
 
 func TestBlueprintBody_CryptPasswords(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("crypt() not supported on darwin")
 	}
@@ -1537,6 +1550,7 @@ func TestBlueprintBody_CryptPasswords(t *testing.T) {
 }
 
 func TestUser_RedactPassword(t *testing.T) {
+	t.Parallel()
 	user := &v1.User{
 		Name:     "test",
 		Password: common.ToPtr("password123"),
@@ -1547,6 +1561,7 @@ func TestUser_RedactPassword(t *testing.T) {
 }
 
 func TestLintBlueprint(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
@@ -1760,6 +1775,7 @@ func TestLintBlueprint(t *testing.T) {
 }
 
 func TestFixupBlueprint(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
@@ -1868,6 +1884,7 @@ func TestFixupBlueprint(t *testing.T) {
 }
 
 func TestBlueprintComplianceSnapshot(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "darwin" {
 		t.Skip("crypt() not supported on darwin")
 	}
@@ -1922,6 +1939,7 @@ func TestBlueprintComplianceSnapshot(t *testing.T) {
 }
 
 func TestBlueprintCreationRollbackOnPolicyFailure(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	dbase, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
@@ -1959,6 +1977,7 @@ func TestBlueprintCreationRollbackOnPolicyFailure(t *testing.T) {
 }
 
 func TestBlueprintUpdateAddsSnapshot(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 

@@ -1,6 +1,7 @@
 package distribution
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -33,6 +34,15 @@ func LoadDistroRegistry(distsDir string) (*AllDistroRegistry, error) {
 	}
 
 	return dr, nil
+}
+
+// MustLoadDistroRegistry is like LoadDistroRegistry but panics on error. Used only for tests.
+func MustLoadDistroRegistry(distsDir string) *AllDistroRegistry {
+	adr, err := LoadDistroRegistry(distsDir)
+	if err != nil {
+		panic(fmt.Sprintf("distribution: MustLoadDistroRegistry(%q): %v", distsDir, err))
+	}
+	return adr
 }
 
 func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntry {

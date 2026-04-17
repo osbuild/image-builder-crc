@@ -58,7 +58,7 @@ func MigrateTern(ctx context.Context, t *testing.T) {
 	// run tern migration on top of existing db
 	c := conf(t)
 
-	output, err := callTernMigrate(
+	err := callTernMigrate(
 		ctx,
 		TernMigrateOptions{
 			MigrationsDir: c.TernMigrationsDir,
@@ -69,7 +69,7 @@ func MigrateTern(ctx context.Context, t *testing.T) {
 			DBPassword:    c.PGPassword,
 			SSLMode:       c.PGSSLMode,
 		})
-	require.NoErrorf(t, err, "tern command failed with non-zero code, combined output: %s", string(output))
+	require.NoError(t, err, "tern migrate failed")
 }
 
 func RunTest(ctx context.Context, t *testing.T, f func(context.Context, *testing.T)) {

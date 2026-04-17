@@ -26,6 +26,7 @@ import (
 )
 
 func TestWithoutOsbuildComposerBackend(t *testing.T) {
+	t.Parallel()
 	// note: any url will work, it'll only try to contact the osbuild-composer
 	// instance when calling /compose or /compose/$uuid
 	srv := startServer(t, &testServerClientsConf{}, nil)
@@ -103,6 +104,7 @@ func TestWithoutOsbuildComposerBackend(t *testing.T) {
 
 // note: this scenario needs to talk to a simulated osbuild-composer API
 func TestGetComposeEntryNotFoundResponse(t *testing.T) {
+	t.Parallel()
 	id := uuid.New().String()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
@@ -126,6 +128,7 @@ func TestGetComposeEntryNotFoundResponse(t *testing.T) {
 }
 
 func TestGetComposeStatusErrorResponse(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		statusCode       int
 		checkImageStatus bool
@@ -215,6 +218,7 @@ func TestGetComposeStatusErrorResponse(t *testing.T) {
 }
 
 func TestGetComposeMetadata(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	id := uuid.New()
 	testPackages := []composer.PackageMetadata{
@@ -276,6 +280,7 @@ func TestGetComposeMetadata(t *testing.T) {
 }
 
 func TestGetComposeMetadata404(t *testing.T) {
+	t.Parallel()
 	id := uuid.New().String()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
@@ -299,6 +304,7 @@ func TestGetComposeMetadata404(t *testing.T) {
 }
 
 func TestGetComposes(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	id := uuid.New()
 	id2 := uuid.New()
@@ -393,6 +399,7 @@ func TestGetComposes(t *testing.T) {
 // TestBuildOSTreeOptions checks if the buildOSTreeOptions utility function
 // properly transfers the ostree options to the Composer structure.
 func TestBuildOSTreeOptions(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		in  *v1.OSTree
 		out *composer.OSTree
@@ -421,6 +428,7 @@ func TestBuildOSTreeOptions(t *testing.T) {
 }
 
 func TestReadinessProbeNotReady(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
@@ -430,6 +438,7 @@ func TestReadinessProbeNotReady(t *testing.T) {
 }
 
 func TestReadinessProbeReady(t *testing.T) {
+	t.Parallel()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -451,6 +460,7 @@ func TestReadinessProbeReady(t *testing.T) {
 }
 
 func TestMetrics(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
@@ -461,6 +471,7 @@ func TestMetrics(t *testing.T) {
 }
 
 func TestValidateSpec(t *testing.T) {
+	t.Parallel()
 	spec, err := v1.GetSwagger()
 	require.NoError(t, err)
 	err = spec.Validate(t.Context())
@@ -468,6 +479,7 @@ func TestValidateSpec(t *testing.T) {
 }
 
 func TestGetArchitectures(t *testing.T) {
+	t.Parallel()
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
 	srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
@@ -524,6 +536,7 @@ func TestGetArchitectures(t *testing.T) {
 }
 
 func TestGetDistribution(t *testing.T) {
+	t.Parallel()
 	t.Run("Success", func(t *testing.T) {
 		var partition composer.Partition
 		err := json.Unmarshal([]byte(`{"type":"plain","fs_type":"vfat","label":"ESP","minsize":"209715200","mountpoint":"/boot/efi"}`), &partition)
@@ -708,6 +721,7 @@ func TestGetDistribution(t *testing.T) {
 }
 
 func TestGetPackages(t *testing.T) {
+	t.Parallel()
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
 	srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
@@ -801,6 +815,7 @@ func TestGetPackages(t *testing.T) {
 }
 
 func TestGetDistributions(t *testing.T) {
+	t.Parallel()
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
 	srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
@@ -917,6 +932,7 @@ func TestGetDistributions(t *testing.T) {
 }
 
 func TestGetBootcDistributions(t *testing.T) {
+	t.Parallel()
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
 	rhel101BootcAWSRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
@@ -1021,6 +1037,7 @@ func TestGetBootcDistributions(t *testing.T) {
 }
 
 func TestGetProfiles(t *testing.T) {
+	t.Parallel()
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
 	srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
@@ -1107,6 +1124,7 @@ func TestGetProfiles(t *testing.T) {
 }
 
 func TestGetCustomizations(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
