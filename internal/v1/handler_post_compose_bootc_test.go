@@ -85,7 +85,6 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 			require.Equal(t, tt.wantReference, ref)
 
 			payload := v1.ComposeRequest{
-				Distribution: "rhel-10.1",
 				Bootc: &v1.BootcBody{
 					Reference: ref,
 				},
@@ -125,7 +124,6 @@ func TestComposeBootcUnknownReferenceRejected(t *testing.T) {
 		ShareWithAccounts: &[]string{"test-account"},
 	}))
 	payload := v1.ComposeRequest{
-		Distribution: "rhel-10.1",
 		Bootc: &v1.BootcBody{
 			Reference: "quay.io/example/this-reference-is-not-in-the-distro-list:latest",
 		},

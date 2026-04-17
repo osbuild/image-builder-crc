@@ -28,7 +28,7 @@ func TestValidateComposeRequest(t *testing.T) {
 	t.Run("ErrorsForZeroImageRequests", func(t *testing.T) {
 		payload := v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   "centos-9",
+			Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests:  []v1.ImageRequest{},
 		}
 		respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
@@ -43,7 +43,7 @@ func TestValidateComposeRequest(t *testing.T) {
 		}))
 		payload := v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   "centos-9",
+			Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture: "x86_64",
@@ -74,7 +74,7 @@ func TestValidateComposeRequest(t *testing.T) {
 
 		payload := v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   "centos-9",
+			Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture: "x86_64",
@@ -133,7 +133,7 @@ func TestValidateComposeRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			payload := v1.ComposeRequest{
 				Customizations: nil,
-				Distribution:   "centos-9",
+				Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests:  []v1.ImageRequest{tc.request},
 			}
 			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
@@ -145,7 +145,7 @@ func TestValidateComposeRequest(t *testing.T) {
 	t.Run("ErrorsForZeroUploadRequests", func(t *testing.T) {
 		payload := v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   "centos-9",
+			Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture:  "x86_64",
@@ -170,7 +170,7 @@ func TestValidateComposeRequest(t *testing.T) {
 		// for repositories
 		payload := v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   "centos-9",
+			Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture: "unsupported-arch",
@@ -195,7 +195,7 @@ func TestValidateComposeRequest(t *testing.T) {
 		// UploadRequest Type isn't supported
 		payload := v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   "centos-9",
+			Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture: "x86_64",
@@ -227,7 +227,7 @@ func TestValidateComposeRequest(t *testing.T) {
 					},
 				},
 			},
-			Distribution: "centos-9",
+			Distribution: common.ToPtr(v1.Distributions("centos-9")),
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture:  "x86_64",
@@ -288,7 +288,7 @@ func TestValidateComposeRequest(t *testing.T) {
 	t.Run("ValidateFSSizes", func(t *testing.T) {
 		buildComposeRequest := func(fsSize *uint64, imgSize *uint64, imgType v1.ImageTypes) *v1.ComposeRequest {
 			cr := &v1.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture:  "x86_64",
@@ -472,7 +472,7 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 	}))
 	payload := v1.ComposeRequest{
 		Customizations: nil,
-		Distribution:   "centos-9",
+		Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -519,7 +519,7 @@ func TestComposeImageErrorResolvingOSTree(t *testing.T) {
 		Customizations: &v1.Customizations{
 			Packages: nil,
 		},
-		Distribution: "centos-9",
+		Distribution: common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -563,7 +563,7 @@ func TestComposeImageErrorsWhenCannotParseResponse(t *testing.T) {
 	}))
 	payload := v1.ComposeRequest{
 		Customizations: nil,
-		Distribution:   "centos-9",
+		Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -592,7 +592,7 @@ func TestComposeImageErrorsWhenDistributionNotExists(t *testing.T) {
 	}))
 	payload := v1.ComposeRequest{
 		Customizations: nil,
-		Distribution:   "fedoros",
+		Distribution:   common.ToPtr(v1.Distributions("fedoros")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -635,7 +635,7 @@ func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
 	}))
 	payload := v1.ComposeRequest{
 		Customizations: nil,
-		Distribution:   "centos-9",
+		Distribution:   common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -684,7 +684,7 @@ func TestComposeImageAllowList(t *testing.T) {
 		}))
 		return v1.ComposeRequest{
 			Customizations: nil,
-			Distribution:   distro,
+			Distribution:   &distro,
 			ImageRequests: []v1.ImageRequest{
 				{
 					Architecture: "x86_64",
@@ -769,7 +769,7 @@ func TestCompliancePolicyErrors(t *testing.T) {
 		Customizations: &v1.Customizations{
 			Openscap: nil,
 		},
-		Distribution: "rhel-8",
+		Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -798,7 +798,7 @@ func TestCompliancePolicyErrors(t *testing.T) {
 		PolicyId: uuid.MustParse(mocks.PolicyID),
 	}))
 	cr.Customizations.Openscap = &goodPolicy
-	cr.Distribution = "rhel-89"
+	cr.Distribution = common.ToPtr(v1.Distributions("rhel-89"))
 
 	respStatusCode, body = tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", cr)
 	require.Equal(t, http.StatusBadRequest, respStatusCode)
@@ -844,7 +844,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// basic without payload or custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -893,7 +893,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// basic with old snapshotting date format
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -942,7 +942,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload 2 custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1041,7 +1041,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 2 payload 1 custom repository
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1137,7 +1137,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// repositories by uuid
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1234,7 +1234,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// gcp
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1343,7 +1343,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload & custom repository with an empty, but not-nil gpg key
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1420,7 +1420,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload and custom repository from shared epel repos
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1501,7 +1501,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload and custom repository from additional RH repos
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1786,7 +1786,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1954,7 +1954,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2083,7 +2083,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2167,7 +2167,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// Test Azure with SubscriptionId and TenantId
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2230,7 +2230,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// AWS upload
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2279,7 +2279,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// Image size
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2338,7 +2338,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2386,7 +2386,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// OCI
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2441,7 +2441,7 @@ func TestComposeCustomizations(t *testing.T) {
 					},
 					PartitioningMode: common.ToPtr(v1.Lvm),
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2515,7 +2515,7 @@ func TestComposeCustomizations(t *testing.T) {
 						},
 					},
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2601,7 +2601,7 @@ func TestComposeCustomizations(t *testing.T) {
 					},
 					Hostname: common.ToPtr("test-host"),
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2673,7 +2673,7 @@ func TestComposeCustomizations(t *testing.T) {
 						Masked:  &[]string{"test_service2"},
 					},
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2737,7 +2737,7 @@ func TestComposeCustomizations(t *testing.T) {
 					},
 					Openscap: &openscap,
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2797,7 +2797,7 @@ func TestComposeCustomizations(t *testing.T) {
 				Customizations: &v1.Customizations{
 					Openscap: &openscapTailoring,
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2861,7 +2861,7 @@ func TestComposeCustomizations(t *testing.T) {
 				Customizations: &v1.Customizations{
 					Openscap: &openscapNoTailoring,
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2908,7 +2908,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// content template with 1 custom repository and 2 Red Hat repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: common.ToPtr(v1.Distributions("rhel-95")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -2960,7 +2960,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// content template with 2 custom repositories and 2 Red Hat repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: common.ToPtr(v1.Distributions("rhel-95")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3016,7 +3016,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// content template with 0 custom repositories, only Red Hat repos
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: common.ToPtr(v1.Distributions("rhel-95")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3057,7 +3057,7 @@ func TestComposeCustomizations(t *testing.T) {
 		// content template with 1 custom repository in requested customizations
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-95",
+				Distribution: common.ToPtr(v1.Distributions("rhel-95")),
 				Customizations: &v1.Customizations{
 					PayloadRepositories: &[]v1.Repository{
 						{
@@ -3151,7 +3151,7 @@ func TestComposeCustomizations(t *testing.T) {
 						TlsCertificateAuthority: "---BEGIN CERTIFICATE---\nMIIC0DCCAbigAwIBAgIUI...\n---END CERTIFICATE---",
 					},
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3246,7 +3246,7 @@ WantedBy=basic.target
 						Disabled: common.ToPtr([]string{"pre-existing-service"}),
 					},
 				},
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3384,7 +3384,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 		// RHEL 9.7 without SnapshotDate uses latest snapshots
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3425,7 +3425,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 		// CentOS 9 with non-CDN repos (should pass through unchanged, no snapshotting)
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "centos-9",
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3465,7 +3465,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 		// RHEL 9.6 GCP image with mix of CDN and non-CDN repos
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: "rhel-9.7",
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.7")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3564,7 +3564,7 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
 
 	ibRequest := v1.ComposeRequest{
-		Distribution: "rhel-9",
+		Distribution: common.ToPtr(v1.Distributions("rhel-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -3613,7 +3613,7 @@ func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
 	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
 
 	ibRequest := v1.ComposeRequest{
-		Distribution: "rhel-9",
+		Distribution: common.ToPtr(v1.Distributions("rhel-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",

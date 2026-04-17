@@ -237,7 +237,7 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 func BlueprintFromAPI(cbr CreateBlueprintRequest) (BlueprintBody, error) {
 	bb := BlueprintBody{
 		Customizations: cbr.Customizations,
-		Distribution:   cbr.Distribution,
+		Distribution:   *cbr.Distribution,
 		ImageRequests:  cbr.ImageRequests,
 		Bootc:          cbr.Bootc,
 	}
@@ -356,19 +356,21 @@ func (h *Handlers) CreateBlueprint(ctx echo.Context) error {
 		return err
 	}
 
-	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, blueprintRequest.Distribution)
-	if err != nil {
-		slog.ErrorContext(ctx.Request().Context(), "error building service snapshots",
-			"blueprint_id", id,
-			"error", err.Error())
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots")
-	}
-
 	var serviceSnapshotsJSON json.RawMessage
-	if serviceSnapshots != nil {
-		serviceSnapshotsJSON, err = json.Marshal(serviceSnapshots)
+	if blueprintRequest.Distribution != nil {
+		serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, *blueprintRequest.Distribution)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal service snapshots")
+			slog.ErrorContext(ctx.Request().Context(), "error building service snapshots",
+				"blueprint_id", id,
+				"error", err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots")
+		}
+
+		if serviceSnapshots != nil {
+			serviceSnapshotsJSON, err = json.Marshal(serviceSnapshots)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, "Failed to marshal service snapshots")
+			}
 		}
 	}
 
@@ -433,7 +435,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		Name:           blueprintEntry.Name,
 		Description:    blueprintEntry.Description,
 		ImageRequests:  blueprint.ImageRequests,
-		Distribution:   blueprint.Distribution,
+		Distribution:   &blueprint.Distribution,
 		Bootc:          blueprint.Bootc,
 		Customizations: blueprint.Customizations,
 		Lint: BlueprintLint{
@@ -501,7 +503,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	blueprintExportResponse := BlueprintExportResponse{
 		Name:           blueprintEntry.Name,
 		Description:    blueprintEntry.Description,
-		Distribution:   blueprint.Distribution,
+		Distribution:   &blueprint.Distribution,
 		Bootc:          blueprint.Bootc,
 		Customizations: blueprint.Customizations,
 		Metadata: BlueprintMetadata{
@@ -660,15 +662,14 @@ func (h *Handlers) UpdateBlueprint(ctx echo.Context, blueprintId uuid.UUID) erro
 		desc = *blueprintRequest.Description
 	}
 
-	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, blueprintRequest.Distribution)
+	var serviceSnapshotsJSON json.RawMessage
+	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, *blueprintRequest.Distribution)
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error building service snapshots",
 			"blueprint_id", blueprintId,
 			"error", err.Error())
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to build compliance snapshots")
 	}
-
-	var serviceSnapshotsJSON json.RawMessage
 	if serviceSnapshots != nil {
 		serviceSnapshotsJSON, err = json.Marshal(serviceSnapshots)
 		if err != nil {
@@ -728,7 +729,7 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 		}
 		composeRequest := ComposeRequest{
 			Customizations:   &blueprint.Customizations,
-			Distribution:     blueprint.Distribution,
+			Distribution:     &blueprint.Distribution,
 			ImageRequests:    []ImageRequest{imageRequest},
 			ImageName:        &blueprintEntry.Name,
 			ImageDescription: &blueprintEntry.Description,
@@ -942,7 +943,7 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		Name:           blueprintEntry.Name,
 		Description:    &blueprintEntry.Description,
 		Metadata:       &md,
-		Distribution:   blueprint.Distribution,
+		Distribution:   &blueprint.Distribution,
 		ImageRequests:  blueprint.ImageRequests,
 		Customizations: blueprint.Customizations,
 	}
@@ -957,7 +958,7 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		"distribution", blueprintRequest.Distribution,
 		"has_openscap", blueprintRequest.Customizations.Openscap != nil)
 
-	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, blueprintRequest.Distribution)
+	serviceSnapshots, err := h.buildServiceSnapshots(ctx, &blueprintRequest.Customizations, *blueprintRequest.Distribution)
 	if err != nil {
 		slog.ErrorContext(ctx.Request().Context(), "error building service snapshots during fixup",
 			"blueprint_id", blueprintEntry.Id,
