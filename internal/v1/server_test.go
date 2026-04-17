@@ -251,4 +251,5 @@ func (ts *testServer) Shutdown(t *testing.T) {
 	require.NoError(t, ts.echo.Shutdown(t.Context()))
 	ts.tokenSrv.Close()
 	ts.csSrv.Close()
+	db.ClosePool(ts.DB)
 }
