@@ -7,50 +7,101 @@ import (
 )
 
 func TestArchitectureValidateBootcReference(t *testing.T) {
-	t.Run("returns nil when reference matches a bootc entry", func(t *testing.T) {
-		arch := Architecture{
-			Bootc: []BootcImage{
-				{Type: "ec2", Reference: "ref-ec2"},
-				{Type: "gcp", Reference: "ref-gcp"},
-			},
-		}
-		require.NoError(t, arch.ValidateBootcReference("ref-ec2"))
-		require.NoError(t, arch.ValidateBootcReference("ref-gcp"))
-	})
+	archBoth := Architecture{
+		Bootc: []BootcImage{
+			{Type: "ec2", Reference: "ref-ec2"},
+			{Type: "gcp", Reference: "ref-gcp"},
+		},
+	}
+	archEC2Only := Architecture{
+		Bootc: []BootcImage{{Type: "ec2", Reference: "r"}},
+	}
+	archEmpty := Architecture{Bootc: []BootcImage{}}
 
-	t.Run("returns error when reference is not in bootc list", func(t *testing.T) {
-		arch := Architecture{
-			Bootc: []BootcImage{{Type: "ec2", Reference: "r"}},
-		}
-		err := arch.ValidateBootcReference("other-ref")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "bootc reference 'other-ref' not found")
-	})
+	tests := []struct {
+		name         string
+		arch         Architecture
+		reference    string
+		wantErr      bool
+		errSubstring string
+	}{
+		{
+			name:      "reference matches first bootc entry",
+			arch:      archBoth,
+			reference: "ref-ec2",
+		},
+		{
+			name:      "reference matches second bootc entry",
+			arch:      archBoth,
+			reference: "ref-gcp",
+		},
+		{
+			name:         "reference not in bootc list",
+			arch:         archEC2Only,
+			reference:    "other-ref",
+			wantErr:      true,
+			errSubstring: "bootc reference 'other-ref' not found",
+		},
+		{
+			name:         "empty bootc list",
+			arch:         archEmpty,
+			reference:    "any-ref",
+			wantErr:      true,
+			errSubstring: "bootc reference 'any-ref' not found",
+		},
+	}
 
-	t.Run("returns error when bootc list is empty", func(t *testing.T) {
-		arch := Architecture{Bootc: []BootcImage{}}
-		err := arch.ValidateBootcReference("any-ref")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "bootc reference 'any-ref' not found")
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.arch.ValidateBootcReference(tt.reference)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.errSubstring)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
 
 func TestCollectBootcFromRegistry(t *testing.T) {
-	t.Run("collects bootc from distro architectures", func(t *testing.T) {
-		adr, err := LoadDistroRegistry("testdata/distributions")
-		require.NoError(t, err)
-		list := adr.CollectBootcFromRegistry()
-		require.Len(t, list, 1)
-		require.Equal(t, "with-bootc", list[0].Distro)
-		require.Equal(t, "Test distro with bootc entries", list[0].Name)
-		require.Equal(t, "ec2", list[0].Type)
-		require.Equal(t, "x86_64", list[0].Arch)
-		require.Equal(t, "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest", list[0].Reference)
-	})
+	loaded, err := LoadDistroRegistry("testdata/distributions")
+	require.NoError(t, err)
 
-	t.Run("empty registry returns empty list", func(t *testing.T) {
-		adr := &AllDistroRegistry{distros: map[string]*DistributionFile{}}
-		list := adr.CollectBootcFromRegistry()
-		require.Empty(t, list)
-	})
+	tests := []struct {
+		name      string
+		registry  *AllDistroRegistry
+		want      []BootcDistributionEntry
+		wantEmpty bool
+	}{
+		{
+			name:     "collects bootc from distro architectures",
+			registry: loaded,
+			want: []BootcDistributionEntry{
+				{
+					Distro:    "with-bootc",
+					Name:      "Test distro with bootc entries",
+					Type:      "ec2",
+					Arch:      "x86_64",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+				},
+			},
+		},
+		{
+			name:      "empty registry returns empty list",
+			registry:  &AllDistroRegistry{distros: map[string]*DistributionFile{}},
+			wantEmpty: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			list := tt.registry.CollectBootcFromRegistry()
+			if tt.wantEmpty {
+				require.Empty(t, list)
+				return
+			}
+			require.Equal(t, tt.want, list)
+		})
+	}
 }
