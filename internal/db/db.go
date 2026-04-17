@@ -143,6 +143,12 @@ func InitDBConnectionPool(ctx context.Context, connStr string) (DB, error) {
 	return &dB{pool}, nil
 }
 
+func ClosePool(d DB) {
+	if impl, ok := d.(*dB); ok {
+		impl.Pool.Close()
+	}
+}
+
 func (db *dB) InsertCompose(ctx context.Context, jobId uuid.UUID, accountNumber, email, orgId string, imageName *string, request json.RawMessage, clientId *string, blueprintVersionId *uuid.UUID) error {
 	conn, err := db.Pool.Acquire(ctx)
 	if err != nil {
