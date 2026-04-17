@@ -410,7 +410,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].SshKey)
 	// keep ssh key and remove password = SUCCESS
 	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": ""}}}
-	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("http://localhost:8086/api/image-builder/v1/blueprints/%s", result.Id), body)
+	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
 	// add ssh key and remove password = SUCCESS

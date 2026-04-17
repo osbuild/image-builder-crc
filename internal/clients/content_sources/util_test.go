@@ -11,6 +11,7 @@ import (
 )
 
 func TestGetBaseURL(t *testing.T) {
+	t.Parallel()
 	baseURL, err := content_sources.GetBaseURL(content_sources.ApiRepositoryResponse{
 		Url:    common.ToPtr("someurl"),
 		Origin: common.ToPtr("external"),

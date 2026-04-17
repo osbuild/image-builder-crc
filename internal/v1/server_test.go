@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -227,11 +228,13 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 	server, err := v1.Attach(serverConfig)
 	require.NoError(t, err)
 
-	// execute in parallel b/c .Run() will block execution
-	addr := "localhost:8086"
-	URL := "http://" + addr
+	// Random port so multiple tests can run in parallel without colliding.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	echoServer.Listener = ln
+	URL := "http://" + ln.Addr().String()
 	go func() {
-		err = echoServer.Start(addr)
+		err = echoServer.Start("")
 		if !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("starting test server failed %w", err))
 		}
