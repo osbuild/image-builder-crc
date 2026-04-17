@@ -75,40 +75,60 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Either a snapshot date or content template can be specified, but not both")
 	}
 
-	d, err := h.server.getDistro(ctx, composeRequest.Distribution)
-	if err != nil {
-		return ComposeResponse{}, err
-	}
-
-	arch, err := d.Architecture(string(composeRequest.ImageRequests[0].Architecture))
-	if err != nil {
-		return ComposeResponse{}, err
-	}
-
+	var repositories []composer.Repository
+	var customizations *composer.Customizations
+	var distro *string
 	var bootc *composer.Bootc
-	if composeRequest.Bootc != nil {
-		err := arch.ValidateBootcReference(composeRequest.Bootc.Reference)
+	if composeRequest.Distribution != nil {
+		d, err := h.server.getDistro(ctx, *composeRequest.Distribution)
+		if err != nil {
+			return ComposeResponse{}, err
+		}
+
+		distro = &d.Distribution.Name
+		if d.Distribution.ComposerName != nil {
+			distro = d.Distribution.ComposerName
+		}
+
+		arch, err := d.Architecture(string(composeRequest.ImageRequests[0].Architecture))
+		if err != nil {
+			return ComposeResponse{}, err
+		}
+		customizations, err = h.buildCustomizations(ctx, &composeRequest, d)
+		if err != nil {
+			ctx.Logger().Errorf("Failed building customizations: %v", err)
+			if _, ok := err.(*echo.HTTPError); ok {
+				return ComposeResponse{}, err
+			}
+			return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to build customizations: %v", err))
+		}
+
+		var detectedOsVersion *string
+		repositories, detectedOsVersion, err = h.buildRepositories(ctx, composeRequest, arch)
+		if err != nil {
+			return ComposeResponse{}, err
+		}
+
+		// When the snapshot contains a detected OS version (e.g. "9.4"), override the
+		// distribution sent to osbuild-composer with the matching minor-version
+		// distribution. This prevents composer from requesting packages that are only
+		// available in a newer minor version (e.g. system-reinstall-bootc in 9.6+).
+		if detectedOsVersion != nil {
+			if v := h.server.distroRegistry(ctx).FindByMajorMinorStr(*detectedOsVersion); v != "" {
+				distro = &v
+			}
+		}
+	} else if composeRequest.Bootc != nil {
+		err := h.server.distroRegistry(ctx).ValidateBootcReference(composeRequest.Bootc.Reference)
 		if err != nil {
 			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 		bootc = &composer.Bootc{
 			Reference: composeRequest.Bootc.Reference,
 		}
-	}
-
-	var customizations *composer.Customizations
-	customizations, err = h.buildCustomizations(ctx, &composeRequest, d)
-	if err != nil {
-		ctx.Logger().Errorf("Failed building customizations: %v", err)
-		if _, ok := err.(*echo.HTTPError); ok {
-			return ComposeResponse{}, err
-		}
-		return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to build customizations: %v", err))
-	}
-
-	repositories, detectedOsVersion, err := h.buildRepositories(ctx, composeRequest, arch)
-	if err != nil {
-		return ComposeResponse{}, err
+	} else {
+		// 500 error as any validation should have happened before handing it off to the common compose function
+		return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Errorf("either distribution or bootc needs to be set"))
 	}
 
 	uploadOptions, imageType, err := h.buildUploadOptions(ctx, composeRequest.ImageRequests[0].UploadRequest, composeRequest.ImageRequests[0].ImageType)
@@ -121,23 +141,8 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, err
 	}
 
-	distro := d.Distribution.Name
-	if d.Distribution.ComposerName != nil {
-		distro = *d.Distribution.ComposerName
-	}
-
-	// When the snapshot contains a detected OS version (e.g. "9.4"), override the
-	// distribution sent to osbuild-composer with the matching minor-version
-	// distribution. This prevents composer from requesting packages that are only
-	// available in a newer minor version (e.g. system-reinstall-bootc in 9.6+).
-	if detectedOsVersion != nil {
-		if v := h.server.distroRegistry(ctx).FindByMajorMinorStr(*detectedOsVersion); v != "" {
-			distro = v
-		}
-	}
-
 	cloudCR := composer.ComposeRequest{
-		Distribution:   common.ToPtr(distro),
+		Distribution:   distro,
 		Customizations: customizations,
 		BlueprintId:    opts.BlueprintId,
 		Bootc:          bootc,
@@ -149,12 +154,6 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			Repositories:  repositories,
 			UploadOptions: &uploadOptions,
 		},
-	}
-	// XXX/HACK: Composer expects either bootc or distribution to be set, but not both. Ideally
-	// distribution is marked as no longer required in the API.
-	if cloudCR.Bootc != nil {
-		ctx.Logger().Infof("Dropped distribution %s from compose request, because bootc ref %s is set", cloudCR.Distribution, cloudCR.Bootc.Reference)
-		cloudCR.Distribution = nil
 	}
 
 	resp, err := h.server.cClient.Compose(ctx.Request().Context(), cloudCR)
@@ -222,6 +221,10 @@ func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeReq
 	var repositories []composer.Repository
 	var detectedOsVersion *string
 	var err error
+
+	if composeRequest.Distribution == nil {
+		return []composer.Repository{}, nil, nil
+	}
 
 	// We should only build repository snapshots in the case where there is a snapshot date and no content template
 	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate == nil {

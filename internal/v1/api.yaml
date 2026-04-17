@@ -1023,7 +1023,6 @@ components:
       type: object
       additionalProperties: false
       required:
-        - distribution
         - image_requests
       properties:
         distribution:
@@ -1056,7 +1055,6 @@ components:
       additionalProperties: false
       required:
         - name
-        - distribution
         - image_requests
         - customizations
       properties:
@@ -1130,7 +1128,6 @@ components:
         - name
         - description
         - lint
-        - distribution
         - image_requests
         - customizations
       properties:
@@ -1161,7 +1158,6 @@ components:
       required:
         - name
         - description
-        - distribution
         - customizations
         - metadata
       properties:

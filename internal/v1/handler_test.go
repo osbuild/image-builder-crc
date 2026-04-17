@@ -159,7 +159,7 @@ func TestGetComposeStatusErrorResponse(t *testing.T) {
 		defer apiSrv.Close()
 
 		cr := v1.ComposeRequest{
-			Distribution: "rhel-9",
+			Distribution: common.ToPtr(v1.Distributions("rhel-9")),
 			Customizations: &v1.Customizations{
 				// Since we are not calling handleCommonCompose but inserting directly to DB
 				// there is no point in using plaintext passwords
@@ -322,7 +322,7 @@ func TestGetComposes(t *testing.T) {
 	require.Contains(t, body, "\"data\":[]")
 
 	cr := v1.ComposeRequest{
-		Distribution: "rhel-9",
+		Distribution: common.ToPtr(v1.Distributions("rhel-9")),
 		Customizations: &v1.Customizations{
 			// Since we are not calling handleCommonCompose but inserting directly to DB
 			// there is no point in using plaintext passwords

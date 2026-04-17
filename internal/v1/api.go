@@ -593,7 +593,7 @@ type BlueprintExportResponse struct {
 	// restricted distributions.
 	//
 	// Restricted distributions include the RHEL nightlies and the Fedora distributions.
-	Distribution Distributions     `json:"distribution"`
+	Distribution *Distributions    `json:"distribution,omitempty"`
 	Metadata     BlueprintMetadata `json:"metadata"`
 	Name         string            `json:"name"`
 
@@ -643,7 +643,7 @@ type BlueprintResponse struct {
 	// restricted distributions.
 	//
 	// Restricted distributions include the RHEL nightlies and the Fedora distributions.
-	Distribution Distributions      `json:"distribution"`
+	Distribution *Distributions     `json:"distribution,omitempty"`
 	Id           openapi_types.UUID `json:"id"`
 
 	// ImageRequests Array of image requests. Having more image requests in a single blueprint is currently not supported.
@@ -719,9 +719,9 @@ type ComposeRequest struct {
 	// restricted distributions.
 	//
 	// Restricted distributions include the RHEL nightlies and the Fedora distributions.
-	Distribution     Distributions `json:"distribution"`
-	ImageDescription *string       `json:"image_description,omitempty"`
-	ImageName        *string       `json:"image_name,omitempty"`
+	Distribution     *Distributions `json:"distribution,omitempty"`
+	ImageDescription *string        `json:"image_description,omitempty"`
+	ImageName        *string        `json:"image_name,omitempty"`
 
 	// ImageRequests Array of exactly one image request. Having more image requests in one compose is currently not supported.
 	ImageRequests []ImageRequest `json:"image_requests"`
@@ -787,7 +787,7 @@ type CreateBlueprintRequest struct {
 	// restricted distributions.
 	//
 	// Restricted distributions include the RHEL nightlies and the Fedora distributions.
-	Distribution Distributions `json:"distribution"`
+	Distribution *Distributions `json:"distribution,omitempty"`
 
 	// ImageRequests Array of image requests. Having more image requests in a single blueprint is currently not supported.
 	ImageRequests []ImageRequest     `json:"image_requests"`

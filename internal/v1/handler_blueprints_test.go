@@ -78,7 +78,7 @@ func TestHandlers_CreateBlueprint(t *testing.T) {
 				"skip_tls_verification":     false,
 			},
 		},
-		"distribution": "centos-9",
+		"distribution": common.ToPtr("centos-9"),
 		"image_requests": []map[string]any{
 			{
 				"architecture":     "x86_64",
@@ -572,7 +572,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: "centos-9",
+		Distribution: v1.Distributions("centos-9"),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
@@ -971,7 +971,7 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: "centos-9",
+		Distribution: v1.Distributions("centos-9"),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
@@ -1013,7 +1013,7 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 	require.Equal(t, description, result.Description)
 	require.Equal(t, name, result.Name)
 	require.Equal(t, blueprint.ImageRequests, result.ImageRequests)
-	require.Equal(t, blueprint.Distribution, result.Distribution)
+	require.Equal(t, &blueprint.Distribution, result.Distribution)
 	require.Equal(t, blueprint.Customizations.Packages, result.Customizations.Packages)
 	// Check that the password returned is redacted
 	for _, u := range *result.Customizations.Users {
@@ -1164,7 +1164,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 				},
 			},
 		},
-		Distribution: "centos-9",
+		Distribution: v1.Distributions("centos-9"),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
@@ -1306,7 +1306,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 				},
 			},
 		},
-		Distribution: "centos-9",
+		Distribution: v1.Distributions("centos-9"),
 	}
 
 	var message2 []byte
@@ -1361,7 +1361,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 				},
 			},
 		},
-		Distribution: "centos-9",
+		Distribution: v1.Distributions("centos-9"),
 	}
 
 	var message3 []byte
@@ -1573,7 +1573,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "missing packages and services",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-8",
+				Distribution: v1.Distributions("rhel-8"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap,
 				},
@@ -1588,7 +1588,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "all requirements satisfied",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-8",
+				Distribution: v1.Distributions("rhel-8"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap,
 					Packages: &[]string{
@@ -1611,7 +1611,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "missing filesystems and kernel params",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-8",
+				Distribution: v1.Distributions("rhel-8"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
@@ -1625,7 +1625,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "filesystems and kernel params satisfied",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-8",
+				Distribution: v1.Distributions("rhel-8"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 					Kernel: &v1.Kernel{
@@ -1647,7 +1647,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "unsupported minor version",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-89",
+				Distribution: v1.Distributions("rhel-89"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
@@ -1659,7 +1659,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "unsupported minor version duplicate",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-89",
+				Distribution: v1.Distributions("rhel-89"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
@@ -1672,7 +1672,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "minimal policy missing package",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-8",
+				Distribution: v1.Distributions("rhel-8"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap3,
 				},
@@ -1684,7 +1684,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "policy changes generate warnings",
 			blueprint: v1.BlueprintBody{
-				Distribution: "rhel-8",
+				Distribution: v1.Distributions("rhel-8"),
 				Customizations: v1.Customizations{
 					Openscap: &oscap3, // Minimal policy - only requires "required-by-compliance" package
 					Packages: &[]string{
@@ -1785,7 +1785,7 @@ func TestFixupBlueprint(t *testing.T) {
 			blueprint: v1.CreateBlueprintRequest{
 				Name:         "bp-fixup-0",
 				Description:  common.ToPtr("fixup test"),
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap,
 				},
@@ -1811,7 +1811,7 @@ func TestFixupBlueprint(t *testing.T) {
 			blueprint: v1.CreateBlueprintRequest{
 				Name:         "bp-fixup-1",
 				Description:  common.ToPtr("fixup test"),
-				Distribution: "rhel-8",
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
