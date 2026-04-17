@@ -15,6 +15,7 @@ import (
 )
 
 func TestComposeBootcReferenceWithQuery(t *testing.T) {
+	t.Parallel()
 	distsDir := "../../distributions"
 
 	tests := []struct {
@@ -126,6 +127,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 }
 
 func TestComposeBootcUnknownReferenceRejected(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
 		DistributionsDir: "../../distributions",
 	})

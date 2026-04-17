@@ -121,24 +121,6 @@ func (p *PSQLContainer) pgConnString(database string) string {
 	return fmt.Sprintf("postgres://%s@%s/%s?sslmode=disable", user, host, database)
 }
 
-func (p *PSQLContainer) adminPGConn(ctx context.Context) (*pgx.Conn, error) {
-	p.pgMu.Lock()
-	defer p.pgMu.Unlock()
-	if p.pgConn != nil {
-		if err := p.pgConn.Ping(ctx); err == nil {
-			return p.pgConn, nil
-		}
-		_ = p.pgConn.Close(ctx)
-		p.pgConn = nil
-	}
-	conn, err := pgx.Connect(ctx, p.pgConnString("postgres"))
-	if err != nil {
-		return nil, err
-	}
-	p.pgConn = conn
-	return conn, nil
-}
-
 func (p *PSQLContainer) closePGConn(ctx context.Context) {
 	p.pgMu.Lock()
 	defer p.pgMu.Unlock()
@@ -154,11 +136,23 @@ func (p *PSQLContainer) execQuery(ctx context.Context, dbase, cmd string) (strin
 		targetDB = "postgres"
 	}
 	if targetDB == "postgres" {
-		conn, err := p.adminPGConn(ctx)
-		if err != nil {
-			return "", err
+		// *pgx.Conn must not be used concurrently. Hold pgMu for ping, connect, and Exec.
+		p.pgMu.Lock()
+		defer p.pgMu.Unlock()
+		if p.pgConn != nil {
+			if err := p.pgConn.Ping(ctx); err != nil {
+				_ = p.pgConn.Close(ctx)
+				p.pgConn = nil
+			}
 		}
-		tag, err := conn.Exec(ctx, cmd)
+		if p.pgConn == nil {
+			conn, err := pgx.Connect(ctx, p.pgConnString("postgres"))
+			if err != nil {
+				return "", err
+			}
+			p.pgConn = conn
+		}
+		tag, err := p.pgConn.Exec(ctx, cmd)
 		if err != nil {
 			return "", err
 		}

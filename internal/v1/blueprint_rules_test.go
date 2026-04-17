@@ -14,6 +14,7 @@ import (
 )
 
 func TestHandlers_BlueprintRuleChecking(t *testing.T) {
+	t.Parallel()
 	_, srvURL, shutdownFn := makeTestServer(t, nil)
 	defer shutdownFn(t)
 
