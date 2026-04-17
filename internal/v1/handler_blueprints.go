@@ -733,6 +733,7 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 			ImageName:        &blueprintEntry.Name,
 			ImageDescription: &blueprintEntry.Description,
 			ClientId:         &clientId,
+			Bootc:            blueprint.Bootc,
 		}
 		composesResponse, err := h.handleCommonCompose(ctx, composeRequest, composeOpts{
 			BlueprintId:        &blueprintEntry.Id,
