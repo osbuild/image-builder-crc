@@ -106,59 +106,9 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to build customizations: %v", err))
 	}
 
-	var repositories []composer.Repository
-	var detectedOsVersion *string
-	// We should only build repository snapshots in the case where there is a snapshot date and no content template
-	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate == nil {
-		repoURLs := []string{}
-		for _, r := range arch.Repositories {
-			// Assume that non-rh repositories that are defined in the distributions file will not be snapshotted,
-			// as there's no guarantee the rpms will be kept forever like in RH repos.
-			if slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) && !r.Rhsm {
-				repositories = append(repositories, composer.Repository{
-					Baseurl:  r.Baseurl,
-					Metalink: r.Metalink,
-					Rhsm:     common.ToPtr(r.Rhsm),
-					Gpgkey:   r.GpgKey,
-					CheckGpg: r.CheckGpg,
-				})
-				continue
-			}
-
-			if len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) {
-				repoURLs = append(repoURLs, *r.Baseurl)
-			}
-		}
-
-		snapshotRepos, _, snapshotOsVersion, err := h.buildRepositorySnapshots(ctx, repoURLs, nil, false, *composeRequest.ImageRequests[0].SnapshotDate)
-		if err != nil {
-			return ComposeResponse{}, err
-		}
-		repositories = append(repositories, snapshotRepos...)
-		detectedOsVersion = snapshotOsVersion
-
-		// A sanity check to make sure there's a snapshot for each repo
-		expected := 0
-		for _, r := range arch.Repositories {
-			if len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) {
-				expected++
-			}
-		}
-		if len(repositories) != expected {
-			return ComposeResponse{}, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
-		}
-	} else if composeRequest.ImageRequests[0].ContentTemplate != nil {
-		var templateOsVersion *string
-		_, _, repositories, templateOsVersion, err = h.buildTemplateRepositories(ctx, *composeRequest.ImageRequests[0].ContentTemplate)
-		if err != nil {
-			return ComposeResponse{}, err
-		}
-		detectedOsVersion = templateOsVersion
-	} else {
-		repositories, err = h.buildRepositoriesWithLatestSnapshots(ctx, arch, composeRequest.ImageRequests[0].ImageType)
-		if err != nil {
-			return ComposeResponse{}, err
-		}
+	repositories, detectedOsVersion, err := h.buildRepositories(ctx, composeRequest, arch)
+	if err != nil {
+		return ComposeResponse{}, err
 	}
 
 	uploadOptions, imageType, err := h.buildUploadOptions(ctx, composeRequest.ImageRequests[0].UploadRequest, composeRequest.ImageRequests[0].ImageType)
@@ -266,6 +216,66 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	return ComposeResponse{
 		Id: composeResult.Id,
 	}, nil
+}
+
+func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeRequest, arch *distribution.Architecture) ([]composer.Repository, *string, error) {
+	var repositories []composer.Repository
+	var detectedOsVersion *string
+	var err error
+
+	// We should only build repository snapshots in the case where there is a snapshot date and no content template
+	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate == nil {
+		repoURLs := []string{}
+		for _, r := range arch.Repositories {
+			// Assume that non-rh repositories that are defined in the distributions file will not be snapshotted,
+			// as there's no guarantee the rpms will be kept forever like in RH repos.
+			if slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) && !r.Rhsm {
+				repositories = append(repositories, composer.Repository{
+					Baseurl:  r.Baseurl,
+					Metalink: r.Metalink,
+					Rhsm:     common.ToPtr(r.Rhsm),
+					Gpgkey:   r.GpgKey,
+					CheckGpg: r.CheckGpg,
+				})
+				continue
+			}
+
+			if len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) {
+				repoURLs = append(repoURLs, *r.Baseurl)
+			}
+		}
+
+		snapshotRepos, _, snapshotOsVersion, err := h.buildRepositorySnapshots(ctx, repoURLs, nil, false, *composeRequest.ImageRequests[0].SnapshotDate)
+		if err != nil {
+			return nil, nil, err
+		}
+		repositories = append(repositories, snapshotRepos...)
+		detectedOsVersion = snapshotOsVersion
+
+		// A sanity check to make sure there's a snapshot for each repo
+		expected := 0
+		for _, r := range arch.Repositories {
+			if len(r.ImageTypeTags) == 0 || slices.Contains(r.ImageTypeTags, string(composeRequest.ImageRequests[0].ImageType)) {
+				expected++
+			}
+		}
+		if len(repositories) != expected {
+			return nil, nil, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
+		}
+	} else if composeRequest.ImageRequests[0].ContentTemplate != nil {
+		var templateOsVersion *string
+		_, _, repositories, templateOsVersion, err = h.buildTemplateRepositories(ctx, *composeRequest.ImageRequests[0].ContentTemplate)
+		if err != nil {
+			return nil, nil, err
+		}
+		detectedOsVersion = templateOsVersion
+	} else {
+		repositories, err = h.buildRepositoriesWithLatestSnapshots(ctx, arch, composeRequest.ImageRequests[0].ImageType)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return repositories, detectedOsVersion, nil
 }
 
 // buildRepositoriesWithLatestSnapshots transforms the CDN repository URLs to the latest snapshot URL
