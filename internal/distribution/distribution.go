@@ -163,6 +163,19 @@ func (arch Architecture) FindPackages(search string) []Package {
 	return pkgs
 }
 
+func (arch *Architecture) ValidateBootcReference(reference string) error {
+	if arch == nil {
+		return fmt.Errorf("bootc reference '%s' not found", reference)
+	}
+	for _, image := range arch.Bootc {
+		if image.Reference == reference {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("bootc reference '%s' not found", reference)
+}
+
 func (arch Architecture) validate() error {
 	for _, r := range arch.Repositories {
 		sourceSet := false

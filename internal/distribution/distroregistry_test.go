@@ -187,3 +187,45 @@ func TestDistroRegistry_ValidateBootcReference(t *testing.T) {
 		})
 	}
 }
+
+func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
+	loaded, err := LoadDistroRegistry("testdata/distributions")
+	require.NoError(t, err)
+
+	tests := []struct {
+		name      string
+		registry  *AllDistroRegistry
+		want      []BootcDistributionEntry
+		wantEmpty bool
+	}{
+		{
+			name:     "collects bootc from distro architectures",
+			registry: loaded,
+			want: []BootcDistributionEntry{
+				{
+					Distro:    "with-bootc",
+					Name:      "Test distro with bootc entries",
+					Type:      "ec2",
+					Arch:      "x86_64",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+				},
+			},
+		},
+		{
+			name:      "empty registry returns empty list",
+			registry:  &AllDistroRegistry{distros: map[string]*DistributionFile{}},
+			wantEmpty: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			list := tt.registry.CollectBootcFromRegistry()
+			if tt.wantEmpty {
+				require.Empty(t, list)
+				return
+			}
+			require.Equal(t, tt.want, list)
+		})
+	}
+}
