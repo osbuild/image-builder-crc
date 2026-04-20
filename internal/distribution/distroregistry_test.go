@@ -1,6 +1,7 @@
 package distribution
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -162,6 +163,27 @@ func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			require.Equal(t, tc.expected, registry.FindByMajorMinorStr(tc.input))
+		})
+	}
+}
+
+func TestDistroRegistry_ValidateBootcReference(t *testing.T) {
+	dr, err := LoadDistroRegistry("./testdata/distributions")
+	require.NoError(t, err)
+	registry := dr.Available(true)
+
+	cases := []struct {
+		ref  string
+		err  error
+		desc string
+	}{
+		{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest", nil, "returns nil error on valid reference"},
+		{"duck", fmt.Errorf("bootc reference 'duck' not found"), "returns error on invalid reference"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			require.Equal(t, tc.err, registry.ValidateBootcReference(tc.ref))
 		})
 	}
 }
