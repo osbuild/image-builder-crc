@@ -237,7 +237,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	description1 := "desc"
 	body1 := v1.BlueprintBody{
 		Customizations: v1.Customizations{},
-		Distribution:   "distribution",
+		Distribution:   common.ToPtr(v1.Distributions("distribution")),
 		ImageRequests:  []v1.ImageRequest{},
 	}
 	bodyJson1, err := json.Marshal(body1)
@@ -272,7 +272,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	description2 := "new desc"
 	body2 := v1.BlueprintBody{
 		Customizations: v1.Customizations{},
-		Distribution:   "distribution of updated body",
+		Distribution:   common.ToPtr(v1.Distributions("distribution of updated body")),
 		ImageRequests:  []v1.ImageRequest{},
 	}
 	bodyJson2, err := json.Marshal(body2)
@@ -311,7 +311,7 @@ func testBlueprints(ctx context.Context, t *testing.T) {
 	description3 := "desc should not be changed"
 	body3 := v1.BlueprintBody{
 		Customizations: v1.Customizations{},
-		Distribution:   "distribution of third body version",
+		Distribution:   common.ToPtr(v1.Distributions("distribution of third body version")),
 		ImageRequests:  []v1.ImageRequest{},
 	}
 	bodyJson3, err := json.Marshal(body3)
@@ -388,7 +388,7 @@ func testGetBlueprintComposes(ctx context.Context, t *testing.T) {
 	id := uuid.New()
 	versionId := uuid.New()
 	body1 := v1.BlueprintBody{
-		Distribution: "rhel-8",
+		Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -430,7 +430,7 @@ func testGetBlueprintComposes(ctx context.Context, t *testing.T) {
 	version2Id := uuid.New()
 
 	body2 := v1.BlueprintBody{
-		Distribution: "rhel-9",
+		Distribution: common.ToPtr(v1.Distributions("rhel-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
@@ -582,7 +582,7 @@ func testGetBlueprintComposes(ctx context.Context, t *testing.T) {
 	require.NoError(t, err)
 	retrievedBlueprint, err := v1.BlueprintFromEntry(blueprintEntry)
 	require.NoError(t, err)
-	require.Equal(t, v1.Distributions("rhel-9"), retrievedBlueprint.Distribution)
+	require.Equal(t, v1.Distributions("rhel-9"), *retrievedBlueprint.Distribution)
 
 	var retrievedServiceSnapshots db.ServiceSnapshots
 	err = json.Unmarshal(blueprintEntry.ServiceSnapshots, &retrievedServiceSnapshots)
