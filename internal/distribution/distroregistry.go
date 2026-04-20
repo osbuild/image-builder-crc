@@ -13,6 +13,14 @@ type AllDistroRegistry struct {
 	distros map[string]*DistributionFile
 }
 
+type BootcDistributionEntry struct {
+	Distro    string `json:"distro"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Arch      string `json:"arch"`
+	Reference string `json:"reference"`
+}
+
 // LoadDistroRegistry loads all distributions from distsDir
 func LoadDistroRegistry(distsDir string) (*AllDistroRegistry, error) {
 	files, err := os.ReadDir(distsDir)

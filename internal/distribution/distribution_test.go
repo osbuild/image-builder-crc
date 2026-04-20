@@ -190,3 +190,61 @@ func TestArchitecture_validate(t *testing.T) {
 		})
 	}
 }
+
+func TestArchitecture_ValidateBootcReference(t *testing.T) {
+	archBoth := Architecture{
+		Bootc: []BootcImage{
+			{Type: "ec2", Reference: "ref-ec2"},
+			{Type: "gcp", Reference: "ref-gcp"},
+		},
+	}
+	archEC2Only := Architecture{
+		Bootc: []BootcImage{{Type: "ec2", Reference: "r"}},
+	}
+	archEmpty := Architecture{Bootc: []BootcImage{}}
+
+	tests := []struct {
+		name         string
+		arch         Architecture
+		reference    string
+		wantErr      bool
+		errSubstring string
+	}{
+		{
+			name:      "reference matches first bootc entry",
+			arch:      archBoth,
+			reference: "ref-ec2",
+		},
+		{
+			name:      "reference matches second bootc entry",
+			arch:      archBoth,
+			reference: "ref-gcp",
+		},
+		{
+			name:         "reference not in bootc list",
+			arch:         archEC2Only,
+			reference:    "other-ref",
+			wantErr:      true,
+			errSubstring: "bootc reference 'other-ref' not found",
+		},
+		{
+			name:         "empty bootc list",
+			arch:         archEmpty,
+			reference:    "any-ref",
+			wantErr:      true,
+			errSubstring: "bootc reference 'any-ref' not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.arch.ValidateBootcReference(tt.reference)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.errSubstring)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
