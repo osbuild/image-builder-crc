@@ -1,6 +1,7 @@
 package distribution
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -150,4 +151,16 @@ func (dr DistroRegistry) FindByMajorMinorStr(majorMinor string) string {
 		return *d.Distribution.ComposerName
 	}
 	return d.Distribution.Name
+}
+
+func (dr DistroRegistry) ValidateBootcReference(reference string) error {
+	for _, d := range dr.distros {
+		if d.ArchX86.ValidateBootcReference(reference) == nil {
+			return nil
+		}
+		if d.Aarch64.ValidateBootcReference(reference) == nil {
+			return nil
+		}
+	}
+	return fmt.Errorf("bootc reference '%s' not found", reference)
 }

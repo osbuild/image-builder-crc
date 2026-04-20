@@ -10,7 +10,10 @@ type BootcDistributionEntry struct {
 	Reference string `json:"reference"`
 }
 
-func (arch Architecture) ValidateBootcReference(reference string) error {
+func (arch *Architecture) ValidateBootcReference(reference string) error {
+	if arch == nil {
+		return fmt.Errorf("bootc reference '%s' not found", reference)
+	}
 	for _, image := range arch.Bootc {
 		if image.Reference == reference {
 			return nil
