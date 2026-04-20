@@ -27,7 +27,7 @@ type BlueprintExportResponseUnmarshal struct {
 	ContentSources []content_sources.ApiRepositoryExportResponse `json:"content_sources,omitempty"`
 	Customizations v1.Customizations                             `json:"customizations"`
 	Description    string                                        `json:"description"`
-	Distribution   v1.Distributions                              `json:"distribution"`
+	Distribution   *v1.Distributions                             `json:"distribution,omitempty"`
 	Metadata       v1.BlueprintMetadata                          `json:"metadata"`
 	Name           string                                        `json:"name"`
 	SnapshotDate   *string                                       `json:"snapshot_date,omitempty"`
@@ -572,7 +572,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: v1.Distributions("centos-9"),
+		Distribution: common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
@@ -744,7 +744,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			require.NoError(t, err)
 			require.ElementsMatch(t, tc.composeRequests, composeRequests)
 			require.Len(t, result, tc.expectedImages)
-			for i := range tc.expectedImages {
+			for i := range result {
 				require.Equal(t, ids[len(ids)-tc.expectedImages+i], result[i].Id)
 			}
 		})
@@ -971,7 +971,7 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 				},
 			}),
 		},
-		Distribution: v1.Distributions("centos-9"),
+		Distribution: common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
@@ -1013,7 +1013,7 @@ func TestHandlers_GetBlueprint(t *testing.T) {
 	require.Equal(t, description, result.Description)
 	require.Equal(t, name, result.Name)
 	require.Equal(t, blueprint.ImageRequests, result.ImageRequests)
-	require.Equal(t, &blueprint.Distribution, result.Distribution)
+	require.Equal(t, blueprint.Distribution, result.Distribution)
 	require.Equal(t, blueprint.Customizations.Packages, result.Customizations.Packages)
 	// Check that the password returned is redacted
 	for _, u := range *result.Customizations.Users {
@@ -1164,7 +1164,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 				},
 			},
 		},
-		Distribution: v1.Distributions("centos-9"),
+		Distribution: common.ToPtr(v1.Distributions("centos-9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: v1.ImageRequestArchitectureX8664,
@@ -1215,7 +1215,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, description, result.Description)
 	require.Equal(t, name, result.Name)
-	require.Equal(t, blueprint.Distribution, result.Distribution)
+	require.EqualValues(t, blueprint.Distribution, result.Distribution)
 	require.Equal(t, blueprint.Customizations.Packages, result.Customizations.Packages)
 	require.Equal(t, "baseos", *result.ContentSources[0].Name)
 	require.Equal(t, "http://snappy-url/snappy/baseos", *result.ContentSources[0].Url)
@@ -1306,7 +1306,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 				},
 			},
 		},
-		Distribution: v1.Distributions("centos-9"),
+		Distribution: common.ToPtr(v1.Distributions("centos-9")),
 	}
 
 	var message2 []byte
@@ -1361,7 +1361,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 				},
 			},
 		},
-		Distribution: v1.Distributions("centos-9"),
+		Distribution: common.ToPtr(v1.Distributions("centos-9")),
 	}
 
 	var message3 []byte
@@ -1573,7 +1573,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "missing packages and services",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-8"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap,
 				},
@@ -1588,7 +1588,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "all requirements satisfied",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-8"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap,
 					Packages: &[]string{
@@ -1611,7 +1611,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "missing filesystems and kernel params",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-8"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
@@ -1625,7 +1625,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "filesystems and kernel params satisfied",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-8"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 					Kernel: &v1.Kernel{
@@ -1647,7 +1647,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "unsupported minor version",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-89"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-89")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
@@ -1659,7 +1659,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "unsupported minor version duplicate",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-89"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-89")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap2,
 				},
@@ -1672,7 +1672,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "minimal policy missing package",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-8"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap3,
 				},
@@ -1684,7 +1684,7 @@ func TestLintBlueprint(t *testing.T) {
 		{
 			name: "policy changes generate warnings",
 			blueprint: v1.BlueprintBody{
-				Distribution: v1.Distributions("rhel-8"),
+				Distribution: common.ToPtr(v1.Distributions("rhel-8")),
 				Customizations: v1.Customizations{
 					Openscap: &oscap3, // Minimal policy - only requires "required-by-compliance" package
 					Packages: &[]string{

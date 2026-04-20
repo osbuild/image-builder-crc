@@ -32,7 +32,7 @@ var (
 
 type BlueprintBody struct {
 	Customizations Customizations `json:"customizations"`
-	Distribution   Distributions  `json:"distribution"`
+	Distribution   *Distributions `json:"distribution,omitempty"`
 	ImageRequests  []ImageRequest `json:"image_requests"`
 	Bootc          *BootcBody     `json:"bootc,omitempty"`
 }
@@ -237,7 +237,7 @@ func (h *Handlers) buildServiceSnapshots(ctx echo.Context, customizations *Custo
 func BlueprintFromAPI(cbr CreateBlueprintRequest) (BlueprintBody, error) {
 	bb := BlueprintBody{
 		Customizations: cbr.Customizations,
-		Distribution:   *cbr.Distribution,
+		Distribution:   cbr.Distribution,
 		ImageRequests:  cbr.ImageRequests,
 		Bootc:          cbr.Bootc,
 	}
@@ -425,9 +425,12 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 	}
 	snapshotCust := extractSnapshotCustomizations(blueprintEntry)
 
-	lintErrors, lintWarnings, err := h.lintAndFixupOpenscap(ctx, &blueprint.Customizations, LinterOptionNoFixup, blueprint.Distribution, snapshotCust)
-	if err != nil && err != compliance.ErrorTailoringNotFound {
-		return err
+	var lintErrors, lintWarnings []BlueprintLintItem
+	if blueprint.Distribution != nil {
+		lintErrors, lintWarnings, err = h.lintAndFixupOpenscap(ctx, &blueprint.Customizations, LinterOptionNoFixup, *blueprint.Distribution, snapshotCust)
+		if err != nil && err != compliance.ErrorTailoringNotFound {
+			return err
+		}
 	}
 
 	blueprintResponse := BlueprintResponse{
@@ -435,7 +438,7 @@ func (h *Handlers) GetBlueprint(ctx echo.Context, id openapi_types.UUID, params 
 		Name:           blueprintEntry.Name,
 		Description:    blueprintEntry.Description,
 		ImageRequests:  blueprint.ImageRequests,
-		Distribution:   &blueprint.Distribution,
+		Distribution:   blueprint.Distribution,
 		Bootc:          blueprint.Bootc,
 		Customizations: blueprint.Customizations,
 		Lint: BlueprintLint{
@@ -503,7 +506,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	blueprintExportResponse := BlueprintExportResponse{
 		Name:           blueprintEntry.Name,
 		Description:    blueprintEntry.Description,
-		Distribution:   &blueprint.Distribution,
+		Distribution:   blueprint.Distribution,
 		Bootc:          blueprint.Bootc,
 		Customizations: blueprint.Customizations,
 		Metadata: BlueprintMetadata{
@@ -729,7 +732,7 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 		}
 		composeRequest := ComposeRequest{
 			Customizations:   &blueprint.Customizations,
-			Distribution:     &blueprint.Distribution,
+			Distribution:     blueprint.Distribution,
 			ImageRequests:    []ImageRequest{imageRequest},
 			ImageName:        &blueprintEntry.Name,
 			ImageDescription: &blueprintEntry.Description,
@@ -922,8 +925,12 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	}
 
+	if blueprint.Distribution == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("fixing up blueprints is only available for package mode blueprints"))
+	}
+
 	snapshotCustomizations := extractSnapshotCustomizations(blueprintEntry)
-	_, _, err = h.lintAndFixupOpenscap(ctx, &blueprint.Customizations, LinterOptionFixup, blueprint.Distribution, snapshotCustomizations)
+	_, _, err = h.lintAndFixupOpenscap(ctx, &blueprint.Customizations, LinterOptionFixup, *blueprint.Distribution, snapshotCustomizations)
 	if err == compliance.ErrorTailoringNotFound {
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	}
@@ -943,7 +950,7 @@ func (h *Handlers) FixupBlueprint(ctx echo.Context, id openapi_types.UUID) error
 		Name:           blueprintEntry.Name,
 		Description:    &blueprintEntry.Description,
 		Metadata:       &md,
-		Distribution:   &blueprint.Distribution,
+		Distribution:   blueprint.Distribution,
 		ImageRequests:  blueprint.ImageRequests,
 		Customizations: blueprint.Customizations,
 	}
