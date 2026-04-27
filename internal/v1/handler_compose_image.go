@@ -1097,7 +1097,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		}
 
 		if policy.PolicyId != uuid.Nil {
-			if !unleash.Enabled(unleash.CompliancePolicies) {
+			if !unleash.EnabledCtx(ctx.Request().Context(), unleash.CompliancePolicies) {
 				return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Feature %s not enabled", string(unleash.CompliancePolicies)))
 			}
 
