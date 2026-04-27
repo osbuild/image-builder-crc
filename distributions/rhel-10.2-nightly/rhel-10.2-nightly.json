@@ -9,6 +9,13 @@
     "restricted_access": true
   },
   "x86_64": {
+    "bootc": [
+      { "type": "aws", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.2-ec2:latest" },
+      { "type": "gcp", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.2-gcp:latest" },
+      { "type": "azure", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.2-azure:latest" },
+      { "type": "installer", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.2-installer:latest" },
+      { "type": "guest-image", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.2-qcow2:latest" }
+    ],
     "image_types": ["aws", "azure", "gcp", "guest-image", "image-installer", "openstack", "vsphere", "vsphere-ova"],
     "repositories": [{
       "id": "baseos",
