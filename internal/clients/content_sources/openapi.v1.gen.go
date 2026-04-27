@@ -1320,7 +1320,7 @@ type ListRepositoriesParams struct {
 	// ExtendedRelease A comma separated list of extended release types to filter on (eus, e4s), or 'none' to filter out extended release repositories
 	ExtendedRelease *string `form:"extended_release,omitempty" json:"extended_release,omitempty"`
 
-	// ExtendedReleaseVersion A comma separated list of extended release versions to filter on (e.g. 9.4,9.6)
+	// ExtendedReleaseVersion A comma separated list of extended release versions to filter on (e.g. 9.4,9.6). Use 'none' to filter repositories without extended release versions.
 	ExtendedReleaseVersion *string `form:"extended_release_version,omitempty" json:"extended_release_version,omitempty"`
 }
 
@@ -1473,7 +1473,7 @@ type ListTemplatesParams struct {
 	// Limit Number of items to include in response. Use it to control the number of items, particularly when dealing with large datasets. Default value: `100`.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
-	// Version Filter templates by version.
+	// Version Filter templates by version. Supports comma-separated lists (e.g. '8,9').
 	Version *string `form:"version,omitempty" json:"version,omitempty"`
 
 	// Arch Filter templates by architecture.
@@ -1491,7 +1491,7 @@ type ListTemplatesParams struct {
 	// ExtendedRelease Filter templates by extended release type. Valid values: eus, e4s, eeus. Supports comma-separated lists (e.g., 'eus,e4s'). Use 'none' to filter templates without extended release.
 	ExtendedRelease *string `form:"extended_release,omitempty" json:"extended_release,omitempty"`
 
-	// ExtendedReleaseVersion Filter templates by extended release version (e.g., 9.4)
+	// ExtendedReleaseVersion Filter templates by extended release version (e.g., 9.4). Supports comma-separated lists (e.g., '9.4,9.6'). Use 'none' to filter templates without extended release versions.
 	ExtendedReleaseVersion *string `form:"extended_release_version,omitempty" json:"extended_release_version,omitempty"`
 
 	// SortBy Sort the response data based on specific parameters. Sort criteria can include `name`, `arch`, and `version`.
