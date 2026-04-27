@@ -932,7 +932,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "returns list from distribution JSON bootc field",
 			query:   "kind=bootc",
-			wantLen: 4,
+			wantLen: 10,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Equal(t, "rhel-10.1", result[0].Distro)
 				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
@@ -943,7 +943,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by distro",
 			query:   "kind=bootc&distro=rhel-10.1",
-			wantLen: 4,
+			wantLen: 5,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				for _, item := range result {
 					require.Equal(t, "rhel-10.1", item.Distro)
@@ -958,7 +958,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by arch",
 			query:   "kind=bootc&arch=x86_64",
-			wantLen: 4,
+			wantLen: 10,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				for _, item := range result {
 					require.Equal(t, "x86_64", item.Arch)
@@ -973,19 +973,27 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by type",
 			query:   "kind=bootc&type=aws",
-			wantLen: 1,
+			wantLen: 2,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, "aws", result[0].Type)
+				for _, item := range result {
+					require.Equal(t, "aws", item.Type)
+				}
 			},
 		},
 		{
 			name:    "combines arch and type filters",
 			query:   "kind=bootc&arch=x86_64&type=guest-image",
-			wantLen: 1,
+			wantLen: 2,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, rhel101BootcGuestImageRef, result[0].Reference)
-				require.Equal(t, "x86_64", result[0].Arch)
-				require.Equal(t, "guest-image", result[0].Type)
+				var found101 bool
+				for _, item := range result {
+					require.Equal(t, "x86_64", item.Arch)
+					require.Equal(t, "guest-image", item.Type)
+					if item.Distro == "rhel-10.1" && item.Reference == rhel101BootcGuestImageRef {
+						found101 = true
+					}
+				}
+				require.True(t, found101, "expected rhel-10.1 guest-image qcow2 ref in results")
 			},
 		},
 		{
