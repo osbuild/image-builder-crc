@@ -285,6 +285,7 @@ const (
 	ImageTypesAzureRhui                  ImageTypes = "azure-rhui"
 	ImageTypesAzureSapRhui               ImageTypes = "azure-sap-rhui"
 	ImageTypesAzureSapappsRhui           ImageTypes = "azure-sapapps-rhui"
+	ImageTypesBootableContainerIso       ImageTypes = "bootable-container-iso"
 	ImageTypesEdgeCommit                 ImageTypes = "edge-commit"
 	ImageTypesEdgeContainer              ImageTypes = "edge-container"
 	ImageTypesEdgeInstaller              ImageTypes = "edge-installer"
@@ -334,6 +335,8 @@ func (e ImageTypes) Valid() bool {
 	case ImageTypesAzureSapRhui:
 		return true
 	case ImageTypesAzureSapappsRhui:
+		return true
+	case ImageTypesBootableContainerIso:
 		return true
 	case ImageTypesEdgeCommit:
 		return true
@@ -781,7 +784,12 @@ type BlueprintUser struct {
 
 // Bootc defines model for Bootc.
 type Bootc struct {
-	Reference string `json:"reference"`
+	// IsoPayloadReference Optional container image reference for a payload container to embed
+	// in the ISO's container storage. When set, the payload container is
+	// available at install/boot time. Only valid for bootable-container-iso
+	// image type.
+	IsoPayloadReference *string `json:"iso_payload_reference,omitempty"`
+	Reference           string  `json:"reference"`
 }
 
 // BtrfsSubvolume defines model for BtrfsSubvolume.
