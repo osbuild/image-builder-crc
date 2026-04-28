@@ -864,6 +864,18 @@ components:
           type: string
           description: 'Derived container image reference, only references listed in the bootc distributions list are allowed.'
           example: 'quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest'
+        iso_payload_references:
+          type: array
+          items:
+            type: string
+          description: |
+            List of allowed payload container references for
+            bootable-container-iso image type. Only present for
+            bootable-container-iso entries.
+          example: [
+            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest",
+            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
+          ]
     BootcBody:
       type: object
       description: |
@@ -878,6 +890,14 @@ components:
             Image name from the bootc distributions list. Must match a reference
             returned by GET /distributions?kind=bootc.
           example: 'quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest'
+        iso_payload_reference:
+          type: string
+          description: |
+            Optional container image reference for a payload container to embed
+            in the ISO. When set, the payload container is available at
+            install/boot time. Only valid for bootable-container-iso image type.
+            Must be one of the references listed in the distribution's bootc
+            configuration.
     Architectures:
       type: array
       items:
@@ -1329,6 +1349,7 @@ components:
       enum:
         - aws
         - azure
+        - bootable-container-iso  # bootc-only, not in image_types
         - edge-commit
         - edge-installer
         - gcp
