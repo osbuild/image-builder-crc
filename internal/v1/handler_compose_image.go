@@ -1165,6 +1165,25 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				res.Subscription.TemplateUuid = cr.ImageRequests[0].ContentTemplate
 			}
 		}
+
+		// Fetch content labels from any extra RH repositories in the customizations (not baseos/appstream)
+		// and add these to the subscription
+		if cust.CustomRepositories != nil {
+			var repoIDs []string
+
+			for _, repo := range *cust.CustomRepositories {
+				repoIDs = append(repoIDs, repo.Id)
+			}
+
+			if len(repoIDs) > 0 {
+				labels, err := h.server.csClient.FetchLabelsFromNonBaseRHRepos(ctx.Request().Context(), repoIDs)
+				if err != nil {
+					ctx.Logger().Warnf("Failed to get labels from repositories: %v", err)
+				} else if len(labels) > 0 {
+					res.Subscription.ContentSets = &labels
+				}
+			}
+		}
 	}
 
 	if cust.Packages != nil {

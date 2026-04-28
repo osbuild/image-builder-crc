@@ -151,6 +151,27 @@ func (csc *ContentSourcesClient) FindRepoByID(repos []ApiRepositoryResponse, tar
 	return repos[idx], true
 }
 
+func (csc *ContentSourcesClient) FetchLabelsFromNonBaseRHRepos(ctx context.Context, repoIDs []string) ([]string, error) {
+	rhRepoMap, err := csc.GetRepositories(ctx, nil, repoIDs, false)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+	}
+
+	var labels []string
+	for _, repoID := range repoIDs {
+		if repo, ok := rhRepoMap[repoID]; ok {
+			if repo.Label != nil && *repo.Label != "" {
+				if strings.Contains(*repo.Label, "baseos") || strings.Contains(*repo.Label, "appstream") {
+					continue
+				}
+				labels = append(labels, *repo.Label)
+			}
+		}
+	}
+
+	return labels, nil
+}
+
 // returns []ApiRepositoryExportResponse
 func (csc *ContentSourcesClient) BulkExportRepositories(ctx context.Context, body ApiRepositoryExportRequest) (*http.Response, error) {
 	id, ok := identity.GetIdentityHeader(ctx)
