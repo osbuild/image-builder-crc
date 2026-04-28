@@ -142,3 +142,158 @@ func TestComposeBootcUnknownReferenceRejected(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, status, body)
 	require.Contains(t, body, "bootc reference 'quay.io/example/this-reference-is-not-in-the-distro-list:latest' not found")
 }
+
+func TestComposeBootableContainerIso(t *testing.T) {
+	distsDir := "../../distributions"
+
+	installerRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest"
+	validPayloadRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"
+	invalidPayloadRef := "quay.io/example/not-in-allowed-list:latest"
+	awsBootcRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
+
+	tests := []struct {
+		name             string
+		bootc            *v1.BootcBody
+		imageType        v1.ImageTypes
+		uploadType       v1.UploadTypes
+		uploadOpts       func(t *testing.T) v1.UploadRequest_Options
+		wantStatus       int
+		wantErrSubstring string
+		checkComposer    func(t *testing.T, cr composer.ComposeRequest)
+	}{
+		{
+			name: "bootable-container-iso with valid iso_payload_reference",
+			bootc: &v1.BootcBody{
+				Reference:           installerRef,
+				IsoPayloadReference: &validPayloadRef,
+			},
+			imageType:  v1.ImageTypesBootableContainerIso,
+			uploadType: v1.UploadTypesAwsS3,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+				return uo
+			},
+			wantStatus: http.StatusCreated,
+			checkComposer: func(t *testing.T, cr composer.ComposeRequest) {
+				require.NotNil(t, cr.Bootc)
+				require.Equal(t, installerRef, cr.Bootc.Reference)
+				require.NotNil(t, cr.Bootc.IsoPayloadReference)
+				require.Equal(t, validPayloadRef, *cr.Bootc.IsoPayloadReference)
+			},
+		},
+		{
+			name: "bootable-container-iso without iso_payload_reference",
+			bootc: &v1.BootcBody{
+				Reference: installerRef,
+			},
+			imageType:  v1.ImageTypesBootableContainerIso,
+			uploadType: v1.UploadTypesAwsS3,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+				return uo
+			},
+			wantStatus: http.StatusCreated,
+			checkComposer: func(t *testing.T, cr composer.ComposeRequest) {
+				require.NotNil(t, cr.Bootc)
+				require.Equal(t, installerRef, cr.Bootc.Reference)
+				require.Nil(t, cr.Bootc.IsoPayloadReference)
+			},
+		},
+		{
+			name: "bootable-container-iso with invalid iso_payload_reference",
+			bootc: &v1.BootcBody{
+				Reference:           installerRef,
+				IsoPayloadReference: &invalidPayloadRef,
+			},
+			imageType:  v1.ImageTypesBootableContainerIso,
+			uploadType: v1.UploadTypesAwsS3,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+				return uo
+			},
+			wantStatus:       http.StatusBadRequest,
+			wantErrSubstring: "iso payload reference",
+		},
+		{
+			name: "iso_payload_reference rejected on non-ISO bootc type",
+			bootc: &v1.BootcBody{
+				Reference:           awsBootcRef,
+				IsoPayloadReference: &validPayloadRef,
+			},
+			imageType:  v1.ImageTypesAws,
+			uploadType: v1.UploadTypesAws,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSUploadRequestOptions(v1.AWSUploadRequestOptions{
+					ShareWithAccounts: &[]string{"test-account"},
+				}))
+				return uo
+			},
+			wantStatus:       http.StatusBadRequest,
+			wantErrSubstring: "iso_payload_reference must not be set for non-ISO bootc image types",
+		},
+		{
+			name:       "bootable-container-iso requires bootc",
+			bootc:      nil,
+			imageType:  v1.ImageTypesBootableContainerIso,
+			uploadType: v1.UploadTypesAwsS3,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+				return uo
+			},
+			wantStatus:       http.StatusBadRequest,
+			wantErrSubstring: "bootc is required for bootable-container-iso image type",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantComposeID := uuid.New()
+			var gotComposer composer.ComposeRequest
+
+			apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
+				err := json.NewDecoder(r.Body).Decode(&gotComposer)
+				require.NoError(t, err)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusCreated)
+				err = json.NewEncoder(w).Encode(composer.ComposeId{Id: wantComposeID})
+				require.NoError(t, err)
+			}))
+			defer apiSrv.Close()
+
+			srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
+				DistributionsDir: distsDir,
+			})
+			defer srv.Shutdown(t)
+
+			payload := v1.ComposeRequest{
+				Bootc: tt.bootc,
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    tt.imageType,
+						UploadRequest: v1.UploadRequest{
+							Type:    tt.uploadType,
+							Options: tt.uploadOpts(t),
+						},
+					},
+				},
+			}
+
+			status, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
+			require.Equal(t, tt.wantStatus, status, body)
+
+			if tt.wantErrSubstring != "" {
+				require.Contains(t, body, tt.wantErrSubstring)
+			}
+			if tt.checkComposer != nil {
+				tt.checkComposer(t, gotComposer)
+			}
+		})
+	}
+}

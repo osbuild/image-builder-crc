@@ -75,6 +75,10 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Either a snapshot date or content template can be specified, but not both")
 	}
 
+	if composeRequest.Bootc == nil && composeRequest.ImageRequests[0].ImageType == ImageTypesBootableContainerIso {
+		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "bootc is required for bootable-container-iso image type")
+	}
+
 	var repositories []composer.Repository
 	var customizations *composer.Customizations
 	var distro *string
@@ -119,6 +123,11 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			}
 		}
 	} else if composeRequest.Bootc != nil {
+		imageType := composeRequest.ImageRequests[0].ImageType
+		if composeRequest.Bootc.IsoPayloadReference != nil && imageType != ImageTypesBootableContainerIso {
+			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "iso_payload_reference must not be set for non-ISO bootc image types")
+		}
+
 		err := h.server.distroRegistry(ctx).ValidateBootcReferences(
 			composeRequest.Bootc.Reference,
 			composeRequest.Bootc.IsoPayloadReference,
@@ -126,8 +135,10 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		if err != nil {
 			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
+
 		bootc = &composer.Bootc{
-			Reference: composeRequest.Bootc.Reference,
+			Reference:           composeRequest.Bootc.Reference,
+			IsoPayloadReference: composeRequest.Bootc.IsoPayloadReference,
 		}
 	} else {
 		// 500 error as any validation should have happened before handing it off to the common compose function
@@ -842,6 +853,8 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 			composerImageType = composer.ImageTypesVsphereOva
 		case ImageTypesWsl:
 			composerImageType = composer.ImageTypesWsl
+		case ImageTypesBootableContainerIso:
+			composerImageType = composer.ImageTypesBootableContainerIso
 		default:
 			return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, "Invalid image type for upload target")
 		}
