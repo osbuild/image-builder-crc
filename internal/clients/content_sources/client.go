@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/osbuild/logging/pkg/strc"
@@ -124,6 +125,30 @@ func (csc *ContentSourcesClient) GetRepositories(ctx context.Context, repoURLs [
 	}
 
 	return result, nil
+}
+
+func (csc *ContentSourcesClient) FindRepoByURL(repos []ApiRepositoryResponse, targetURL string) (ApiRepositoryResponse, bool) {
+	idx := slices.IndexFunc(repos, func(r ApiRepositoryResponse) bool {
+		return r.Url != nil && *r.Url == targetURL
+	})
+
+	if idx == -1 {
+		return ApiRepositoryResponse{}, false
+	}
+
+	return repos[idx], true
+}
+
+func (csc *ContentSourcesClient) FindRepoByID(repos []ApiRepositoryResponse, targetID string) (ApiRepositoryResponse, bool) {
+	idx := slices.IndexFunc(repos, func(r ApiRepositoryResponse) bool {
+		return r.Uuid != nil && *r.Uuid == targetID
+	})
+
+	if idx == -1 {
+		return ApiRepositoryResponse{}, false
+	}
+
+	return repos[idx], true
 }
 
 // returns []ApiRepositoryExportResponse

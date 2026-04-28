@@ -94,7 +94,9 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		if err != nil {
 			return ComposeResponse{}, err
 		}
-		customizations, err = h.buildCustomizations(ctx, &composeRequest, d)
+
+		var extraRHRepos []content_sources.ApiRepositoryResponse
+		customizations, extraRHRepos, err = h.buildCustomizations(ctx, &composeRequest, d)
 		if err != nil {
 			ctx.Logger().Errorf("Failed building customizations: %v", err)
 			if _, ok := err.(*echo.HTTPError); ok {
@@ -104,7 +106,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		}
 
 		var detectedOsVersion *string
-		repositories, detectedOsVersion, err = h.buildRepositories(ctx, composeRequest, arch)
+		repositories, detectedOsVersion, err = h.buildRepositories(ctx, composeRequest, arch, extraRHRepos)
 		if err != nil {
 			return ComposeResponse{}, err
 		}
@@ -217,7 +219,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	}, nil
 }
 
-func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeRequest, arch *distribution.Architecture) ([]composer.Repository, *string, error) {
+func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeRequest, arch *distribution.Architecture, extraRHRepos []content_sources.ApiRepositoryResponse) ([]composer.Repository, *string, error) {
 	var repositories []composer.Repository
 	var detectedOsVersion *string
 	var err error
@@ -248,6 +250,13 @@ func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeReq
 			}
 		}
 
+		// Add extra RH repos from the customizations to the URLs we send to buildRepositorySnapshots
+		for _, r := range extraRHRepos {
+			if r.Url != nil {
+				repoURLs = append(repoURLs, *r.Url)
+			}
+		}
+
 		snapshotRepos, _, snapshotOsVersion, err := h.buildRepositorySnapshots(ctx, repoURLs, nil, false, *composeRequest.ImageRequests[0].SnapshotDate)
 		if err != nil {
 			return nil, nil, err
@@ -262,6 +271,7 @@ func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeReq
 				expected++
 			}
 		}
+		expected += len(extraRHRepos)
 		if len(repositories) != expected {
 			return nil, nil, fmt.Errorf("no snapshots found for all repositories (found %d, expected %d)", len(repositories), expected)
 		}
@@ -273,7 +283,7 @@ func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeReq
 		}
 		detectedOsVersion = templateOsVersion
 	} else {
-		repositories, err = h.buildRepositoriesWithLatestSnapshots(ctx, arch, composeRequest.ImageRequests[0].ImageType)
+		repositories, err = h.buildRepositoriesWithLatestSnapshots(ctx, arch, composeRequest.ImageRequests[0].ImageType, extraRHRepos)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -283,7 +293,7 @@ func (h *Handlers) buildRepositories(ctx echo.Context, composeRequest ComposeReq
 
 // buildRepositoriesWithLatestSnapshots transforms the CDN repository URLs to the latest snapshot URL
 // or falls back to CDN if snapshot is not available
-func (h *Handlers) buildRepositoriesWithLatestSnapshots(ctx echo.Context, arch *distribution.Architecture, imageType ImageTypes) ([]composer.Repository, error) {
+func (h *Handlers) buildRepositoriesWithLatestSnapshots(ctx echo.Context, arch *distribution.Architecture, imageType ImageTypes, extraRHRepos []content_sources.ApiRepositoryResponse) ([]composer.Repository, error) {
 	var repositories []composer.Repository
 	var cdnRepoURLs []string
 	var errs []error
@@ -299,7 +309,7 @@ func (h *Handlers) buildRepositoriesWithLatestSnapshots(ctx echo.Context, arch *
 		var err error
 		repoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), cdnRepoURLs, nil, false)
 		if err != nil {
-			return nil, fmt.Errorf("unable to retrieve get repositories: %w", err)
+			return nil, fmt.Errorf("unable to retrieve Red Hat repositories: %w", err)
 		}
 	}
 
@@ -315,6 +325,21 @@ func (h *Handlers) buildRepositoriesWithLatestSnapshots(ctx echo.Context, arch *
 		}
 
 		repositories = append(repositories, composerRepo)
+	}
+
+	for _, r := range extraRHRepos {
+		if r.LatestSnapshotUrl != nil && *r.LatestSnapshotUrl != "" {
+			repoURL, err := url.Parse(*r.LatestSnapshotUrl)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse snapshot URL for repository %s: %w", *r.Url, err)
+			}
+			composerRepo, err := h.buildComposerRepositoryFromSnapshot(repoURL.Path, false, &r)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			repositories = append(repositories, composerRepo)
+		}
 	}
 
 	if len(errs) > 0 {
@@ -579,6 +604,117 @@ func (h *Handlers) buildPayloadRepositories(ctx echo.Context, payloadRepos []Rep
 		res[i].Rhsm = common.ToPtr(pyrepo.Rhsm)
 	}
 	return res, nil
+}
+
+// Filters out RH repos from payload repos and returns remaining payload repos
+func (h *Handlers) filterRHFromPayloadRepos(rhRepos []content_sources.ApiRepositoryResponse, unfilteredPayloadRepos []Repository) ([]Repository, []string, []string) {
+	var filteredPayloadRepos []Repository
+	var filteredPayloadURLs []string
+	var filteredPayloadIDs []string
+
+	for _, payloadRepository := range unfilteredPayloadRepos {
+		if payloadRepository.Baseurl != nil {
+			if _, isRedHat := h.server.csClient.FindRepoByURL(rhRepos, *payloadRepository.Baseurl); !isRedHat {
+				filteredPayloadRepos = append(filteredPayloadRepos, payloadRepository)
+				filteredPayloadURLs = append(filteredPayloadURLs, *payloadRepository.Baseurl)
+			}
+			continue
+		}
+		if payloadRepository.Id != nil {
+			if _, isRedHat := h.server.csClient.FindRepoByID(rhRepos, *payloadRepository.Id); !isRedHat {
+				filteredPayloadRepos = append(filteredPayloadRepos, payloadRepository)
+				filteredPayloadIDs = append(filteredPayloadIDs, *payloadRepository.Id)
+			}
+		}
+	}
+
+	return filteredPayloadRepos, filteredPayloadURLs, filteredPayloadIDs
+}
+
+// Filters out RH repos from custom repos and returns remaining custom repos
+func (h *Handlers) filterRHFromCustomRepos(rhRepos []content_sources.ApiRepositoryResponse, unfilteredCustomRepos []CustomRepository) ([]CustomRepository, []string, []string) {
+	var filteredCustomRepos []CustomRepository
+	var filteredCustomURLs []string
+	var filteredCustomIDs []string
+
+	for _, customRepository := range unfilteredCustomRepos {
+		if customRepository.Baseurl != nil && len(*customRepository.Baseurl) > 0 {
+			if _, isRedHat := h.server.csClient.FindRepoByURL(rhRepos, (*customRepository.Baseurl)[0]); !isRedHat {
+				filteredCustomRepos = append(filteredCustomRepos, customRepository)
+				filteredCustomURLs = append(filteredCustomURLs, (*customRepository.Baseurl)[0])
+			}
+			continue
+		}
+		if customRepository.Id != "" {
+			if _, isRedHat := h.server.csClient.FindRepoByID(rhRepos, customRepository.Id); !isRedHat {
+				filteredCustomRepos = append(filteredCustomRepos, customRepository)
+				filteredCustomIDs = append(filteredCustomIDs, customRepository.Id)
+			}
+		}
+	}
+
+	return filteredCustomRepos, filteredCustomURLs, filteredCustomIDs
+}
+
+// Checks for RH repos from given custom repos
+// Returns custom repo URLs and IDs unchanged and any matched RH repos
+func (h *Handlers) checkForRHReposInCustom(ctx echo.Context, customRepos []CustomRepository) ([]string, []string, []content_sources.ApiRepositoryResponse, error) {
+	var repoURLs []string
+	var repoIDs []string
+
+	for _, repo := range customRepos {
+		if repo.Baseurl != nil && len(*repo.Baseurl) > 0 {
+			repoURLs = append(repoURLs, (*repo.Baseurl)[0])
+		} else if repo.Id != "" {
+			repoIDs = append(repoIDs, repo.Id)
+		}
+	}
+
+	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+	}
+
+	var rhRepos []content_sources.ApiRepositoryResponse
+	for _, repo := range customRepos {
+		if repo.Id != "" {
+			if rhRepo, ok := rhRepoMap[repo.Id]; ok {
+				rhRepos = append(rhRepos, rhRepo)
+			}
+		}
+	}
+
+	return repoURLs, repoIDs, rhRepos, nil
+}
+
+// Checks for RH repos from given payload repos
+// Returns repo URLs and IDs unchanged and any matched RH repos
+func (h *Handlers) checkForRHReposInPayload(ctx echo.Context, payloadRepos []Repository) ([]string, []string, []content_sources.ApiRepositoryResponse, error) {
+	var repoURLs []string
+	var repoIDs []string
+
+	for _, payloadRepository := range payloadRepos {
+		if payloadRepository.Baseurl != nil {
+			repoURLs = append(repoURLs, *payloadRepository.Baseurl)
+		} else if payloadRepository.Id != nil {
+			repoIDs = append(repoIDs, *payloadRepository.Id)
+		}
+	}
+	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+	}
+
+	var rhRepos []content_sources.ApiRepositoryResponse
+	for _, repo := range payloadRepos {
+		if repo.Id != nil {
+			if rhRepo, ok := rhRepoMap[*repo.Id]; ok {
+				rhRepos = append(rhRepos, rhRepo)
+			}
+		}
+	}
+
+	return repoURLs, repoIDs, rhRepos, nil
 }
 
 func (h *Handlers) buildCustomRepositories(ctx echo.Context, custRepos []CustomRepository) ([]composer.CustomRepository, error) {
@@ -964,13 +1100,14 @@ func validateComposeRequest(cr *ComposeRequest) error {
 	return nil
 }
 
-func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *distribution.DistributionFile) (*composer.Customizations, error) {
+func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *distribution.DistributionFile) (*composer.Customizations, []content_sources.ApiRepositoryResponse, error) {
 	res := &composer.Customizations{}
+	var extraRHRepos []content_sources.ApiRepositoryResponse
 
 	if cr.ImageRequests[0].ContentTemplate != nil {
 		templatePayloadRepositories, templateCustomRepositories, _, _, err := h.buildTemplateRepositories(ctx, *cr.ImageRequests[0].ContentTemplate)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if len(templateCustomRepositories) > 0 {
 			res.CustomRepositories = &templateCustomRepositories
@@ -984,9 +1121,9 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	if cust == nil {
 		// If no customizations requested, just return the payload repository snapshots resolved from the content template if one was specified
 		if res.PayloadRepositories != nil {
-			return res, nil
+			return res, nil, nil
 		}
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if cust.Subscription != nil {
@@ -1003,7 +1140,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		if d != nil && cr.ImageRequests[0].ContentTemplate != nil {
 			major, minor, err := d.RHELMajorMinor()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			if ((major >= 9 && minor >= 6) || (major >= 10)) && cr.ImageRequests[0].ContentTemplateName != nil {
 				res.Subscription.TemplateName = cr.ImageRequests[0].ContentTemplateName
@@ -1033,56 +1170,108 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	if cr.ImageRequests[0].ContentTemplate == nil {
 		snapshotDate := cr.ImageRequests[0].SnapshotDate
 		if cust.PayloadRepositories != nil && snapshotDate != nil {
-			var repoURLs []string
-			var repoIDs []string
-			for _, payloadRepository := range *cust.PayloadRepositories {
-				if payloadRepository.Baseurl != nil {
-					repoURLs = append(repoURLs, *payloadRepository.Baseurl)
-				} else if payloadRepository.Id != nil {
-					repoIDs = append(repoIDs, *payloadRepository.Id)
+			repoURLs, repoIDs, rhRepos, err := h.checkForRHReposInPayload(ctx, *cust.PayloadRepositories)
+			if err != nil {
+				return nil, nil, err
+			}
+			if len(rhRepos) == 0 {
+				payloadRepositories, _, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
+				if err != nil {
+					return nil, nil, err
+				}
+				res.PayloadRepositories = &payloadRepositories
+			} else {
+				_, filteredRepoURLs, filteredRepoIDs := h.filterRHFromPayloadRepos(rhRepos, *cust.PayloadRepositories)
+				if len(filteredRepoIDs) == 0 && len(filteredRepoURLs) == 0 {
+					res.PayloadRepositories = nil
+				} else {
+					payloadRepositories, _, _, err := h.buildRepositorySnapshots(ctx, filteredRepoURLs, filteredRepoIDs, true, *snapshotDate)
+					if err != nil {
+						return nil, nil, err
+					}
+					res.PayloadRepositories = &payloadRepositories
 				}
 			}
-			payloadRepositories, _, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
-			if err != nil {
-				return nil, err
-			}
-			res.PayloadRepositories = &payloadRepositories
 		} else if cust.PayloadRepositories != nil && len(*cust.PayloadRepositories) > 0 {
-			plrepos, err := h.buildPayloadRepositories(ctx, *cust.PayloadRepositories)
+			_, _, rhRepos, err := h.checkForRHReposInPayload(ctx, *cust.PayloadRepositories)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			res.PayloadRepositories = &plrepos
+			if len(rhRepos) == 0 {
+				plrepos, err := h.buildPayloadRepositories(ctx, *cust.PayloadRepositories)
+				if err != nil {
+					return nil, nil, err
+				}
+				res.PayloadRepositories = &plrepos
+			} else {
+				filteredPayloadRepos, _, _ := h.filterRHFromPayloadRepos(rhRepos, *cust.PayloadRepositories)
+				if len(filteredPayloadRepos) == 0 {
+					res.PayloadRepositories = nil
+				} else {
+					plrepos, err := h.buildPayloadRepositories(ctx, filteredPayloadRepos)
+					if err != nil {
+						return nil, nil, err
+					}
+					res.PayloadRepositories = &plrepos
+				}
+			}
 		}
 
 		if cust.CustomRepositories != nil && snapshotDate != nil {
-			var repoURLs []string
-			var repoIDs []string
-			for _, repo := range *cust.CustomRepositories {
-				if repo.Baseurl != nil && len(*repo.Baseurl) > 0 {
-					repoURLs = append(repoURLs, (*repo.Baseurl)[0])
-				} else if repo.Id != "" {
-					repoIDs = append(repoIDs, repo.Id)
+			repoURLs, repoIDs, rhRepos, err := h.checkForRHReposInCustom(ctx, *cust.CustomRepositories)
+			if err != nil {
+				return nil, nil, err
+			}
+			if len(rhRepos) == 0 {
+				_, customRepositories, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
+				if err != nil {
+					return nil, nil, err
+				}
+				res.CustomRepositories = &customRepositories
+			} else {
+				extraRHRepos = rhRepos
+				_, filteredRepoURLs, filteredRepoIDs := h.filterRHFromCustomRepos(rhRepos, *cust.CustomRepositories)
+				if len(filteredRepoIDs) == 0 && len(filteredRepoURLs) == 0 {
+					res.CustomRepositories = nil
+				} else {
+					_, customRepositories, _, err := h.buildRepositorySnapshots(ctx, filteredRepoURLs, filteredRepoIDs, true, *snapshotDate)
+					if err != nil {
+						return nil, nil, err
+					}
+					res.CustomRepositories = &customRepositories
 				}
 			}
-			_, customRepositories, _, err := h.buildRepositorySnapshots(ctx, repoURLs, repoIDs, true, *snapshotDate)
-			if err != nil {
-				return nil, err
-			}
-			res.CustomRepositories = &customRepositories
 		} else if cust.CustomRepositories != nil && len(*cust.CustomRepositories) > 0 {
-			custrepos, err := h.buildCustomRepositories(ctx, *cust.CustomRepositories)
+			_, _, rhRepos, err := h.checkForRHReposInCustom(ctx, *cust.CustomRepositories)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			res.CustomRepositories = &custrepos
+			if len(rhRepos) == 0 {
+				custrepos, err := h.buildCustomRepositories(ctx, *cust.CustomRepositories)
+				if err != nil {
+					return nil, nil, err
+				}
+				res.CustomRepositories = &custrepos
+			} else {
+				extraRHRepos = rhRepos
+				filteredCustomRepos, _, _ := h.filterRHFromCustomRepos(rhRepos, *cust.CustomRepositories)
+				if len(filteredCustomRepos) == 0 {
+					res.CustomRepositories = nil
+				} else {
+					custrepos, err := h.buildCustomRepositories(ctx, filteredCustomRepos)
+					if err != nil {
+						return nil, nil, err
+					}
+					res.CustomRepositories = &custrepos
+				}
+			}
 		}
 	}
 
 	if cust.Openscap != nil {
 		profile, err := cust.Openscap.AsOpenSCAPProfile()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if profile.ProfileId != "" {
@@ -1093,30 +1282,30 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 		policy, err := cust.Openscap.AsOpenSCAPCompliance()
 		if err != nil {
 			ctx.Logger().Error(err.Error())
-			return nil, err
+			return nil, nil, err
 		}
 
 		if policy.PolicyId != uuid.Nil {
 			if !unleash.Enabled(unleash.CompliancePolicies) {
-				return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Feature %s not enabled", string(unleash.CompliancePolicies)))
+				return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Feature %s not enabled", string(unleash.CompliancePolicies)))
 			}
 
 			major, minor, err := d.RHELMajorMinor()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			pdata, err := h.server.complianceClient.PolicyDataForMinorVersion(ctx.Request().Context(), major, minor, policy.PolicyId.String())
 			if errors.Is(err, compliance.ErrorAuth) {
-				return nil, echo.NewHTTPError(http.StatusForbidden, fmt.Sprintf("User is not authorized to get compliance data for given policy ID (%s)", policy.PolicyId.String()))
+				return nil, nil, echo.NewHTTPError(http.StatusForbidden, fmt.Sprintf("User is not authorized to get compliance data for given policy ID (%s)", policy.PolicyId.String()))
 			} else if errors.Is(err, compliance.ErrorMajorVersion) {
-				return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Compliance policy (%s) does not support requested major version %d", policy.PolicyId.String(), major))
+				return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Compliance policy (%s) does not support requested major version %d", policy.PolicyId.String(), major))
 			} else if errors.Is(err, compliance.ErrorPolicyNotFound) {
-				return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Compliance policy (%s) does not exist", policy.PolicyId.String()))
+				return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Compliance policy (%s) does not exist", policy.PolicyId.String()))
 			} else if errors.Is(err, compliance.ErrorTailoringNotFound) {
-				return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Compliance policy (%s) does not have tailoring for RHEL %d, minor version %d", policy.PolicyId.String(), major, minor))
+				return nil, nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Compliance policy (%s) does not have tailoring for RHEL %d, minor version %d", policy.PolicyId.String(), major, minor))
 			} else if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			if pdata.TailoringData != nil {
@@ -1220,7 +1409,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				if err == nil {
 					err = group.FromDirectoryGroup0(dg0)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 
 				}
@@ -1228,7 +1417,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				if err == nil {
 					err = group.FromDirectoryGroup1(dg1)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 			}
@@ -1240,14 +1429,14 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				if err == nil {
 					err = user.FromDirectoryUser0(du0)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 				du1, err := d.User.AsDirectoryUser1()
 				if err == nil {
 					err = user.FromDirectoryUser1(composer.DirectoryUser1(du1))
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 			}
@@ -1278,7 +1467,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				if err == nil {
 					err = group.FromFileGroup0(fg0)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 
@@ -1286,7 +1475,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				if err == nil {
 					err = group.FromFileGroup1(fg1)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 			}
@@ -1298,14 +1487,14 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				if err == nil {
 					err = user.FromFileUser0(fu0)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 				fu1, err := f.User.AsFileUser1()
 				if err == nil {
 					err = user.FromFileUser1(composer.FileUser1(fu1))
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				}
 			}
@@ -1313,7 +1502,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			if f.Data != nil && f.DataEncoding != nil && *f.DataEncoding == "base64" {
 				buf, err := base64.StdEncoding.DecodeString(*f.Data)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				f.Data = common.ToPtr(string(buf))
 			}
@@ -1363,7 +1552,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	if cust.Subscription != nil && cust.Subscription.Insights && cust.Openscap != nil {
 		major, _, err := d.RHELMajorMinor()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		// Since RHEL 10, there is no rhcd service.
 		if major < 10 {
@@ -1454,12 +1643,12 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 			SkipTlsVerification: aap.SkipTlsVerification != nil && *aap.SkipTlsVerification,
 		})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		serviceUnit, err := tmpl.RenderAAPServiceUnit(ctx.Request().Context())
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		files := []composer.File{
@@ -1511,5 +1700,8 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 	// IB API Disk uses the same type as the osbuild-composer Disk
 	res.Disk = cust.Disk
 
-	return res, nil
+	if len(extraRHRepos) > 0 {
+		return res, extraRHRepos, nil
+	}
+	return res, nil, nil
 }
