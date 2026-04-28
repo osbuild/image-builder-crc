@@ -119,7 +119,10 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			}
 		}
 	} else if composeRequest.Bootc != nil {
-		err := h.server.distroRegistry(ctx).ValidateBootcReference(composeRequest.Bootc.Reference)
+		err := h.server.distroRegistry(ctx).ValidateBootcReferences(
+			composeRequest.Bootc.Reference,
+			composeRequest.Bootc.IsoPayloadReference,
+		)
 		if err != nil {
 			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}

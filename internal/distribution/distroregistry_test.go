@@ -1,7 +1,6 @@
 package distribution
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -167,23 +166,62 @@ func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
 	}
 }
 
-func TestDistroRegistry_ValidateBootcReference(t *testing.T) {
+func TestDistroRegistry_ValidateBootcReferences(t *testing.T) {
 	dr, err := LoadDistroRegistry("./testdata/distributions")
 	require.NoError(t, err)
 	registry := dr.Available(true)
 
 	cases := []struct {
-		ref  string
-		err  error
-		desc string
+		desc          string
+		ref           string
+		isoPayloadRef *string
+		errSubstring  string
 	}{
-		{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest", nil, "returns nil error on valid reference"},
-		{"duck", fmt.Errorf("bootc reference 'duck' not found"), "returns error on invalid reference"},
+		// Base ref only
+		{
+			desc: "valid base reference",
+			ref:  "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+		},
+		{
+			desc:         "unknown base reference",
+			ref:          "duck",
+			errSubstring: "bootc reference 'duck' not found",
+		},
+		// Base ref + payload
+		{
+			desc:          "valid installer ref + valid payload",
+			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
+			isoPayloadRef: common.ToPtr("quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"),
+		},
+		{
+			desc:          "valid installer ref + unknown payload",
+			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
+			isoPayloadRef: common.ToPtr("duck"),
+			errSubstring:  "iso payload reference 'duck' not in its allowed list",
+		},
+		{
+			desc:          "ec2 ref + any payload (no allowlist)",
+			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+			isoPayloadRef: common.ToPtr("duck"),
+			errSubstring:  "iso payload reference 'duck' not in its allowed list",
+		},
+		{
+			desc:          "unknown ref + payload",
+			ref:           "duck",
+			isoPayloadRef: common.ToPtr("any-payload"),
+			errSubstring:  "bootc reference 'duck' not found or iso payload reference 'any-payload' not in its allowed list",
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			require.Equal(t, tc.err, registry.ValidateBootcReference(tc.ref))
+			err := registry.ValidateBootcReferences(tc.ref, tc.isoPayloadRef)
+			if tc.errSubstring != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.errSubstring)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }
@@ -208,6 +246,14 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 					Type:      "ec2",
 					Arch:      "x86_64",
 					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+				},
+				{
+					Distro:               "with-bootc",
+					Name:                 "Test distro with bootc entries",
+					Type:                 "bootable-container-iso",
+					Arch:                 "x86_64",
+					Reference:            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
+					IsoPayloadReferences: []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"},
 				},
 			},
 		},

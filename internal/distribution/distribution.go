@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -44,6 +45,9 @@ type BootcImage struct {
 
 	// Reference is the part of the container image reference used as the base for composing
 	Reference string `json:"reference"`
+
+	// IsoPayloadReferences is a list of allowed payload container references for bootable-container-iso image type.
+	IsoPayloadReferences []string `json:"iso_payload_references,omitempty"`
 }
 
 type Architecture struct {
@@ -163,16 +167,21 @@ func (arch Architecture) FindPackages(search string) []Package {
 	return pkgs
 }
 
-func (arch *Architecture) ValidateBootcReference(reference string) error {
+func (arch *Architecture) ValidateBootcReferences(reference string, isoPayloadRef *string) error {
 	if arch == nil {
 		return fmt.Errorf("bootc reference '%s' not found", reference)
 	}
 	for _, image := range arch.Bootc {
 		if image.Reference == reference {
+			if isoPayloadRef == nil {
+				return nil
+			}
+			if !slices.Contains(image.IsoPayloadReferences, *isoPayloadRef) {
+				return fmt.Errorf("iso payload reference '%s' not found in allowed list for bootc reference '%s'", *isoPayloadRef, reference)
+			}
 			return nil
 		}
 	}
-
 	return fmt.Errorf("bootc reference '%s' not found", reference)
 }
 

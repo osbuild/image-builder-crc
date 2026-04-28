@@ -92,14 +92,18 @@ func (h *Handlers) GetDistributions(ctx echo.Context, params GetDistributionsPar
 			if params.Type != nil && e.Type != *params.Type {
 				continue
 			}
-			var item DistributionsResponse_Item
-			_ = item.FromBootcDistributionItem(BootcDistributionItem{
+			bdi := BootcDistributionItem{
 				Distro:    e.Distro,
 				Name:      e.Name,
 				Type:      e.Type,
 				Arch:      e.Arch,
 				Reference: e.Reference,
-			})
+			}
+			if len(e.IsoPayloadReferences) > 0 {
+				bdi.IsoPayloadReferences = &e.IsoPayloadReferences
+			}
+			var item DistributionsResponse_Item
+			_ = item.FromBootcDistributionItem(bdi)
 			resp = append(resp, item)
 		}
 		return ctx.JSON(http.StatusOK, resp)
