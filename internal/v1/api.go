@@ -370,23 +370,24 @@ func (e ImageStatusStatus) Valid() bool {
 
 // Defines values for ImageTypes.
 const (
-	ImageTypesAmi               ImageTypes = "ami"
-	ImageTypesAws               ImageTypes = "aws"
-	ImageTypesAzure             ImageTypes = "azure"
-	ImageTypesEdgeCommit        ImageTypes = "edge-commit"
-	ImageTypesEdgeInstaller     ImageTypes = "edge-installer"
-	ImageTypesGcp               ImageTypes = "gcp"
-	ImageTypesGuestImage        ImageTypes = "guest-image"
-	ImageTypesImageInstaller    ImageTypes = "image-installer"
-	ImageTypesNetworkInstaller  ImageTypes = "network-installer"
-	ImageTypesOci               ImageTypes = "oci"
-	ImageTypesPxeTarXz          ImageTypes = "pxe-tar-xz"
-	ImageTypesRhelEdgeCommit    ImageTypes = "rhel-edge-commit"
-	ImageTypesRhelEdgeInstaller ImageTypes = "rhel-edge-installer"
-	ImageTypesVhd               ImageTypes = "vhd"
-	ImageTypesVsphere           ImageTypes = "vsphere"
-	ImageTypesVsphereOva        ImageTypes = "vsphere-ova"
-	ImageTypesWsl               ImageTypes = "wsl"
+	ImageTypesAmi                  ImageTypes = "ami"
+	ImageTypesAws                  ImageTypes = "aws"
+	ImageTypesAzure                ImageTypes = "azure"
+	ImageTypesBootableContainerIso ImageTypes = "bootable-container-iso"
+	ImageTypesEdgeCommit           ImageTypes = "edge-commit"
+	ImageTypesEdgeInstaller        ImageTypes = "edge-installer"
+	ImageTypesGcp                  ImageTypes = "gcp"
+	ImageTypesGuestImage           ImageTypes = "guest-image"
+	ImageTypesImageInstaller       ImageTypes = "image-installer"
+	ImageTypesNetworkInstaller     ImageTypes = "network-installer"
+	ImageTypesOci                  ImageTypes = "oci"
+	ImageTypesPxeTarXz             ImageTypes = "pxe-tar-xz"
+	ImageTypesRhelEdgeCommit       ImageTypes = "rhel-edge-commit"
+	ImageTypesRhelEdgeInstaller    ImageTypes = "rhel-edge-installer"
+	ImageTypesVhd                  ImageTypes = "vhd"
+	ImageTypesVsphere              ImageTypes = "vsphere"
+	ImageTypesVsphereOva           ImageTypes = "vsphere-ova"
+	ImageTypesWsl                  ImageTypes = "wsl"
 )
 
 // Valid indicates whether the value is a known member of the ImageTypes enum.
@@ -397,6 +398,8 @@ func (e ImageTypes) Valid() bool {
 	case ImageTypesAws:
 		return true
 	case ImageTypesAzure:
+		return true
+	case ImageTypesBootableContainerIso:
 		return true
 	case ImageTypesEdgeCommit:
 		return true
@@ -668,6 +671,13 @@ type BootMode = composer.ImageTypeInfoBootMode
 // BootcBody Bootc/Image Mode compose parameters. When present, the compose builds from the
 // specified bootc base image instead of the classic package-based flow.
 type BootcBody struct {
+	// IsoPayloadReference Optional container image reference for a payload container to embed
+	// in the ISO. When set, the payload container is available at
+	// install/boot time. Only valid for bootable-container-iso image type.
+	// Must be one of the references listed in the distribution's bootc
+	// configuration.
+	IsoPayloadReference *string `json:"iso_payload_reference,omitempty"`
+
 	// Reference Image name from the bootc distributions list. Must match a reference
 	// returned by GET /distributions?kind=bootc.
 	Reference string `json:"reference"`
@@ -677,7 +687,12 @@ type BootcBody struct {
 type BootcDistributionItem struct {
 	Arch   string `json:"arch"`
 	Distro string `json:"distro"`
-	Name   string `json:"name"`
+
+	// IsoPayloadReferences List of allowed payload container references for
+	// bootable-container-iso image type. Only present for
+	// bootable-container-iso entries.
+	IsoPayloadReferences *[]string `json:"iso_payload_references,omitempty"`
+	Name                 string    `json:"name"`
 
 	// Reference Derived container image reference, only references listed in the bootc distributions list are allowed.
 	Reference string `json:"reference"`
