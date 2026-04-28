@@ -932,7 +932,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "returns list from distribution JSON bootc field",
 			query:   "kind=bootc",
-			wantLen: 4,
+			wantLen: 5,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Equal(t, "rhel-10.1", result[0].Distro)
 				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
@@ -943,7 +943,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by distro",
 			query:   "kind=bootc&distro=rhel-10.1",
-			wantLen: 4,
+			wantLen: 5,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				for _, item := range result {
 					require.Equal(t, "rhel-10.1", item.Distro)
@@ -958,7 +958,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by arch",
 			query:   "kind=bootc&arch=x86_64",
-			wantLen: 4,
+			wantLen: 5,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				for _, item := range result {
 					require.Equal(t, "x86_64", item.Arch)
@@ -976,6 +976,7 @@ func TestGetBootcDistributions(t *testing.T) {
 			wantLen: 1,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Equal(t, "aws", result[0].Type)
+				require.Nil(t, result[0].IsoPayloadReferences)
 			},
 		},
 		{
@@ -986,6 +987,17 @@ func TestGetBootcDistributions(t *testing.T) {
 				require.Equal(t, rhel101BootcGuestImageRef, result[0].Reference)
 				require.Equal(t, "x86_64", result[0].Arch)
 				require.Equal(t, "guest-image", result[0].Type)
+			},
+		},
+		{
+			name:    "filters by type bootable-container-iso includes iso_payload_references",
+			query:   "kind=bootc&type=bootable-container-iso",
+			wantLen: 1,
+			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				require.Equal(t, "bootable-container-iso", result[0].Type)
+				require.Equal(t, "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest", result[0].Reference)
+				require.NotNil(t, result[0].IsoPayloadReferences)
+				require.Equal(t, []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"}, *result[0].IsoPayloadReferences)
 			},
 		},
 		{
