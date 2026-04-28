@@ -9,7 +9,14 @@
     "image_types": ["qcow2"],
     "repositories": [],
     "bootc": [
-      { "type": "ec2", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest" }
+      { "type": "ec2", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest" },
+      {
+        "type": "bootable-container-iso",
+        "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
+        "iso_payload_references": [
+          "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"
+        ]
+      }
     ]
   }
 }

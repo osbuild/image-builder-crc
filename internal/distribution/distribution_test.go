@@ -191,55 +191,123 @@ func TestArchitecture_validate(t *testing.T) {
 	}
 }
 
-func TestArchitecture_ValidateBootcReference(t *testing.T) {
+func TestArchitecture_ValidateBootcReferences(t *testing.T) {
 	archBoth := Architecture{
 		Bootc: []BootcImage{
 			{Type: "ec2", Reference: "ref-ec2"},
 			{Type: "gcp", Reference: "ref-gcp"},
 		},
 	}
-	archEC2Only := Architecture{
-		Bootc: []BootcImage{{Type: "ec2", Reference: "r"}},
+	archWithISO := Architecture{
+		Bootc: []BootcImage{
+			{Type: "aws", Reference: "ref-aws"},
+			{
+				Type:                 "bootable-container-iso",
+				Reference:            "ref-installer",
+				IsoPayloadReferences: []string{"ref-payload-1", "ref-payload-2"},
+			},
+		},
+	}
+	archISONoPayloads := Architecture{
+		Bootc: []BootcImage{
+			{
+				Type:      "bootable-container-iso",
+				Reference: "ref-installer-empty",
+			},
+		},
 	}
 	archEmpty := Architecture{Bootc: []BootcImage{}}
 
 	tests := []struct {
-		name         string
-		arch         Architecture
-		reference    string
-		wantErr      bool
-		errSubstring string
+		name          string
+		arch          *Architecture
+		reference     string
+		isoPayloadRef *string
+		errSubstring  string
 	}{
+		// Base ref only (isoPayloadRef = nil)
 		{
 			name:      "reference matches first bootc entry",
-			arch:      archBoth,
+			arch:      &archBoth,
 			reference: "ref-ec2",
 		},
 		{
 			name:      "reference matches second bootc entry",
-			arch:      archBoth,
+			arch:      &archBoth,
 			reference: "ref-gcp",
 		},
 		{
 			name:         "reference not in bootc list",
-			arch:         archEC2Only,
+			arch:         &archBoth,
 			reference:    "other-ref",
-			wantErr:      true,
 			errSubstring: "bootc reference 'other-ref' not found",
 		},
 		{
 			name:         "empty bootc list",
-			arch:         archEmpty,
+			arch:         &archEmpty,
 			reference:    "any-ref",
-			wantErr:      true,
 			errSubstring: "bootc reference 'any-ref' not found",
+		},
+		{
+			name:         "nil architecture",
+			arch:         nil,
+			reference:    "any-ref",
+			errSubstring: "bootc reference 'any-ref' not found",
+		},
+		// Base ref + payload ref (isoPayloadRef != nil)
+		{
+			name:          "valid installer ref + valid payload",
+			arch:          &archWithISO,
+			reference:     "ref-installer",
+			isoPayloadRef: common.ToPtr("ref-payload-1"),
+		},
+		{
+			name:          "valid installer ref + second valid payload",
+			arch:          &archWithISO,
+			reference:     "ref-installer",
+			isoPayloadRef: common.ToPtr("ref-payload-2"),
+		},
+		{
+			name:          "valid installer ref + unknown payload",
+			arch:          &archWithISO,
+			reference:     "ref-installer",
+			isoPayloadRef: common.ToPtr("ref-unknown"),
+			errSubstring:  "iso payload reference 'ref-unknown' not found in allowed list for bootc reference 'ref-installer'",
+		},
+		{
+			name:          "installer ref with no IsoPayloadReferences configured",
+			arch:          &archISONoPayloads,
+			reference:     "ref-installer-empty",
+			isoPayloadRef: common.ToPtr("ref-payload-1"),
+			errSubstring:  "iso payload reference 'ref-payload-1' not found in allowed list for bootc reference 'ref-installer-empty'",
+		},
+		{
+			name:          "non-ISO bootc ref with no IsoPayloadReferences + payload",
+			arch:          &archWithISO,
+			reference:     "ref-aws",
+			isoPayloadRef: common.ToPtr("ref-payload-1"),
+			errSubstring:  "iso payload reference 'ref-payload-1' not found in allowed list for bootc reference 'ref-aws'",
+		},
+		{
+			name:          "unknown installer ref + payload",
+			arch:          &archWithISO,
+			reference:     "ref-nonexistent",
+			isoPayloadRef: common.ToPtr("ref-payload-1"),
+			errSubstring:  "bootc reference 'ref-nonexistent' not found",
+		},
+		{
+			name:          "nil architecture + payload",
+			arch:          nil,
+			reference:     "ref-installer",
+			isoPayloadRef: common.ToPtr("ref-payload-1"),
+			errSubstring:  "bootc reference 'ref-installer' not found",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.arch.ValidateBootcReference(tt.reference)
-			if tt.wantErr {
+			err := tt.arch.ValidateBootcReferences(tt.reference, tt.isoPayloadRef)
+			if tt.errSubstring != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.errSubstring)
 			} else {

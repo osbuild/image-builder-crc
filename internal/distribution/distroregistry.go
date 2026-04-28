@@ -14,11 +14,12 @@ type AllDistroRegistry struct {
 }
 
 type BootcDistributionEntry struct {
-	Distro    string `json:"distro"`
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Arch      string `json:"arch"`
-	Reference string `json:"reference"`
+	Distro               string   `json:"distro"`
+	Name                 string   `json:"name"`
+	Type                 string   `json:"type"`
+	Arch                 string   `json:"arch"`
+	Reference            string   `json:"reference"`
+	IsoPayloadReferences []string `json:"iso_payload_references,omitempty"`
 }
 
 // LoadDistroRegistry loads all distributions from distsDir
@@ -62,11 +63,12 @@ func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntr
 			}
 			for _, b := range arch.Bootc {
 				all = append(all, BootcDistributionEntry{
-					Distro:    d.Distribution.Name,
-					Name:      displayName,
-					Type:      b.Type,
-					Arch:      archName,
-					Reference: b.Reference,
+					Distro:               d.Distribution.Name,
+					Name:                 displayName,
+					Type:                 b.Type,
+					Arch:                 archName,
+					Reference:            b.Reference,
+					IsoPayloadReferences: b.IsoPayloadReferences,
 				})
 			}
 		}
@@ -161,14 +163,17 @@ func (dr DistroRegistry) FindByMajorMinorStr(majorMinor string) string {
 	return d.Distribution.Name
 }
 
-func (dr DistroRegistry) ValidateBootcReference(reference string) error {
+func (dr DistroRegistry) ValidateBootcReferences(reference string, isoPayloadRef *string) error {
 	for _, d := range dr.distros {
-		if d.ArchX86.ValidateBootcReference(reference) == nil {
+		if d.ArchX86.ValidateBootcReferences(reference, isoPayloadRef) == nil {
 			return nil
 		}
-		if d.Aarch64.ValidateBootcReference(reference) == nil {
+		if d.Aarch64.ValidateBootcReferences(reference, isoPayloadRef) == nil {
 			return nil
 		}
+	}
+	if isoPayloadRef != nil {
+		return fmt.Errorf("bootc reference '%s' not found or iso payload reference '%s' not in its allowed list", reference, *isoPayloadRef)
 	}
 	return fmt.Errorf("bootc reference '%s' not found", reference)
 }
