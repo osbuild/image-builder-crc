@@ -16,6 +16,7 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/db"
 	"github.com/osbuild/image-builder-crc/internal/distribution"
+	"github.com/osbuild/image-builder-crc/internal/unleash"
 	"github.com/osbuild/logging"
 )
 
@@ -90,6 +91,9 @@ func (h *Handlers) GetDistributions(ctx echo.Context, params GetDistributionsPar
 				continue
 			}
 			if params.Type != nil && e.Type != *params.Type {
+				continue
+			}
+			if !unleash.EnabledBootcCtx(ctx.Request().Context(), unleash.BootcDistroDisabled, e.Distro, e.Type) {
 				continue
 			}
 			var item DistributionsResponse_Item
