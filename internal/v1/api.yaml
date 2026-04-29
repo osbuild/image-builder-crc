@@ -873,8 +873,8 @@ components:
             bootable-container-iso image type. Only present for
             bootable-container-iso entries.
           example: [
-            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest",
-            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
+            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest",
+            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest"
           ]
     BootcBody:
       type: object
@@ -889,7 +889,7 @@ components:
           description: |
             Image name from the bootc distributions list. Must match a reference
             returned by GET /distributions?kind=bootc.
-          example: 'quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest'
+          example: 'quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest'
         iso_payload_reference:
           type: string
           description: |

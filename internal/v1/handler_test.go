@@ -919,8 +919,8 @@ func TestGetDistributions(t *testing.T) {
 func TestGetBootcDistributions(t *testing.T) {
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
-	rhel101BootcAWSRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
-	rhel101BootcGuestImageRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"
+	rhel101BootcAWSRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest"
+	rhel101BootcGuestImageRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"
 
 	tests := []struct {
 		name     string
@@ -995,9 +995,9 @@ func TestGetBootcDistributions(t *testing.T) {
 			wantLen: 1,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Equal(t, "bootable-container-iso", result[0].Type)
-				require.Equal(t, "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest", result[0].Reference)
+				require.Equal(t, "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest", result[0].Reference)
 				require.NotNil(t, result[0].IsoPayloadReferences)
-				require.Equal(t, []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"}, *result[0].IsoPayloadReferences)
+				require.Equal(t, []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"}, *result[0].IsoPayloadReferences)
 			},
 		},
 		{

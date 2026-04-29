@@ -180,7 +180,7 @@ func TestDistroRegistry_ValidateBootcReferences(t *testing.T) {
 		// Base ref only
 		{
 			desc: "valid base reference",
-			ref:  "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+			ref:  "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
 		},
 		{
 			desc:         "unknown base reference",
@@ -190,18 +190,18 @@ func TestDistroRegistry_ValidateBootcReferences(t *testing.T) {
 		// Base ref + payload
 		{
 			desc:          "valid installer ref + valid payload",
-			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
-			isoPayloadRef: common.ToPtr("quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"),
+			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
+			isoPayloadRef: common.ToPtr("quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"),
 		},
 		{
 			desc:          "valid installer ref + unknown payload",
-			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
+			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
 			isoPayloadRef: common.ToPtr("duck"),
 			errSubstring:  "iso payload reference 'duck' not in its allowed list",
 		},
 		{
 			desc:          "ec2 ref + any payload (no allowlist)",
-			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+			ref:           "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
 			isoPayloadRef: common.ToPtr("duck"),
 			errSubstring:  "iso payload reference 'duck' not in its allowed list",
 		},
@@ -245,15 +245,15 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 					Name:      "Test distro with bootc entries",
 					Type:      "ec2",
 					Arch:      "x86_64",
-					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
 				},
 				{
 					Distro:               "with-bootc",
 					Name:                 "Test distro with bootc entries",
 					Type:                 "bootable-container-iso",
 					Arch:                 "x86_64",
-					Reference:            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
-					IsoPayloadReferences: []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"},
+					Reference:            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
+					IsoPayloadReferences: []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"},
 				},
 			},
 		},

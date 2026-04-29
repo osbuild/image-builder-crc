@@ -28,7 +28,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 		{
 			name:          "aws uses bootc container reference from query",
 			queryExtra:    "distro=rhel-10.1&arch=x86_64&type=aws",
-			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest",
+			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
 			imageType:     v1.ImageTypesAws,
 			uploadType:    v1.UploadTypesAws,
 			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
@@ -42,7 +42,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 		{
 			name:          "guest-image uses bootc container reference from query",
 			queryExtra:    "distro=rhel-10.1&arch=x86_64&type=guest-image",
-			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest",
+			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest",
 			imageType:     v1.ImageTypesGuestImage,
 			uploadType:    v1.UploadTypesAwsS3,
 			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
@@ -146,10 +146,10 @@ func TestComposeBootcUnknownReferenceRejected(t *testing.T) {
 func TestComposeBootableContainerIso(t *testing.T) {
 	distsDir := "../../distributions"
 
-	installerRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest"
-	validPayloadRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"
+	installerRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest"
+	validPayloadRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"
 	invalidPayloadRef := "quay.io/example/not-in-allowed-list:latest"
-	awsBootcRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest"
+	awsBootcRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest"
 
 	tests := []struct {
 		name             string
