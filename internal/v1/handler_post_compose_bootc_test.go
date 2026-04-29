@@ -58,7 +58,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 			wantComposeID := uuid.New()
 			var gotComposer composer.ComposeRequest
 
-			apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 				err := json.NewDecoder(r.Body).Decode(&gotComposer)
 				require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 				w.WriteHeader(http.StatusCreated)
 				err = json.NewEncoder(w).Encode(composer.ComposeId{Id: wantComposeID})
 				require.NoError(t, err)
-			}))
+			})))
 			defer apiSrv.Close()
 
 			srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{

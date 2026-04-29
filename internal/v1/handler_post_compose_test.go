@@ -443,7 +443,7 @@ func TestComposeStatusError(t *testing.T) {
 }
 
 func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -460,7 +460,7 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 		}
 		err := json.NewEncoder(w).Encode(serviceError)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -490,7 +490,7 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 }
 
 func TestComposeImageErrorResolvingOSTree(t *testing.T) {
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -504,7 +504,7 @@ func TestComposeImageErrorResolvingOSTree(t *testing.T) {
 		}
 		err := json.NewEncoder(w).Encode(serviceStat)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -540,7 +540,7 @@ func TestComposeImageErrorResolvingOSTree(t *testing.T) {
 }
 
 func TestComposeImageErrorsWhenCannotParseResponse(t *testing.T) {
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -551,7 +551,7 @@ func TestComposeImageErrorsWhenCannotParseResponse(t *testing.T) {
 		s := "not a composer.ComposeId data structure"
 		err := json.NewEncoder(w).Encode(s)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -610,7 +610,7 @@ func TestComposeImageErrorsWhenDistributionNotExists(t *testing.T) {
 
 func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
 	id := uuid.New()
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -623,7 +623,7 @@ func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
 		}
 		err := json.NewEncoder(w).Encode(result)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -661,7 +661,7 @@ func TestComposeImageAllowList(t *testing.T) {
 	id := uuid.New()
 
 	createApiSrv := func() *httptest.Server {
-		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get("Authorization") == "Bearer" {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
@@ -674,7 +674,7 @@ func TestComposeImageAllowList(t *testing.T) {
 			}
 			err := json.NewEncoder(w).Encode(result)
 			require.NoError(t, err)
-		}))
+		})))
 	}
 
 	createPayload := func(distro v1.Distributions) v1.ComposeRequest {
@@ -808,7 +808,7 @@ func TestCompliancePolicyErrors(t *testing.T) {
 func TestComposeWithSnapshots(t *testing.T) {
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -825,7 +825,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		}
 		err = json.NewEncoder(w).Encode(result)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -1600,7 +1600,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 func TestComposeCustomizations(t *testing.T) {
 	var id uuid.UUID
 	var composerRequest composer.ComposeRequest
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1618,7 +1618,7 @@ func TestComposeCustomizations(t *testing.T) {
 		}
 		err = json.NewEncoder(w).Encode(result)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	awsAccountId := "123456123456"
@@ -3347,7 +3347,7 @@ WantedBy=basic.target
 func TestComposeWithLatestSnapshots(t *testing.T) {
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -3364,7 +3364,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 		}
 		err = json.NewEncoder(w).Encode(result)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -3540,7 +3540,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 // system-reinstall-bootc) that are only available in a newer minor version.
 func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 	var composerRequest composer.ComposeRequest
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 		err := json.NewDecoder(r.Body).Decode(&composerRequest)
 		require.NoError(t, err)
@@ -3548,7 +3548,7 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(composer.ComposeId{Id: uuid.New()})
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	// Use a CS mock that reports detected_os_version "9.4" for snapshots.
@@ -3592,7 +3592,7 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 // to avoid blocking a valid version from a later snapshot.
 func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
 	var composerRequest composer.ComposeRequest
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 		err := json.NewDecoder(r.Body).Decode(&composerRequest)
 		require.NoError(t, err)
@@ -3600,7 +3600,7 @@ func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
 		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(composer.ComposeId{Id: uuid.New()})
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{
