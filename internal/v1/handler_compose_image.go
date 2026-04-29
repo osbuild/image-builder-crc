@@ -79,7 +79,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "bootc is required for bootable-container-iso image type")
 	}
 
-	var repositories []composer.Repository
+	repositories := []composer.Repository{}
 	var customizations *composer.Customizations
 	var distro *string
 	var bootc *composer.Bootc
