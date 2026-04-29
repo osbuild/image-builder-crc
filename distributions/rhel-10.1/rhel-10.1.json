@@ -9,15 +9,15 @@
   },
   "x86_64": {
     "bootc": [
-      { "type": "aws", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-ec2:latest" },
-      { "type": "gcp", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-gcp:latest" },
-      { "type": "azure", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-azure:latest" },
-      { "type": "guest-image", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest" },
+      { "type": "aws", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest" },
+      { "type": "gcp", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-gcp:latest" },
+      { "type": "azure", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-azure:latest" },
+      { "type": "guest-image", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest" },
       {
         "type": "bootable-container-iso",
-        "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-installer:latest",
+        "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
         "iso_payload_references": [
-          "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10.1-qcow2:latest"
+          "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"
         ]
       }
     ],
