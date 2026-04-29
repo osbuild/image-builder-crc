@@ -51,6 +51,18 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 				return uo
 			},
 		},
+		{
+			name:          "hummingbird OS guest-image uses bootc container reference from query",
+			queryExtra:    "distro=hummingbird&arch=x86_64&type=guest-image",
+			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/hummingbird-qcow2:latest",
+			imageType:     v1.ImageTypesGuestImage,
+			uploadType:    v1.UploadTypesAwsS3,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+				return uo
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -1300,6 +1300,7 @@ components:
         - fedora-42
         - fedora-43
         - fedora-44
+        - hummingbird
     ImageRequest:
       type: object
       additionalProperties: false

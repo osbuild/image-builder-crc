@@ -1,0 +1,13 @@
+{
+  "module_platform_id": "platform:el10",
+  "distribution": {
+    "name": "hummingbird",
+    "description": "Hummingbird OS",
+    "no_package_list": true
+  },
+  "x86_64": {
+    "bootc": [
+      { "type": "guest-image", "reference": "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/hummingbird-qcow2:latest" }
+    ]
+  }
+}

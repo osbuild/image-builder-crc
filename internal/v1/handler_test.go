@@ -862,6 +862,7 @@ func TestGetDistributions(t *testing.T) {
 				"fedora-42",
 				"fedora-43",
 				"fedora-44",
+				"hummingbird",
 			},
 			distros)
 	})
@@ -911,6 +912,7 @@ func TestGetDistributions(t *testing.T) {
 				"rhel-10.1",
 				"centos-9",
 				"centos-10",
+				"hummingbird",
 			},
 			distros)
 	})
@@ -919,8 +921,6 @@ func TestGetDistributions(t *testing.T) {
 func TestGetBootcDistributions(t *testing.T) {
 	distsDir := "../../distributions"
 	allowFile := "../common/testdata/allow.json"
-	rhel101BootcAWSRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest"
-	rhel101BootcGuestImageRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"
 
 	tests := []struct {
 		name     string
@@ -932,12 +932,15 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "returns list from distribution JSON bootc field",
 			query:   "kind=bootc",
-			wantLen: 5,
+			wantLen: 6,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, "rhel-10.1", result[0].Distro)
-				require.Equal(t, "Red Hat Enterprise Linux (RHEL) 10", result[0].Name)
-				require.Equal(t, "aws", result[0].Type)
-				require.Equal(t, rhel101BootcAWSRef, result[0].Reference)
+				require.Contains(t, result, v1.BootcDistributionItem{
+					Arch:      "x86_64",
+					Distro:    "rhel-10.1",
+					Name:      "Red Hat Enterprise Linux (RHEL) 10",
+					Type:      "aws",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
+				})
 			},
 		},
 		{
@@ -958,7 +961,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by arch",
 			query:   "kind=bootc&arch=x86_64",
-			wantLen: 5,
+			wantLen: 6,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				for _, item := range result {
 					require.Equal(t, "x86_64", item.Arch)
@@ -982,11 +985,22 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "combines arch and type filters",
 			query:   "kind=bootc&arch=x86_64&type=guest-image",
-			wantLen: 1,
+			wantLen: 2,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
-				require.Equal(t, rhel101BootcGuestImageRef, result[0].Reference)
-				require.Equal(t, "x86_64", result[0].Arch)
-				require.Equal(t, "guest-image", result[0].Type)
+				require.Contains(t, result, v1.BootcDistributionItem{
+					Arch:      "x86_64",
+					Distro:    "rhel-10.1",
+					Name:      "Red Hat Enterprise Linux (RHEL) 10",
+					Type:      "guest-image",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest",
+				})
+				require.Contains(t, result, v1.BootcDistributionItem{
+					Arch:      "x86_64",
+					Distro:    "hummingbird",
+					Name:      "Hummingbird OS",
+					Type:      "guest-image",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/hummingbird-qcow2:latest",
+				})
 			},
 		},
 		{
