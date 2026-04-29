@@ -520,7 +520,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 
 	composeRequests := []composer.ComposeRequest{}
 	ids := []uuid.UUID{}
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		newId := uuid.New()
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -542,7 +542,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 		ids = append(ids, newId)
 		encodeErr := json.NewEncoder(w).Encode(result)
 		require.NoError(t, encodeErr)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, nil)
@@ -1102,7 +1102,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
-	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1119,7 +1119,7 @@ func TestHandlers_ExportBlueprint(t *testing.T) {
 		}
 		err = json.NewEncoder(w).Encode(result)
 		require.NoError(t, err)
-	}))
+	})))
 	defer apiSrv.Close()
 
 	dbase, srvURL, shutdownFn := makeTestServer(t, &apiSrv.URL)
