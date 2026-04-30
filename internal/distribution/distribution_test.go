@@ -9,16 +9,16 @@ import (
 )
 
 func TestDistributionFile_Architecture(t *testing.T) {
-	adr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-	d, err := adr.Available(false).Get("standard")
+	t.Parallel()
+	d, err := distroReg.Available(false).Get("standard")
 	require.NoError(t, err)
 
 	arch, err := d.Architecture("x86_64")
 	require.NoError(t, err)
 
-	// don't test packages, they are huge
-	arch.Packages = nil
+	// don't test packages, they are huge — copy so we don't mutate the shared test registry
+	archForCompare := *arch
+	archForCompare.Packages = nil
 
 	require.Equal(t, &Architecture{
 		ImageTypes: []string{"std", "std2"},
@@ -39,7 +39,7 @@ func TestDistributionFile_Architecture(t *testing.T) {
 				ImageTypeTags: []string{"std2"},
 			},
 		},
-	}, arch,
+	}, &archForCompare,
 	)
 
 	arch, err = d.Architecture("unsupported")
@@ -48,26 +48,23 @@ func TestDistributionFile_Architecture(t *testing.T) {
 }
 
 func TestRHELMajorMinor(t *testing.T) {
-	adr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-
-	d, err := adr.Available(true).Get("rhel-1.2")
+	t.Parallel()
+	d, err := distroReg.Available(true).Get("rhel-1.2")
 	require.NoError(t, err)
 	major, minor, err := d.RHELMajorMinor()
 	require.NoError(t, err)
 	require.Equal(t, 1, major)
 	require.Equal(t, 2, minor)
 
-	d, err = adr.Available(true).Get("standard")
+	d, err = distroReg.Available(true).Get("standard")
 	require.NoError(t, err)
 	_, _, err = d.RHELMajorMinor()
 	require.Error(t, err, ErrMajorMinor)
 }
 
 func TestArchitecture_FindPackages(t *testing.T) {
-	adr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-	d, err := adr.Available(false).Get("standard")
+	t.Parallel()
+	d, err := distroReg.Available(false).Get("standard")
 	require.NoError(t, err)
 
 	arch, err := d.Architecture("x86_64")
@@ -92,11 +89,8 @@ func TestArchitecture_FindPackages(t *testing.T) {
 	pkgs = arch.FindPackages("other")
 	require.Empty(t, pkgs)
 
-	// load the test distributions and check that a distro with no_package_list == true works
-	adr, err = LoadDistroRegistry("testdata/distributions")
-	require.NoError(t, err)
-
-	d, err = adr.Available(true).Get("no-packages")
+	// check that a distro with no_package_list == true works
+	d, err = distroReg.Available(true).Get("no-packages")
 	require.NoError(t, err)
 
 	arch, err = d.Architecture("x86_64")
@@ -107,14 +101,17 @@ func TestArchitecture_FindPackages(t *testing.T) {
 }
 
 func TestInvalidDistribution(t *testing.T) {
+	t.Parallel()
 	_, err := readDistribution("./testdata/distributions", "none")
 	require.Error(t, err, ErrDistributionNotFound)
 }
 
 func TestDistributionFileIsRestricted(t *testing.T) {
+	t.Parallel()
 	distsDir := "testdata/distributions"
 
 	t.Run("distro is not restricted, has no restricted_access field", func(t *testing.T) {
+		t.Parallel()
 		d, err := readDistribution(distsDir, "standard")
 		require.NoError(t, err)
 		actual := d.IsRestricted()
@@ -123,6 +120,7 @@ func TestDistributionFileIsRestricted(t *testing.T) {
 	})
 
 	t.Run("distro is not restricted, restricted_access field is false", func(t *testing.T) {
+		t.Parallel()
 		d, err := readDistribution(distsDir, "needs-entitlement")
 		require.NoError(t, err)
 		actual := d.IsRestricted()
@@ -131,6 +129,7 @@ func TestDistributionFileIsRestricted(t *testing.T) {
 	})
 
 	t.Run("distro is restricted, restricted_access field is true", func(t *testing.T) {
+		t.Parallel()
 		d, err := readDistribution(distsDir, "restricted-access")
 		require.NoError(t, err)
 		actual := d.IsRestricted()
@@ -140,6 +139,7 @@ func TestDistributionFileIsRestricted(t *testing.T) {
 }
 
 func TestArchitecture_validate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		arch Architecture
@@ -184,7 +184,9 @@ func TestArchitecture_validate(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.arch.validate()
 			require.Equal(t, tt.err, err)
 		})
@@ -192,6 +194,7 @@ func TestArchitecture_validate(t *testing.T) {
 }
 
 func TestArchitecture_ValidateBootcReferences(t *testing.T) {
+	t.Parallel()
 	archBoth := Architecture{
 		Bootc: []BootcImage{
 			{Type: "ec2", Reference: "ref-ec2"},
@@ -305,7 +308,9 @@ func TestArchitecture_ValidateBootcReferences(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.arch.ValidateBootcReferences(tt.reference, tt.isoPayloadRef)
 			if tt.errSubstring != "" {
 				require.Error(t, err)

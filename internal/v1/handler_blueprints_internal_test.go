@@ -7,6 +7,7 @@ import (
 )
 
 func TestToHTTPErrorList(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name     string
 		err      error
@@ -83,7 +84,9 @@ func TestToHTTPErrorList(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			actual := toHTTPErrorList(tc.err)
 			if !reflect.DeepEqual(actual, tc.expected) {
 				t.Errorf("expected %+v, got %+v", tc.expected, actual)
