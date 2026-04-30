@@ -6,25 +6,28 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/require"
 )
 
-var composerSpec *openapi3.T
+var (
+	composerSpecOnce sync.Once
+	composerSpec     *openapi3.T
+	composerSpecErr  error
+)
 
 // loadComposerSpec loads the composer OpenAPI spec from the file system once
 // and returns a pointer to it.
 func loadComposerSpec(t *testing.T) *openapi3.T {
 	t.Helper()
-	if composerSpec != nil {
-		return composerSpec
-	}
-	loader := openapi3.NewLoader()
-	var err error
-	composerSpec, err = loader.LoadFromFile("../../internal/clients/composer/openapi.v2.yml")
-	require.NoError(t, err)
+	composerSpecOnce.Do(func() {
+		loader := openapi3.NewLoader()
+		composerSpec, composerSpecErr = loader.LoadFromFile("../../internal/clients/composer/openapi.v2.yml")
+	})
+	require.NoError(t, composerSpecErr)
 	return composerSpec
 }
 
