@@ -83,7 +83,25 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 	var customizations *composer.Customizations
 	var distro *string
 	var bootc *composer.Bootc
-	if composeRequest.Distribution != nil {
+	if composeRequest.Bootc != nil {
+		imageType := composeRequest.ImageRequests[0].ImageType
+		if composeRequest.Bootc.IsoPayloadReference != nil && imageType != ImageTypesBootableContainerIso {
+			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "iso_payload_reference must not be set for non-ISO bootc image types")
+		}
+
+		err := h.server.distroRegistry(ctx).ValidateBootcReferences(
+			composeRequest.Bootc.Reference,
+			composeRequest.Bootc.IsoPayloadReference,
+		)
+		if err != nil {
+			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		bootc = &composer.Bootc{
+			Reference:           composeRequest.Bootc.Reference,
+			IsoPayloadReference: composeRequest.Bootc.IsoPayloadReference,
+		}
+	} else if composeRequest.Distribution != nil {
 		d, err := h.server.getDistro(ctx, *composeRequest.Distribution)
 		if err != nil {
 			return ComposeResponse{}, err
@@ -123,24 +141,6 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			if v := h.server.distroRegistry(ctx).FindByMajorMinorStr(*detectedOsVersion); v != "" {
 				distro = &v
 			}
-		}
-	} else if composeRequest.Bootc != nil {
-		imageType := composeRequest.ImageRequests[0].ImageType
-		if composeRequest.Bootc.IsoPayloadReference != nil && imageType != ImageTypesBootableContainerIso {
-			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "iso_payload_reference must not be set for non-ISO bootc image types")
-		}
-
-		err := h.server.distroRegistry(ctx).ValidateBootcReferences(
-			composeRequest.Bootc.Reference,
-			composeRequest.Bootc.IsoPayloadReference,
-		)
-		if err != nil {
-			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		}
-
-		bootc = &composer.Bootc{
-			Reference:           composeRequest.Bootc.Reference,
-			IsoPayloadReference: composeRequest.Bootc.IsoPayloadReference,
 		}
 	} else {
 		// 500 error as any validation should have happened before handing it off to the common compose function

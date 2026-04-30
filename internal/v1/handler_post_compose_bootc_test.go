@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
+	"github.com/osbuild/image-builder-crc/internal/common"
 	"github.com/osbuild/image-builder-crc/internal/tutils"
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
 )
@@ -19,6 +20,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 
 	tests := []struct {
 		name          string
+		distro        string
 		queryExtra    string
 		wantReference string
 		imageType     v1.ImageTypes
@@ -60,6 +62,21 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
 				var uo v1.UploadRequest_Options
 				require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+				return uo
+			},
+		},
+		{
+			name:          "distribution is ignored in favour of bootc",
+			distro:        "rhel-10.1",
+			queryExtra:    "distro=rhel-10.1&arch=x86_64&type=aws",
+			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
+			imageType:     v1.ImageTypesAws,
+			uploadType:    v1.UploadTypesAws,
+			uploadOpts: func(t *testing.T) v1.UploadRequest_Options {
+				var uo v1.UploadRequest_Options
+				require.NoError(t, uo.FromAWSUploadRequestOptions(v1.AWSUploadRequestOptions{
+					ShareWithAccounts: &[]string{"test-account"},
+				}))
 				return uo
 			},
 		},
@@ -110,6 +127,9 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 						},
 					},
 				},
+			}
+			if tt.distro != "" {
+				payload.Distribution = common.ToPtr(v1.Distributions(tt.distro))
 			}
 
 			status, body = tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
