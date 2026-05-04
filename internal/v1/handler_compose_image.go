@@ -97,6 +97,15 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 			return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
+		customizations, _, err = h.buildCustomizations(ctx, &composeRequest, nil)
+		if err != nil {
+			ctx.Logger().Errorf("Failed building customizations: %v", err)
+			if _, ok := err.(*echo.HTTPError); ok {
+				return ComposeResponse{}, err
+			}
+			return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Unable to build customizations: %v", err))
+		}
+
 		bootc = &composer.Bootc{
 			Reference:           composeRequest.Bootc.Reference,
 			IsoPayloadReference: composeRequest.Bootc.IsoPayloadReference,
