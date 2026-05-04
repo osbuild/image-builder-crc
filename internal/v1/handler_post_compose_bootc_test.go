@@ -175,6 +175,92 @@ func TestComposeBootcUnknownReferenceRejected(t *testing.T) {
 	require.Contains(t, body, "bootc reference 'quay.io/example/this-reference-is-not-in-the-distro-list:latest' not found")
 }
 
+func TestComposeBootcCustomizations(t *testing.T) {
+	distsDir := "../../distributions"
+	bootcRef := "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest"
+
+	tests := []struct {
+		name           string
+		customizations *v1.Customizations
+		expected       *composer.Customizations
+	}{
+		{
+			name: "user customization is preserved",
+			customizations: &v1.Customizations{
+				Users: &[]v1.User{
+					{
+						Name:   "testuser",
+						SshKey: common.ToPtr("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC"),
+						Groups: &[]string{"wheel"},
+					},
+				},
+			},
+			expected: &composer.Customizations{
+				Users: &[]composer.User{
+					{
+						Name:   "testuser",
+						Key:    common.ToPtr("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC"),
+						Groups: &[]string{"wheel"},
+					},
+				},
+			},
+		},
+	}
+
+	var uo v1.UploadRequest_Options
+	require.NoError(t, uo.FromAWSUploadRequestOptions(v1.AWSUploadRequestOptions{
+		ShareWithAccounts: &[]string{"test-account"},
+	}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantComposeID := uuid.New()
+			var gotComposer composer.ComposeRequest
+
+			apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
+				err := json.NewDecoder(r.Body).Decode(&gotComposer)
+				require.NoError(t, err)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusCreated)
+				err = json.NewEncoder(w).Encode(composer.ComposeId{Id: wantComposeID})
+				require.NoError(t, err)
+			}))
+			defer apiSrv.Close()
+
+			srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
+				DistributionsDir: distsDir,
+			})
+			defer srv.Shutdown(t)
+
+			payload := v1.ComposeRequest{
+				Bootc: &v1.BootcBody{
+					Reference: bootcRef,
+				},
+				Customizations: tt.customizations,
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesAws,
+						UploadRequest: v1.UploadRequest{
+							Type:    v1.UploadTypesAws,
+							Options: uo,
+						},
+					},
+				},
+			}
+
+			status, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
+			require.Equal(t, http.StatusCreated, status, body)
+			var composeResp v1.ComposeResponse
+			require.NoError(t, json.Unmarshal([]byte(body), &composeResp))
+			require.Equal(t, wantComposeID, composeResp.Id)
+
+			require.Equal(t, tt.expected, gotComposer.Customizations)
+		})
+	}
+}
+
 func TestComposeBootableContainerIso(t *testing.T) {
 	distsDir := "../../distributions"
 
