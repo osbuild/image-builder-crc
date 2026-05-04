@@ -17,6 +17,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"rhel-34",
 		"standard",
 		"with-bootc",
+		"bootc-link",
 	}
 	notEntitledDistros := []string{
 		"no-packages",
@@ -25,6 +26,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"rhel-34",
 		"standard",
 		"with-bootc",
+		"bootc-link",
 	}
 
 	dr, err := LoadDistroRegistry("./testdata/distributions")
@@ -255,6 +257,21 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 					Reference:            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
 					IsoPayloadReferences: []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"},
 				},
+				{
+					Distro:    "bootc-link",
+					Name:      "Test distro with bootc entries",
+					Type:      "ec2",
+					Arch:      "x86_64",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
+				},
+				{
+					Distro:               "bootc-link",
+					Name:                 "Test distro with bootc entries",
+					Type:                 "bootable-container-iso",
+					Arch:                 "x86_64",
+					Reference:            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
+					IsoPayloadReferences: []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"},
+				},
 			},
 		},
 		{
@@ -271,7 +288,7 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 				require.Empty(t, list)
 				return
 			}
-			require.Equal(t, tt.want, list)
+			require.ElementsMatch(t, tt.want, list)
 		})
 	}
 }

@@ -47,12 +47,7 @@ func LoadDistroRegistry(distsDir string) (*AllDistroRegistry, error) {
 
 func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntry {
 	var all []BootcDistributionEntry
-	seenDistros := make(map[string]bool)
-	for _, d := range adr.distros {
-		if seenDistros[d.Distribution.Name] {
-			continue
-		}
-		seenDistros[d.Distribution.Name] = true
+	for k, d := range adr.distros {
 		displayName := d.Distribution.Description
 		if displayName == "" {
 			displayName = d.Distribution.Name
@@ -63,7 +58,7 @@ func (adr *AllDistroRegistry) CollectBootcFromRegistry() []BootcDistributionEntr
 			}
 			for _, b := range arch.Bootc {
 				all = append(all, BootcDistributionEntry{
-					Distro:               d.Distribution.Name,
+					Distro:               k,
 					Name:                 displayName,
 					Type:                 b.Type,
 					Arch:                 archName,

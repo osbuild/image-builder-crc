@@ -932,11 +932,18 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "returns list from distribution JSON bootc field",
 			query:   "kind=bootc",
-			wantLen: 6,
+			wantLen: 11,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Contains(t, result, v1.BootcDistributionItem{
 					Arch:      "x86_64",
 					Distro:    "rhel-10.1",
+					Name:      "Red Hat Enterprise Linux (RHEL) 10",
+					Type:      "aws",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
+				})
+				require.Contains(t, result, v1.BootcDistributionItem{
+					Arch:      "x86_64",
+					Distro:    "rhel-10",
 					Name:      "Red Hat Enterprise Linux (RHEL) 10",
 					Type:      "aws",
 					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
@@ -961,7 +968,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by arch",
 			query:   "kind=bootc&arch=x86_64",
-			wantLen: 6,
+			wantLen: 11,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				for _, item := range result {
 					require.Equal(t, "x86_64", item.Arch)
@@ -976,17 +983,25 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by type",
 			query:   "kind=bootc&type=aws",
-			wantLen: 1,
+			wantLen: 2,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Equal(t, "aws", result[0].Type)
+				require.Equal(t, "aws", result[1].Type)
 				require.Nil(t, result[0].IsoPayloadReferences)
 			},
 		},
 		{
 			name:    "combines arch and type filters",
 			query:   "kind=bootc&arch=x86_64&type=guest-image",
-			wantLen: 2,
+			wantLen: 3,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
+				require.Contains(t, result, v1.BootcDistributionItem{
+					Arch:      "x86_64",
+					Distro:    "rhel-10",
+					Name:      "Red Hat Enterprise Linux (RHEL) 10",
+					Type:      "guest-image",
+					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest",
+				})
 				require.Contains(t, result, v1.BootcDistributionItem{
 					Arch:      "x86_64",
 					Distro:    "rhel-10.1",
@@ -1006,7 +1021,7 @@ func TestGetBootcDistributions(t *testing.T) {
 		{
 			name:    "filters by type bootable-container-iso includes iso_payload_references",
 			query:   "kind=bootc&type=bootable-container-iso",
-			wantLen: 1,
+			wantLen: 2,
 			check: func(t *testing.T, result []v1.BootcDistributionItem) {
 				require.Equal(t, "bootable-container-iso", result[0].Type)
 				require.Equal(t, "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest", result[0].Reference)
