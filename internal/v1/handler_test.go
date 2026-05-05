@@ -1012,7 +1012,7 @@ func TestGetBootcDistributions(t *testing.T) {
 				require.Contains(t, result, v1.BootcDistributionItem{
 					Arch:      "x86_64",
 					Distro:    "hummingbird",
-					Name:      "Hummingbird OS",
+					Name:      "Fedora Hummingbird",
 					Type:      "guest-image",
 					Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/hummingbird-qcow2:latest",
 				})
