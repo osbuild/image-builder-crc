@@ -2,7 +2,7 @@
   "module_platform_id": "platform:el10",
   "distribution": {
     "name": "hummingbird",
-    "description": "Hummingbird OS",
+    "description": "Fedora Hummingbird",
     "no_package_list": true
   },
   "x86_64": {
