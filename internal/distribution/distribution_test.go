@@ -316,3 +316,43 @@ func TestArchitecture_ValidateBootcReferences(t *testing.T) {
 		})
 	}
 }
+
+func TestIsBootcOnly(t *testing.T) {
+	adr, err := LoadDistroRegistry("./testdata/distributions")
+	require.NoError(t, err)
+
+	tests := []struct {
+		name      string
+		distro    string
+		bootcOnly bool
+	}{
+		{
+			name:      "rhel-1.2 is not bootc only",
+			distro:    "rhel-1.2",
+			bootcOnly: false,
+		},
+		{
+			name:      "with-bootc is not bootc only",
+			distro:    "with-bootc",
+			bootcOnly: false,
+		},
+		{
+			name:      "bootc-link is not bootc only",
+			distro:    "bootc-link",
+			bootcOnly: false,
+		},
+		{
+			name:      "bootc-only is bootc only",
+			distro:    "bootc-only",
+			bootcOnly: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d, err := adr.Available(true).Get(tt.distro)
+			require.NoError(t, err)
+			require.Equal(t, tt.bootcOnly, d.IsBootcOnly())
+		})
+	}
+}
