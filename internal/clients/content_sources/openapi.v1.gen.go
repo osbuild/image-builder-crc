@@ -25,6 +25,12 @@ type ApiArtifact struct {
 	Sha256 *string `json:"sha256,omitempty"`
 }
 
+// ApiBulkRemoveRpmsRequest defines model for api.BulkRemoveRpmsRequest.
+type ApiBulkRemoveRpmsRequest struct {
+	// RpmUuids Rpms to delete from upload repository
+	RpmUuids *[]string `json:"rpm_uuids,omitempty"`
+}
+
 // ApiContentUnitSearchRequest defines model for api.ContentUnitSearchRequest.
 type ApiContentUnitSearchRequest struct {
 	// Date Optional date to search in dated snapshots of the listed repositories.
@@ -1497,6 +1503,9 @@ type ListTemplatesParams struct {
 	// ExtendedReleaseVersion Filter templates by extended release version (e.g., 9.4). Supports comma-separated lists (e.g., '9.4,9.6'). Use 'none' to filter templates without extended release versions.
 	ExtendedReleaseVersion *string `form:"extended_release_version,omitempty" json:"extended_release_version,omitempty"`
 
+	// RestrictToMajor When true, major versions in the version filter only match templates without an extended release version. Specific minor versions in the version filter are still matched.
+	RestrictToMajor *bool `form:"restrict_to_major,omitempty" json:"restrict_to_major,omitempty"`
+
 	// SortBy Sort the response data based on specific parameters. Sort criteria can include `name`, `arch`, and `version`.
 	SortBy *string `form:"sort_by,omitempty" json:"sort_by,omitempty"`
 }
@@ -1587,6 +1596,9 @@ type FullUpdateRepositoryJSONRequestBody = ApiRepositoryRequest
 
 // AddUploadJSONRequestBody defines body for AddUpload for application/json ContentType.
 type AddUploadJSONRequestBody = ApiAddUploadsRequest
+
+// BulkRemoveRpmsJSONRequestBody defines body for BulkRemoveRpms for application/json ContentType.
+type BulkRemoveRpmsJSONRequestBody = ApiBulkRemoveRpmsRequest
 
 // FetchGpgKeyJSONRequestBody defines body for FetchGpgKey for application/json ContentType.
 type FetchGpgKeyJSONRequestBody = ApiFetchGPGKeyRequest
