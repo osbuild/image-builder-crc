@@ -204,6 +204,18 @@ func (h *Handlers) GetDistribution(ctx echo.Context, distro string, params GetDi
 		architectures = *params.Architecture
 	}
 
+	d, err := h.server.distroRegistry(ctx).Get(distro)
+	if err != nil {
+		if err == distribution.ErrDistributionNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("distribution '%s' not found", distro))
+		}
+		return err
+	}
+
+	if d.IsBootcOnly() {
+		return echo.NewHTTPError(http.StatusBadRequest, "distribution details are only available for package mode distributions")
+	}
+
 	resp, err := h.server.cClient.GetDistribution(ctx.Request().Context(), distro, imageTypes, architectures)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get distribution details").SetInternal(err)
