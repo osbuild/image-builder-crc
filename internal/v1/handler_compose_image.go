@@ -67,16 +67,19 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusForbidden, msg)
 	}
 
+	// See HACKING.md for more information on bootc and distribution.
+	if composeRequest.Bootc == nil && composeRequest.Distribution == nil {
+		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("either distribution or bootc needs to be set"))
+	} else if composeRequest.Bootc != nil && composeRequest.Distribution != nil {
+		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("either distribution or bootc needs to be set, but not both"))
+	}
+
 	if string(composeRequest.ImageRequests[0].UploadRequest.Type) == "" {
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Exactly one upload request should be included")
 	}
 
 	if composeRequest.ImageRequests[0].SnapshotDate != nil && composeRequest.ImageRequests[0].ContentTemplate != nil {
 		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "Either a snapshot date or content template can be specified, but not both")
-	}
-
-	if composeRequest.Bootc == nil && composeRequest.ImageRequests[0].ImageType == ImageTypesBootableContainerIso {
-		return ComposeResponse{}, echo.NewHTTPError(http.StatusBadRequest, "bootc is required for bootable-container-iso image type")
 	}
 
 	repositories := []composer.Repository{}
@@ -151,9 +154,6 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 				distro = &v
 			}
 		}
-	} else {
-		// 500 error as any validation should have happened before handing it off to the common compose function
-		return ComposeResponse{}, echo.NewHTTPError(http.StatusInternalServerError, fmt.Errorf("either distribution or bootc needs to be set"))
 	}
 
 	uploadOptions, imageType, err := h.buildUploadOptions(ctx, composeRequest.ImageRequests[0].UploadRequest, composeRequest.ImageRequests[0].ImageType)

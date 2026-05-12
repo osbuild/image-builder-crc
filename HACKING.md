@@ -169,3 +169,23 @@ file to generate a package list.
 
 If the repository requires a client tls key/cert you can supply them with
 `--key` and `--cert`.
+
+## Bootc images and `distributions/`
+
+Bootc images are listed under a specific distribution. For instance the RHEL 10 json will contain
+several bootc references, one or more per image type. Composer, however, does not need a
+distribution set when building bootc images, everything is derived from the bootc references. In the
+case of bootc images in image-builder-crc, the distribution field is relegated to a means of
+categorizing bootc references, rather than being an essential piece of information to build an
+image.
+
+As a result:
+- when sending a compose request to composer, either the bootc information or the distribution is
+  passed, but never both;
+- for the `/compose` endpoint in the image-builder-crc API (when building images without
+  blueprints), either the bootc information or the distribution is passed, but never both;
+- to accomodate the need for the frontend to be able to categorize existing image mode blueprints
+  under a distribution, the bootc information and the distribution can be set simultaneously.
+
+By allowing the situation described in the third point, the frontend can easily present bootc images
+by distribution.
