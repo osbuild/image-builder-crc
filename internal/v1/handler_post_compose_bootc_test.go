@@ -66,7 +66,7 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 			},
 		},
 		{
-			name:          "distribution is ignored in favour of bootc",
+			name:          "distribution is not allowed with bootc",
 			distro:        "rhel-10.1",
 			queryExtra:    "distro=rhel-10.1&arch=x86_64&type=aws",
 			wantReference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
@@ -133,6 +133,13 @@ func TestComposeBootcReferenceWithQuery(t *testing.T) {
 			}
 
 			status, body = tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
+
+			if tt.distro != "" {
+				// distro is not allowed when bootc is set
+				require.Equal(t, http.StatusBadRequest, status, body)
+				return
+			}
+
 			require.Equal(t, http.StatusCreated, status, body)
 			var composeResp v1.ComposeResponse
 			require.NoError(t, json.Unmarshal([]byte(body), &composeResp))
@@ -364,7 +371,7 @@ func TestComposeBootableContainerIso(t *testing.T) {
 				return uo
 			},
 			wantStatus:       http.StatusBadRequest,
-			wantErrSubstring: "bootc is required for bootable-container-iso image type",
+			wantErrSubstring: "either distribution or bootc needs to be set",
 		},
 	}
 

@@ -739,6 +739,13 @@ func (h *Handlers) ComposeBlueprint(ctx echo.Context, id openapi_types.UUID) err
 			ClientId:         &clientId,
 			Bootc:            blueprint.Bootc,
 		}
+
+		// handleCommonCompose requires either bootc or distribution, but not both. See
+		// HACKING.md for more information on bootc and distribution.
+		if composeRequest.Bootc != nil {
+			composeRequest.Distribution = nil
+		}
+
 		composesResponse, err := h.handleCommonCompose(ctx, composeRequest, composeOpts{
 			BlueprintId:        &blueprintEntry.Id,
 			BlueprintVersionId: &blueprintEntry.VersionId,
