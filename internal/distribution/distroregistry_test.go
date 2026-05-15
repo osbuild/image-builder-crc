@@ -18,6 +18,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"standard",
 		"with-bootc",
 		"bootc-link",
+		"bootc-only",
 	}
 	notEntitledDistros := []string{
 		"no-packages",
@@ -27,6 +28,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"standard",
 		"with-bootc",
 		"bootc-link",
+		"bootc-only",
 	}
 
 	dr, err := LoadDistroRegistry("./testdata/distributions")
@@ -271,6 +273,13 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 					Arch:                 "x86_64",
 					Reference:            "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-installer:latest",
 					IsoPayloadReferences: []string{"quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-qcow2:latest"},
+				},
+				{
+					Distro:    "bootc-only",
+					Name:      "Test distro with only bootc entries",
+					Type:      "ec2",
+					Arch:      "x86_64",
+					Reference: "reffy.io",
 				},
 			},
 		},
