@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/osbuild/image-builder-crc/internal/common"
 )
 
 var ErrDistributionNotFound = errors.New("distribution not available")
@@ -143,6 +144,13 @@ func (dist DistributionFile) Architecture(arch string) (*Architecture, error) {
 	default:
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Architecture not supported")
 	}
+}
+
+func (dist DistributionFile) IsBootcOnly() bool {
+	x86, a64 := common.FromPtr(dist.ArchX86), common.FromPtr(dist.Aarch64)
+	hasBootc := len(x86.Bootc) > 0 || len(a64.Bootc) > 0
+	hasITs := len(x86.ImageTypes) > 0 || len(a64.ImageTypes) > 0
+	return hasBootc && !hasITs
 }
 
 func (arch Architecture) FindPackages(search string) []Package {

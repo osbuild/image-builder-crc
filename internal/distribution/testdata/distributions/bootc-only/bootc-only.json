@@ -1,0 +1,13 @@
+{
+  "module_platform_id": "platform:el10",
+  "distribution": {
+    "name": "bootc-only",
+    "description": "Test distro with only bootc entries",
+    "no_package_list": true
+  },
+  "x86_64": {
+    "bootc": [
+      { "type": "ec2", "reference": "reffy.io" }
+    ]
+  }
+}

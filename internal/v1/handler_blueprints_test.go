@@ -611,13 +611,13 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 		{
 			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
 			CheckGpg: common.ToPtr(true),
-			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v2.0.22 (GNU/Linux)\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBCAAhAhsDBgsJCAcDAgYVCAIJCgsDFgIBAh4BAheA\nBQJczFsaAAoJEAW1VbOEg8ZdvOgQAMFTGIQokADy5+CynFKjfO7R0VVpJxmYGVr1\nTjnKaHmjxnJaYqoha9ukGgmLu0r+lJ42Kk6nREk1vlxfRAfiWd00Zkm+K3IMq1/D\nE0heC2vX8qqjsLJs3jzq0hgNvo9X0uHDaA4J1BHsD8sE5in/f4SivjbngvFovRGU\n1XLNCgoqpFNcROP18LqKUw8WtqgWdnYBa5i6D5qx+WMRX0NHNwcCMy1lz+sTFxIU\n9mW6cLsMaacPGD8pUXIVli8P9Vlv3jBk1wFIqRgQPW01ph/3bM7pf9hyM9FAfU4X\nAFcyb1oYI4/82EkICUe6jeuZrz67dPeLVAlYrGW4hp/825g0fqJHxPDp25GS4rAa\n4RqyibLzNjSGdXYeLj2NcB/8OqaP+T1hv3JDaqe70QoYa/GIC4rh15NyXVbUP+LG\nV4vUiL7mb9ynzvF5zYHJbcg4R7dOsiZHrMFwy7FZesQaVrXeJlxRcEj65rpm1ZtZ\nmwAE1k2LsRkvLyr9hpZkXnMeOKYIPwpdmBjXNVNVbq7097OxZOYPPos+iZKMWfl4\nUQnMsCVxonZtamdI4qEc3jMkSZPJKgOplGOms5jdY+EdSvsFWEQ0Snd3dChfU7DV\no4Rbcy5klwHrvuZIOLaovhyxuRPhP6gV9+gzpTK/7vrvDlFbbZE6s212mDZ13RWB\nmTfAxz4h\n=agO/\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Gpgkey:   common.ToPtr(mocks.CentosGPG),
 			Rhsm:     common.ToPtr(false),
 		},
 		{
 			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/"),
 			CheckGpg: common.ToPtr(true),
-			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v2.0.22 (GNU/Linux)\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBCAAhAhsDBgsJCAcDAgYVCAIJCgsDFgIBAh4BAheA\nBQJczFsaAAoJEAW1VbOEg8ZdvOgQAMFTGIQokADy5+CynFKjfO7R0VVpJxmYGVr1\nTjnKaHmjxnJaYqoha9ukGgmLu0r+lJ42Kk6nREk1vlxfRAfiWd00Zkm+K3IMq1/D\nE0heC2vX8qqjsLJs3jzq0hgNvo9X0uHDaA4J1BHsD8sE5in/f4SivjbngvFovRGU\n1XLNCgoqpFNcROP18LqKUw8WtqgWdnYBa5i6D5qx+WMRX0NHNwcCMy1lz+sTFxIU\n9mW6cLsMaacPGD8pUXIVli8P9Vlv3jBk1wFIqRgQPW01ph/3bM7pf9hyM9FAfU4X\nAFcyb1oYI4/82EkICUe6jeuZrz67dPeLVAlYrGW4hp/825g0fqJHxPDp25GS4rAa\n4RqyibLzNjSGdXYeLj2NcB/8OqaP+T1hv3JDaqe70QoYa/GIC4rh15NyXVbUP+LG\nV4vUiL7mb9ynzvF5zYHJbcg4R7dOsiZHrMFwy7FZesQaVrXeJlxRcEj65rpm1ZtZ\nmwAE1k2LsRkvLyr9hpZkXnMeOKYIPwpdmBjXNVNVbq7097OxZOYPPos+iZKMWfl4\nUQnMsCVxonZtamdI4qEc3jMkSZPJKgOplGOms5jdY+EdSvsFWEQ0Snd3dChfU7DV\no4Rbcy5klwHrvuZIOLaovhyxuRPhP6gV9+gzpTK/7vrvDlFbbZE6s212mDZ13RWB\nmTfAxz4h\n=agO/\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Gpgkey:   common.ToPtr(mocks.CentosGPG),
 			Rhsm:     common.ToPtr(false),
 		},
 	}
@@ -625,13 +625,13 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 		{
 			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/aarch64/os/"),
 			CheckGpg: common.ToPtr(true),
-			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v2.0.22 (GNU/Linux)\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBCAAhAhsDBgsJCAcDAgYVCAIJCgsDFgIBAh4BAheA\nBQJczFsaAAoJEAW1VbOEg8ZdvOgQAMFTGIQokADy5+CynFKjfO7R0VVpJxmYGVr1\nTjnKaHmjxnJaYqoha9ukGgmLu0r+lJ42Kk6nREk1vlxfRAfiWd00Zkm+K3IMq1/D\nE0heC2vX8qqjsLJs3jzq0hgNvo9X0uHDaA4J1BHsD8sE5in/f4SivjbngvFovRGU\n1XLNCgoqpFNcROP18LqKUw8WtqgWdnYBa5i6D5qx+WMRX0NHNwcCMy1lz+sTFxIU\n9mW6cLsMaacPGD8pUXIVli8P9Vlv3jBk1wFIqRgQPW01ph/3bM7pf9hyM9FAfU4X\nAFcyb1oYI4/82EkICUe6jeuZrz67dPeLVAlYrGW4hp/825g0fqJHxPDp25GS4rAa\n4RqyibLzNjSGdXYeLj2NcB/8OqaP+T1hv3JDaqe70QoYa/GIC4rh15NyXVbUP+LG\nV4vUiL7mb9ynzvF5zYHJbcg4R7dOsiZHrMFwy7FZesQaVrXeJlxRcEj65rpm1ZtZ\nmwAE1k2LsRkvLyr9hpZkXnMeOKYIPwpdmBjXNVNVbq7097OxZOYPPos+iZKMWfl4\nUQnMsCVxonZtamdI4qEc3jMkSZPJKgOplGOms5jdY+EdSvsFWEQ0Snd3dChfU7DV\no4Rbcy5klwHrvuZIOLaovhyxuRPhP6gV9+gzpTK/7vrvDlFbbZE6s212mDZ13RWB\nmTfAxz4h\n=agO/\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Gpgkey:   common.ToPtr(mocks.CentosGPG),
 			Rhsm:     common.ToPtr(false),
 		},
 		{
 			Baseurl:  common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/"),
 			CheckGpg: common.ToPtr(true),
-			Gpgkey:   common.ToPtr("-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v2.0.22 (GNU/Linux)\n\nmQINBFzMWxkBEADHrskpBgN9OphmhRkc7P/YrsAGSvvl7kfu+e9KAaU6f5MeAVyn\nrIoM43syyGkgFyWgjZM8/rur7EMPY2yt+2q/1ZfLVCRn9856JqTIq0XRpDUe4nKQ\n8BlA7wDVZoSDxUZkSuTIyExbDf0cpw89Tcf62Mxmi8jh74vRlPy1PgjWL5494b3X\n5fxDidH4bqPZyxTBqPrUFuo+EfUVEqiGF94Ppq6ZUvrBGOVo1V1+Ifm9CGEK597c\naevcGc1RFlgxIgN84UpuDjPR9/zSndwJ7XsXYvZ6HXcKGagRKsfYDWGPkA5cOL/e\nf+yObOnC43yPUvpggQ4KaNJ6+SMTZOKikM8yciyBwLqwrjo8FlJgkv8Vfag/2UR7\nJINbyqHHoLUhQ2m6HXSwK4YjtwidF9EUkaBZWrrskYR3IRZLXlWqeOi/+ezYOW0m\nvufrkcvsh+TKlVVnuwmEPjJ8mwUSpsLdfPJo1DHsd8FS03SCKPaXFdD7ePfEjiYk\nnHpQaKE01aWVSLUiygn7F7rYemGqV9Vt7tBw5pz0vqSC72a5E3zFzIIuHx6aANry\nGat3aqU3qtBXOrA/dPkX9cWE+UR5wo/A2UdKJZLlGhM2WRJ3ltmGT48V9CeS6N9Y\nm4CKdzvg7EWjlTlFrd/8WJ2KoqOE9leDPeXRPncubJfJ6LLIHyG09h9kKQARAQAB\ntDpDZW50T1MgKENlbnRPUyBPZmZpY2lhbCBTaWduaW5nIEtleSkgPHNlY3VyaXR5\nQGNlbnRvcy5vcmc+iQI3BBMBCAAhAhsDBgsJCAcDAgYVCAIJCgsDFgIBAh4BAheA\nBQJczFsaAAoJEAW1VbOEg8ZdvOgQAMFTGIQokADy5+CynFKjfO7R0VVpJxmYGVr1\nTjnKaHmjxnJaYqoha9ukGgmLu0r+lJ42Kk6nREk1vlxfRAfiWd00Zkm+K3IMq1/D\nE0heC2vX8qqjsLJs3jzq0hgNvo9X0uHDaA4J1BHsD8sE5in/f4SivjbngvFovRGU\n1XLNCgoqpFNcROP18LqKUw8WtqgWdnYBa5i6D5qx+WMRX0NHNwcCMy1lz+sTFxIU\n9mW6cLsMaacPGD8pUXIVli8P9Vlv3jBk1wFIqRgQPW01ph/3bM7pf9hyM9FAfU4X\nAFcyb1oYI4/82EkICUe6jeuZrz67dPeLVAlYrGW4hp/825g0fqJHxPDp25GS4rAa\n4RqyibLzNjSGdXYeLj2NcB/8OqaP+T1hv3JDaqe70QoYa/GIC4rh15NyXVbUP+LG\nV4vUiL7mb9ynzvF5zYHJbcg4R7dOsiZHrMFwy7FZesQaVrXeJlxRcEj65rpm1ZtZ\nmwAE1k2LsRkvLyr9hpZkXnMeOKYIPwpdmBjXNVNVbq7097OxZOYPPos+iZKMWfl4\nUQnMsCVxonZtamdI4qEc3jMkSZPJKgOplGOms5jdY+EdSvsFWEQ0Snd3dChfU7DV\no4Rbcy5klwHrvuZIOLaovhyxuRPhP6gV9+gzpTK/7vrvDlFbbZE6s212mDZ13RWB\nmTfAxz4h\n=agO/\n-----END PGP PUBLIC KEY BLOCK-----\n"),
+			Gpgkey:   common.ToPtr(mocks.CentosGPG),
 			Rhsm:     common.ToPtr(false),
 		},
 	}
@@ -710,24 +710,71 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 		},
 	}
 
+	bootcId := uuid.New()
+	bootcBlueprint := v1.BlueprintBody{
+		Distribution: common.ToPtr(v1.Distributions("rhel-10.1")),
+		Bootc: &v1.BootcBody{
+			Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
+		},
+		ImageRequests: []v1.ImageRequest{
+			{
+				Architecture: v1.ImageRequestArchitectureX8664,
+				ImageType:    v1.ImageTypesAws,
+				UploadRequest: v1.UploadRequest{
+					Type:    v1.UploadTypesAws,
+					Options: uploadOptions,
+				},
+			},
+		},
+	}
+	message, err = json.Marshal(bootcBlueprint)
+	require.NoError(t, err)
+	err = srv.DB.InsertBlueprint(ctx, bootcId, uuid.New(), "000000", "000000", "bootc bp", "descr", message, nil, nil)
+	require.NoError(t, err)
+	creq4 := composer.ComposeRequest{
+		BlueprintId: &bootcId,
+		Bootc: &composer.Bootc{
+			Reference: "quay.io/redhat-services-prod/insights-management-tenant/image-builder-bootc-foundry/rhel-10-ec2:latest",
+		},
+		ImageRequest: &composer.ImageRequest{
+			Architecture: "x86_64",
+			ImageType:    composer.ImageTypesAws,
+			Repositories: []composer.Repository{},
+			UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
+				ShareWithAccounts: []string{"test-account"},
+			}),
+		},
+		Customizations: &composer.Customizations{},
+	}
+
 	tests := map[string]struct {
+		blueprintId     uuid.UUID
 		payload         any
 		composeRequests []composer.ComposeRequest
 		expectedImages  int
 	}{
 		"empty targets": {
+			blueprintId:     id,
 			payload:         strings.NewReader(""),
 			composeRequests: []composer.ComposeRequest{creq1, creq2, creq3},
 			expectedImages:  3,
 		},
 		"multiple targets": {
+			blueprintId:     id,
 			payload:         v1.ComposeBlueprintJSONBody{ImageTypes: &[]v1.ImageTypes{"aws", "guest-image", "gcp"}},
 			composeRequests: []composer.ComposeRequest{creq1, creq2, creq3},
 			expectedImages:  3,
 		},
 		"one target": {
+			blueprintId:     id,
 			payload:         v1.ComposeBlueprintJSONBody{ImageTypes: &[]v1.ImageTypes{"guest-image"}},
 			composeRequests: []composer.ComposeRequest{creq3},
+			expectedImages:  1,
+		},
+		"bootc": {
+			blueprintId:     bootcId,
+			payload:         strings.NewReader(""),
+			composeRequests: []composer.ComposeRequest{creq4},
 			expectedImages:  1,
 		},
 	}
@@ -736,8 +783,8 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			composeRequests = []composer.ComposeRequest{}
 
-			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s/compose", id.String()), tc.payload)
-			require.Equal(t, http.StatusCreated, respStatusCode)
+			respStatusCode, body := tutils.PostResponseBody(t, srv.URL+fmt.Sprintf("/api/image-builder/v1/blueprints/%s/compose", tc.blueprintId.String()), tc.payload)
+			require.Equal(t, http.StatusCreated, respStatusCode, body)
 
 			var result []v1.ComposeResponse
 			err = json.Unmarshal([]byte(body), &result)
