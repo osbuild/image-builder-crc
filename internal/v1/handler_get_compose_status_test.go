@@ -17,6 +17,7 @@ import (
 )
 
 func TestComposeStatus(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	composeId := uuid.New()
 	var composerStatus composer.ComposeStatus

@@ -20,6 +20,7 @@ import (
 )
 
 func TestValidateComposeRequest(t *testing.T) {
+	t.Parallel()
 	// note: any url will work, it'll only try to contact the osbuild-composer
 	// instance when calling /compose or /compose/$uuid
 	srv := startServer(t, &testServerClientsConf{}, nil)
@@ -372,6 +373,7 @@ func TestValidateComposeRequest(t *testing.T) {
 }
 
 func TestComposeStatusError(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	id := uuid.New()
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -443,6 +445,7 @@ func TestComposeStatusError(t *testing.T) {
 }
 
 func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
+	t.Parallel()
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -490,6 +493,7 @@ func TestComposeImageErrorsWhenStatusCodeIsNotStatusCreated(t *testing.T) {
 }
 
 func TestComposeImageErrorResolvingOSTree(t *testing.T) {
+	t.Parallel()
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -540,6 +544,7 @@ func TestComposeImageErrorResolvingOSTree(t *testing.T) {
 }
 
 func TestComposeImageErrorsWhenCannotParseResponse(t *testing.T) {
+	t.Parallel()
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -583,6 +588,7 @@ func TestComposeImageErrorsWhenCannotParseResponse(t *testing.T) {
 // This test case queries the image-builder for a non existing type of the os distribution
 // osbuild-composer is not being mock here as the error should be intercepted by image-builder
 func TestComposeImageErrorsWhenDistributionNotExists(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
@@ -609,6 +615,7 @@ func TestComposeImageErrorsWhenDistributionNotExists(t *testing.T) {
 }
 
 func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
+	t.Parallel()
 	id := uuid.New()
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer" {
@@ -657,6 +664,7 @@ func TestComposeImageReturnsIdWhenNoErrors(t *testing.T) {
 }
 
 func TestComposeImageAllowList(t *testing.T) {
+	t.Parallel()
 	allowFile := "../common/testdata/allow.json"
 	id := uuid.New()
 
@@ -760,6 +768,7 @@ func TestComposeImageAllowList(t *testing.T) {
 }
 
 func TestCompliancePolicyErrors(t *testing.T) {
+	t.Parallel()
 	srv := startServer(t, &testServerClientsConf{}, nil)
 	defer srv.Shutdown(t)
 
@@ -806,6 +815,7 @@ func TestCompliancePolicyErrors(t *testing.T) {
 }
 
 func TestComposeWithSnapshots(t *testing.T) {
+	t.Parallel()
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1644,6 +1654,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 }
 
 func TestComposeCustomizations(t *testing.T) {
+	t.Parallel()
 	var id uuid.UUID
 	var composerRequest composer.ComposeRequest
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3681,6 +3692,7 @@ WantedBy=basic.target
 }
 
 func TestComposeWithLatestSnapshots(t *testing.T) {
+	t.Parallel()
 	var composeId uuid.UUID
 	var composerRequest composer.ComposeRequest
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3875,6 +3887,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 // This prevents builds from failing when osbuild-composer tries to install packages (e.g.
 // system-reinstall-bootc) that are only available in a newer minor version.
 func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
+	t.Parallel()
 	var composerRequest composer.ComposeRequest
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
@@ -3927,6 +3940,7 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 // distribution is not overridden. Empty strings are non-nil in Go and must be skipped
 // to avoid blocking a valid version from a later snapshot.
 func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
+	t.Parallel()
 	var composerRequest composer.ComposeRequest
 	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))

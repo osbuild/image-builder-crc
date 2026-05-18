@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -30,6 +31,11 @@ import (
 )
 
 var dbc *tutils.PSQLContainer
+
+const defaultTestDistributionsDir = "../../distributions"
+
+// testDistributionsRegistry is loaded once for tests that use defaultTestDistributionsDir.
+var testDistributionsRegistry = distribution.MustLoadDistroRegistry(defaultTestDistributionsDir)
 
 func TestMain(m *testing.M) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -207,22 +213,28 @@ func startServer(t *testing.T, tscc *testServerClientsConf, conf *v1.ServerConfi
 		serverConfig.QuotaFile = quotaFile
 	}
 	if serverConfig.DistributionsDir == "" {
-		serverConfig.DistributionsDir = "../../distributions"
+		serverConfig.DistributionsDir = defaultTestDistributionsDir
 	}
 	if serverConfig.AllDistros == nil {
-		adr, err := distribution.LoadDistroRegistry(serverConfig.DistributionsDir)
-		require.NoError(t, err)
-		serverConfig.AllDistros = adr
+		if serverConfig.DistributionsDir == defaultTestDistributionsDir {
+			serverConfig.AllDistros = testDistributionsRegistry
+		} else {
+			adr, err := distribution.LoadDistroRegistry(serverConfig.DistributionsDir)
+			require.NoError(t, err)
+			serverConfig.AllDistros = adr
+		}
 	}
 
 	server, err := v1.Attach(serverConfig)
 	require.NoError(t, err)
 
-	// execute in parallel b/c .Run() will block execution
-	addr := "localhost:8086"
-	URL := "http://" + addr
+	// Random port so multiple tests can run in parallel without colliding.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	echoServer.Listener = ln
+	URL := "http://" + ln.Addr().String()
 	go func() {
-		err = echoServer.Start(addr)
+		err = echoServer.Start("")
 		if !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("starting test server failed %w", err))
 		}
@@ -251,4 +263,5 @@ func (ts *testServer) Shutdown(t *testing.T) {
 	require.NoError(t, ts.echo.Shutdown(t.Context()))
 	ts.tokenSrv.Close()
 	ts.csSrv.Close()
+	db.ClosePool(ts.DB)
 }

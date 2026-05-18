@@ -8,7 +8,11 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 )
 
+// distroReg is shared by tests that use internal/distribution/testdata/distributions.
+var distroReg = MustLoadDistroRegistry("testdata/distributions")
+
 func TestDistroRegistry_List(t *testing.T) {
+	t.Parallel()
 	allDistros := []string{
 		"needs-entitlement",
 		"no-packages",
@@ -29,8 +33,7 @@ func TestDistroRegistry_List(t *testing.T) {
 		"bootc-link",
 	}
 
-	dr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
+	dr := distroReg
 
 	result := dr.Available(true).List()
 	require.Len(t, result, len(allDistros))
@@ -46,8 +49,8 @@ func TestDistroRegistry_List(t *testing.T) {
 }
 
 func TestDistroRegistry_Get(t *testing.T) {
-	dr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
+	t.Parallel()
+	dr := distroReg
 
 	result, err := dr.Available(true).Get("standard")
 	require.NoError(t, err)
@@ -139,6 +142,7 @@ func TestDistroRegistry_Get(t *testing.T) {
 }
 
 func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
+	t.Parallel()
 	dr, err := LoadDistroRegistry("./testdata/distributions")
 	require.NoError(t, err)
 	registry := dr.Available(true)
@@ -162,7 +166,9 @@ func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
+			t.Parallel()
 			require.Equal(t, tc.expected, registry.FindByMajorMinorStr(tc.input))
 		})
 	}
@@ -229,6 +235,7 @@ func TestDistroRegistry_ValidateBootcReferences(t *testing.T) {
 }
 
 func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
+	t.Parallel()
 	loaded, err := LoadDistroRegistry("testdata/distributions")
 	require.NoError(t, err)
 
@@ -282,7 +289,9 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			list := tt.registry.CollectBootcFromRegistry()
 			if tt.wantEmpty {
 				require.Empty(t, list)
