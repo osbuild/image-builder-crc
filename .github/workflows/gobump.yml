@@ -19,5 +19,4 @@ jobs:
         with:
           go_version: "1.24.12"
           token: ${{ secrets.SCHUTZBOT_GITHUB_ACCESS_TOKEN }}
-          exec_pr: ./tools/prepare-source.sh
-          changelog: true
+          exec: ./tools/prepare-source.sh
