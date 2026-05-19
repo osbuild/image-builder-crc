@@ -3,7 +3,7 @@ module github.com/osbuild/image-builder-crc
 go 1.24.12
 
 require (
-	github.com/BurntSushi/toml v1.5.1-0.20250403130103-3d3abc24416a
+	github.com/BurntSushi/toml v1.6.0
 	github.com/Unleash/unleash-client-go/v4 v4.5.0
 	github.com/getkin/kin-openapi v0.135.0
 	github.com/google/uuid v1.6.0
