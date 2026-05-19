@@ -18,7 +18,7 @@ require (
 	github.com/osbuild/images v0.264.0
 	github.com/osbuild/logging v0.0.10
 	github.com/prometheus/client_golang v1.23.2
-	github.com/redhatinsights/app-common-go v1.6.8
+	github.com/redhatinsights/app-common-go v1.6.9
 	github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1
 	github.com/stretchr/testify v1.11.1
 )
