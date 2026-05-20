@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 
 	"github.com/osbuild/image-builder-crc/internal/clients/composer"
@@ -249,5 +250,127 @@ func TestComposeStatus(t *testing.T) {
 		require.Equal(t, cr.Distribution, result.Request.Distribution)
 		user := (*result.Request.Customizations.Users)[0]
 		require.Nil(t, user.Password)
+	}
+}
+func TestParseComposeStatusError(t *testing.T) {
+	tests := []struct {
+		name        string
+		composerErr *composer.ComposeStatusError
+		expectedErr *v1.ComposeStatusError
+	}{
+		{
+			name: "interpreted error with no details",
+			composerErr: &composer.ComposeStatusError{
+				Id:      5,
+				Reason:  "1 pigeon",
+				Details: nil,
+			},
+			expectedErr: &v1.ComposeStatusError{
+				Id:      5,
+				Reason:  "1 pigeon",
+				Details: nil,
+			},
+		},
+		{
+			name: "interpreted error with string details",
+			composerErr: &composer.ComposeStatusError{
+				Id:      5,
+				Reason:  "1 pigeon",
+				Details: "3 pigeons",
+			},
+			expectedErr: &v1.ComposeStatusError{
+				Id:      5,
+				Reason:  "1 pigeon",
+				Details: "3 pigeons",
+			},
+		},
+		{
+			name: "interpreted error with single object details",
+			composerErr: &composer.ComposeStatusError{
+				Id:     5,
+				Reason: "1 pigeon",
+				Details: &composer.ComposeStatusError{
+					Id:     10,
+					Reason: "many pigeons",
+				},
+			},
+			expectedErr: &v1.ComposeStatusError{
+				Id:     10,
+				Reason: "many pigeons",
+			},
+		},
+		{
+			name: "non-interpreted error with single object details",
+			composerErr: &composer.ComposeStatusError{
+				Id:     1,
+				Reason: "1 pigeon",
+				Details: &composer.ComposeStatusError{
+					Id:     10,
+					Reason: "many pigeons",
+				},
+			},
+			expectedErr: &v1.ComposeStatusError{
+				Id:     1,
+				Reason: "1 pigeon",
+				// this is of type composer.ComposeStatusError because the details
+				// in this case are just forwarded without any casting
+				Details: &composer.ComposeStatusError{
+					Id:     10,
+					Reason: "many pigeons",
+				},
+			},
+		},
+		{
+			name: "interpreted error with details slice",
+			composerErr: &composer.ComposeStatusError{
+				Id:     26,
+				Reason: "1 pigeon",
+				Details: []interface{}{
+					map[string]interface{}{
+						"id":      15,
+						"reason":  "many pigeons",
+						"details": "3 pigeons",
+					},
+				},
+			},
+			expectedErr: &v1.ComposeStatusError{
+				Id:      15,
+				Reason:  "many pigeons",
+				Details: "3 pigeons",
+			},
+		},
+		{
+			name: "interpreted error with double nested details slice",
+			composerErr: &composer.ComposeStatusError{
+				Id:     26,
+				Reason: "1 pigeon",
+				Details: []interface{}{
+					map[string]interface{}{
+						"id":     26,
+						"reason": "1 more pigeon",
+						"details": []interface{}{
+							map[string]interface{}{
+								"id":      15,
+								"reason":  "1 more extra pigeon",
+								"details": "3 pigeons total",
+							},
+						},
+					},
+				},
+			},
+			expectedErr: &v1.ComposeStatusError{
+				Id:      15,
+				Reason:  "1 more extra pigeon",
+				Details: "3 pigeons total",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := echo.New().NewContext(nil, nil)
+			result := v1.ParseComposeStatusError(ctx, tt.composerErr)
+			require.Equal(t, tt.expectedErr, result)
+		})
 	}
 }
