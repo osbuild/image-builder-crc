@@ -500,15 +500,21 @@ func parseComposeStatusError(ctx echo.Context, composeErr *composer.ComposeStatu
 		fallthrough
 	case 28: // osbuild target errors are added to details
 		if composeErr.Details != nil {
-			intfs := (composeErr.Details).([]any)
-			if len(intfs) == 0 {
+			// details can be both a slice of ComposeStatusError objects, a single
+			// ComposeStatusError object, or a simple string
+			details := composeErr.Details
+			if _, ok := details.(string); ok {
 				return fbErr
 			}
 
+			if intfs, ok := (composeErr.Details).([]any); ok {
+				details = intfs[0]
+			}
+
 			// Try to remarshal the details as another composer.ComposeStatusError
-			jsonDetails, err := json.Marshal(intfs[0])
+			jsonDetails, err := json.Marshal(details)
 			if err != nil {
-				ctx.Logger().Errorf("Error processing compose status error details: %v", err)
+				ctx.Logger().Error("Error processing compose status error details: %v", err)
 				return fbErr
 			}
 			var newErr composer.ComposeStatusError
