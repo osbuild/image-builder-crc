@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -371,6 +372,169 @@ func TestParseComposeStatusError(t *testing.T) {
 			ctx := echo.New().NewContext(nil, nil)
 			result := v1.ParseComposeStatusError(ctx, tt.composerErr)
 			require.Equal(t, tt.expectedErr, result)
+		})
+	}
+}
+
+func TestGetComposeStatusErrorResponse(t *testing.T) {
+	var composerStatus *composer.ComposeStatus
+	var composerStatusCode int
+	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "Bearer" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(composerStatusCode)
+		if composerStatus != nil {
+			err := json.NewEncoder(w).Encode(*composerStatus)
+			require.NoError(t, err)
+		}
+	}))
+	defer apiSrv.Close()
+	srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
+		DistributionsDir: "../../distributions",
+	})
+	defer srv.Shutdown(t)
+
+	tests := []struct {
+		name               string
+		composerStatus     *composer.ComposeStatus
+		composerStatusCode int
+		expectedCode       int
+		expectedBody       string
+	}{
+		// errors in crc or composer itself
+		{
+			name:               "404 on non-existent compose in crc",
+			composerStatus:     nil,
+			composerStatusCode: 0,
+			expectedCode:       http.StatusNotFound,
+			expectedBody:       "{\"errors\":[{\"detail\":\"Compose entry %s not found compose entry not found\",\"title\":\"404\"}]}\n",
+		},
+		{
+			name:               "404 on non-existent compose in composer",
+			composerStatus:     nil,
+			composerStatusCode: http.StatusNotFound,
+			expectedCode:       http.StatusNotFound,
+			expectedBody:       "{\"errors\":[{\"detail\":\"Compose entry %s not found compose entry not found\",\"title\":\"404\"}]}\n",
+		},
+		// errors in the job itself
+		{
+			name: "failed compose with simple error",
+			composerStatus: &composer.ComposeStatus{
+				Status: composer.ComposeStatusValueFailure,
+				ImageStatus: composer.ImageStatus{
+					Error: &composer.ComposeStatusError{
+						Id:      1,
+						Reason:  "1 pigeon",
+						Details: "many pigeons",
+					},
+				},
+			},
+			composerStatusCode: 200,
+			expectedCode:       200,
+			expectedBody:       "{\"image_status\":{\"error\":{\"details\":\"many pigeons\",\"id\":1,\"reason\":\"1 pigeon\"},\"status\":\"\"},\"request\":{\"distribution\":\"rhel-9\",\"image_requests\":null}}\n",
+		},
+		{
+			name: "failed compose with interpreted error containing string details",
+			composerStatus: &composer.ComposeStatus{
+				Status: composer.ComposeStatusValueFailure,
+				ImageStatus: composer.ImageStatus{
+					Error: &composer.ComposeStatusError{
+						Id:      5,
+						Reason:  "1 pigeon",
+						Details: "many pigeons",
+					},
+				},
+			},
+			composerStatusCode: 200,
+			expectedCode:       200,
+			expectedBody:       "{\"image_status\":{\"error\":{\"details\":\"many pigeons\",\"id\":5,\"reason\":\"1 pigeon\"},\"status\":\"\"},\"request\":{\"distribution\":\"rhel-9\",\"image_requests\":null}}\n",
+		},
+		{
+			name: "failed compose with interpreted error containing compose error details",
+			composerStatus: &composer.ComposeStatus{
+				Status: composer.ComposeStatusValueFailure,
+				ImageStatus: composer.ImageStatus{
+					Error: &composer.ComposeStatusError{
+						Id:     5,
+						Reason: "1 pigeon",
+						Details: &composer.ComposeStatusError{
+							Id:      1,
+							Reason:  "1 pigeon",
+							Details: "many pigeons",
+						},
+					},
+				},
+			},
+			composerStatusCode: 200,
+			expectedCode:       200,
+			expectedBody:       "{\"image_status\":{\"error\":{\"details\":\"many pigeons\",\"id\":1,\"reason\":\"1 pigeon\"},\"status\":\"\"},\"request\":{\"distribution\":\"rhel-9\",\"image_requests\":null}}\n",
+		},
+		{
+			name: "failed compose with interpreted error containing slice of compose error details",
+			composerStatus: &composer.ComposeStatus{
+				Status: composer.ComposeStatusValueFailure,
+				ImageStatus: composer.ImageStatus{
+					Error: &composer.ComposeStatusError{
+						Id:     5,
+						Reason: "1 pigeon",
+						Details: &[]composer.ComposeStatusError{
+							{
+								Id:      1,
+								Reason:  "1 pigeon",
+								Details: "many pigeons",
+							},
+						},
+					},
+				},
+			},
+			composerStatusCode: 200,
+			expectedCode:       200,
+			expectedBody:       "{\"image_status\":{\"error\":{\"details\":\"many pigeons\",\"id\":1,\"reason\":\"1 pigeon\"},\"status\":\"\"},\"request\":{\"distribution\":\"rhel-9\",\"image_requests\":null}}\n",
+		},
+		{
+			name: "failed compose with non-interpreted error containing compose error details",
+			composerStatus: &composer.ComposeStatus{
+				Status: composer.ComposeStatusValueFailure,
+				ImageStatus: composer.ImageStatus{
+					Error: &composer.ComposeStatusError{
+						Id:     1,
+						Reason: "1 pigeon",
+						Details: composer.ComposeStatusError{
+							Id:      1,
+							Reason:  "1 pigeon",
+							Details: "many pigeons",
+						},
+					},
+				},
+			},
+			composerStatusCode: 200,
+			expectedCode:       200,
+			expectedBody:       "{\"image_status\":{\"error\":{\"details\":{\"details\":\"many pigeons\",\"id\":1,\"reason\":\"1 pigeon\"},\"id\":1,\"reason\":\"1 pigeon\"},\"status\":\"\"},\"request\":{\"distribution\":\"rhel-9\",\"image_requests\":null}}\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			composeId := uuid.New()
+			if tt.expectedCode != http.StatusNotFound {
+				err := srv.DB.InsertCompose(t.Context(), composeId, "000000", "user000000@test.test", "000000", nil, []byte("{\"distribution\": \"rhel-9\"}"), nil, nil)
+				require.NoError(t, err)
+			}
+
+			composerStatus = tt.composerStatus
+			composerStatusCode = tt.composerStatusCode
+
+			statusCode, body := tutils.GetResponseBody(t, fmt.Sprintf(srv.URL+"/api/image-builder/v1/composes/%s", composeId), &tutils.AuthString0)
+			require.Equal(t, tt.expectedCode, statusCode)
+
+			expBody := tt.expectedBody
+			if strings.Contains(tt.expectedBody, "%s") {
+				expBody = fmt.Sprintf(expBody, composeId)
+			}
+			require.Equal(t, expBody, body)
 		})
 	}
 }

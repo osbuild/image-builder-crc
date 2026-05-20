@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
@@ -123,95 +122,6 @@ func TestGetComposeEntryNotFoundResponse(t *testing.T) {
 		id), &tutils.AuthString0)
 	require.Equal(t, http.StatusNotFound, respStatusCode)
 	require.Contains(t, body, "compose entry not found")
-}
-
-func TestGetComposeStatusErrorResponse(t *testing.T) {
-	testCases := []struct {
-		statusCode       int
-		checkImageStatus bool
-		expectedBody     string
-	}{
-		{http.StatusNotFound,
-			true,
-			"",
-		},
-		{http.StatusInternalServerError,
-			false,
-			"Failed querying compose status",
-		},
-	}
-
-	for _, tc := range testCases {
-		ctx := t.Context()
-		composeId := uuid.New()
-
-		var composerStatus composer.ComposeStatus
-		apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("Authorization") == "Bearer" {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(tc.statusCode)
-			err := json.NewEncoder(w).Encode(composerStatus)
-			require.NoError(t, err)
-		}))
-		defer apiSrv.Close()
-
-		cr := v1.ComposeRequest{
-			Distribution: common.ToPtr(v1.Distributions("rhel-9")),
-			Customizations: &v1.Customizations{
-				// Since we are not calling handleCommonCompose but inserting directly to DB
-				// there is no point in using plaintext passwords
-				// If there is plaintext password in DB there is problem elsewhere (eg. CreateBlueprint)
-				Users: &[]v1.User{
-					{
-						Name:     "user",
-						SshKey:   common.ToPtr("ssh-rsa AAAAB3NzaC2"),
-						Password: common.ToPtr("$6$password123"),
-					},
-				},
-			}}
-
-		crRaw, err := json.Marshal(cr)
-		require.NoError(t, err)
-		srv := startServer(t, &testServerClientsConf{ComposerURL: apiSrv.URL}, &v1.ServerConfig{
-			DistributionsDir: "../../distributions",
-		})
-		defer srv.Shutdown(t)
-		err = srv.DB.InsertCompose(ctx, composeId, "000000", "user000000@test.test", "000000", cr.ImageName, crRaw, (*string)(cr.ClientId), nil)
-		require.NoError(t, err)
-
-		payloads := []struct {
-			composerStatus composer.ComposeStatus
-			imageStatus    v1.ImageStatus
-		}{
-			{
-				composerStatus: composer.ComposeStatus{
-					ImageStatus: composer.ImageStatus{},
-				},
-			},
-		}
-		for idx, payload := range payloads {
-			fmt.Printf("TT payload %d\n", idx)
-			composerStatus = payload.composerStatus
-
-			respStatusCode, body := tutils.GetResponseBody(t, fmt.Sprintf(srv.URL+"/api/image-builder/v1/composes/%s",
-				composeId), &tutils.AuthString0)
-			require.Equal(t, tc.statusCode, respStatusCode)
-			var result v1.ComposeStatus
-			err := json.Unmarshal([]byte(body), &result)
-			require.NoError(t, err)
-			if tc.checkImageStatus {
-				require.Equal(t, payload.imageStatus, result.ImageStatus)
-			}
-			if tc.expectedBody != "" {
-				require.Contains(t, body, tc.expectedBody)
-			}
-		}
-		srv.Shutdown(t)
-		apiSrv.Close()
-	}
 }
 
 func TestGetComposeMetadata(t *testing.T) {
