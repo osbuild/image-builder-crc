@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	BuildOSTreeOptions     = buildOSTreeOptions
-	ValidateComposeRequest = validateComposeRequest
+	BuildOSTreeOptions      = buildOSTreeOptions
+	ValidateComposeRequest  = validateComposeRequest
+	ParseComposeStatusError = parseComposeStatusError
 )
 
 func (s *Server) GetDB() db.DB {
