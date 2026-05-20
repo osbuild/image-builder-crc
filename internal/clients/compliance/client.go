@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/BurntSushi/toml"
@@ -20,7 +21,7 @@ var (
 	ErrorMajorVersion      = errors.New("major version of policy doesn't match requested major version")
 	ErrorPolicyNotFound    = errors.New("compliance policy not found")
 	ErrorTailoringNotFound = errors.New("tailorings for a policy not found")
-	ErrorNotOk             = errors.New("unexpected http status")
+	ErrorNotOk             = errors.New("unexpected http status from compliance api")
 )
 
 type ComplianceClient struct {
@@ -85,16 +86,24 @@ func (cc *ComplianceClient) PolicyDataForMinorVersion(ctx context.Context, major
 	if err != nil {
 		return nil, err
 	}
+	defer policiesResp.Body.Close()
 
 	if policiesResp.StatusCode == http.StatusUnauthorized || policiesResp.StatusCode == http.StatusForbidden {
 		return nil, ErrorAuth
 	} else if policiesResp.StatusCode == http.StatusNotFound {
 		return nil, ErrorPolicyNotFound
 	} else if policiesResp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(policiesResp.Body)
+		if err != nil {
+			return nil, ErrorNotOk
+		}
+		slog.ErrorContext(ctx, "unable to fetch policy data for minor version, got %d, response: %s",
+			"status", policiesResp.StatusCode,
+			"body", string(body),
+		)
 		return nil, ErrorNotOk
 	}
 
-	defer policiesResp.Body.Close()
 	var v2pr v2PolicyResponse
 	err = json.NewDecoder(policiesResp.Body).Decode(&v2pr)
 	if err != nil {
