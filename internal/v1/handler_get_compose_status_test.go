@@ -19,6 +19,7 @@ import (
 )
 
 func TestComposeStatus(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	composeId := uuid.New()
 	var composerStatus composer.ComposeStatus
@@ -254,6 +255,8 @@ func TestComposeStatus(t *testing.T) {
 	}
 }
 func TestParseComposeStatusError(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		composerErr *composer.ComposeStatusError
@@ -377,6 +380,8 @@ func TestParseComposeStatusError(t *testing.T) {
 }
 
 func TestGetComposeStatusErrorResponse(t *testing.T) {
+	t.Parallel()
+
 	var composerStatus *composer.ComposeStatus
 	var composerStatusCode int
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

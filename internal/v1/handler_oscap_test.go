@@ -13,6 +13,7 @@ import (
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (packages)
 func TestPackages_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Packages: []blueprint.Package{{Name: "pkg-required-1"}, {Name: "pkg-required-2"}},
 	}
@@ -49,6 +50,7 @@ func TestPackages_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestPackages_Removals_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{Packages: []blueprint.Package{{Name: "pkg-keep"}}}
 	snapshot := &Customizations{Packages: common.ToPtr([]string{"pkg-keep", "pkg-obsolete"})}
 	current := &Customizations{Packages: common.ToPtr([]string{"pkg-keep"})}
@@ -65,6 +67,7 @@ func TestPackages_Removals_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (enabled services)
 func TestServices_EnabledAdditions_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Services: &blueprint.ServicesCustomization{
@@ -105,6 +108,7 @@ func TestServices_EnabledAdditions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestServices_EnabledRemovals_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Services: &blueprint.ServicesCustomization{
@@ -127,6 +131,7 @@ func TestServices_EnabledRemovals_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (disabled services)
 func TestServices_DisabledAdditions_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Services: &blueprint.ServicesCustomization{
@@ -167,6 +172,7 @@ func TestServices_DisabledAdditions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestServices_DisabledRemovals_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Services: &blueprint.ServicesCustomization{
@@ -189,6 +195,7 @@ func TestServices_DisabledRemovals_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (masked services)
 func TestServices_MaskedAdditions_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Services: &blueprint.ServicesCustomization{
@@ -229,6 +236,7 @@ func TestServices_MaskedAdditions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestServices_MaskedRemovals_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Services: &blueprint.ServicesCustomization{
@@ -251,6 +259,7 @@ func TestServices_MaskedRemovals_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (filesystems)
 func TestFilesystems_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Filesystem: []blueprint.FilesystemCustomization{
@@ -306,6 +315,7 @@ func TestFilesystems_Additions_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestFilesystems_Removals_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Filesystem: []blueprint.FilesystemCustomization{
@@ -331,6 +341,7 @@ func TestFilesystems_Removals_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (kernel name)
 func TestKernel_NameAddition_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Kernel: &blueprint.KernelCustomization{
@@ -367,6 +378,7 @@ func TestKernel_NameAddition_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestKernel_NameRemoval_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Kernel: &blueprint.KernelCustomization{
@@ -389,6 +401,7 @@ func TestKernel_NameRemoval_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (kernel append)
 func TestKernel_AppendAddition_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Kernel: &blueprint.KernelCustomization{
@@ -426,6 +439,7 @@ func TestKernel_AppendAddition_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestKernel_AppendRemoval_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			Kernel: &blueprint.KernelCustomization{
@@ -448,6 +462,7 @@ func TestKernel_AppendRemoval_FromSnapshot_Warns(t *testing.T) {
 
 // Flow test: initial open shows errors, fixup applies, next open has no errors (FIPS enabled)
 func TestFIPS_EnabledAddition_Flow_ErrorThenFixup_NoError(t *testing.T) {
+	t.Parallel()
 	fipsTrue := true
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
@@ -485,6 +500,7 @@ func TestFIPS_EnabledAddition_Flow_ErrorThenFixup_NoError(t *testing.T) {
 }
 
 func TestFIPS_NotSet_Fixup_CreatesAndEnables(t *testing.T) {
+	t.Parallel()
 	fipsTrue := true
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
@@ -505,6 +521,7 @@ func TestFIPS_NotSet_Fixup_CreatesAndEnables(t *testing.T) {
 }
 
 func TestFIPS_Removal_FromSnapshot_Warns(t *testing.T) {
+	t.Parallel()
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{
 			// No FIPS requirement in current policy
@@ -524,6 +541,7 @@ func TestFIPS_Removal_FromSnapshot_Warns(t *testing.T) {
 }
 
 func TestFIPS_DisabledInPolicy_SnapshotEnabled_Warns(t *testing.T) {
+	t.Parallel()
 	fipsFalse := false
 	policyBP := &blueprint.Blueprint{
 		Customizations: &blueprint.Customizations{

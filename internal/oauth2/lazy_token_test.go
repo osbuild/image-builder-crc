@@ -12,6 +12,7 @@ import (
 )
 
 func TestLazyToken(t *testing.T) {
+	t.Parallel()
 	nextTokenID := 0
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextTokenID++
@@ -64,6 +65,7 @@ func TestLazyToken(t *testing.T) {
 }
 
 func TestLazyTokenUnhappy(t *testing.T) {
+	t.Parallel()
 	// Set up a mock token server that always returns an HTTP error
 	mockTokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Mock token server error", http.StatusInternalServerError)

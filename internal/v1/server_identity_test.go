@@ -11,6 +11,7 @@ import (
 )
 
 func TestRedHatIdentity(t *testing.T) {
+	t.Parallel()
 	// note: any url will work, it'll only try to contact the osbuild-composer
 	// instance when calling /compose or /compose/$uuid
 	srv := startServer(t, &testServerClientsConf{}, nil)
@@ -63,6 +64,7 @@ func TestRedHatIdentity(t *testing.T) {
 }
 
 func TestFedoraIdentity(t *testing.T) {
+	t.Parallel()
 	// note: any url will work, it'll only try to contact the osbuild-composer
 	// instance when calling /compose or /compose/$uuid
 	srv := startServer(t, &testServerClientsConf{}, &v1.ServerConfig{
