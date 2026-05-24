@@ -16,7 +16,7 @@ require (
 	github.com/osbuild/blueprint v1.30.0
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32
 	github.com/osbuild/images v0.266.0
-	github.com/osbuild/logging v0.0.8
+	github.com/osbuild/logging v0.0.10
 	github.com/prometheus/client_golang v1.23.0
 	github.com/redhatinsights/app-common-go v1.6.8
 	github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1
@@ -38,7 +38,7 @@ require (
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/getsentry/sentry-go v0.35.1 // indirect
+	github.com/getsentry/sentry-go v0.45.1 // indirect
 	github.com/go-openapi/jsonpointer v0.22.4 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.4 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -61,11 +61,11 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
-	github.com/samber/lo v1.47.0 // indirect
-	github.com/samber/slog-common v0.18.1 // indirect
-	github.com/samber/slog-sentry/v2 v2.9.3 // indirect
+	github.com/samber/lo v1.53.0 // indirect
+	github.com/samber/slog-common v0.21.0 // indirect
+	github.com/samber/slog-sentry/v2 v2.10.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/systemd/slog-journal v0.1.0 // indirect
+	github.com/systemd/slog-journal v0.1.2 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
