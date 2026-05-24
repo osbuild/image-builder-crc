@@ -13,7 +13,7 @@ require (
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/labstack/gommon v0.5.0
 	github.com/oapi-codegen/runtime v1.4.1
-	github.com/osbuild/blueprint v1.13.0
+	github.com/osbuild/blueprint v1.30.0
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32
 	github.com/osbuild/images v0.182.0
 	github.com/osbuild/logging v0.0.8
