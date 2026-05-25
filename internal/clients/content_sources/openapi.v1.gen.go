@@ -357,7 +357,7 @@ type ApiRepositoryImportResponse struct {
 	// FailedSnapshotCount Number of consecutive failed snapshots
 	FailedSnapshotCount *int `json:"failed_snapshot_count,omitempty"`
 
-	// FeatureName The feature name this repo requires
+	// FeatureName Comma-separated Red Hat feature names; entitlement or import matches if any token applies
 	FeatureName *string `json:"feature_name,omitempty"`
 
 	// GpgKey GPG key for repository
@@ -537,7 +537,7 @@ type ApiRepositoryResponse struct {
 	// FailedSnapshotCount Number of consecutive failed snapshots
 	FailedSnapshotCount *int `json:"failed_snapshot_count,omitempty"`
 
-	// FeatureName The feature name this repo requires
+	// FeatureName Comma-separated Red Hat feature names; entitlement or import matches if any token applies
 	FeatureName *string `json:"feature_name,omitempty"`
 
 	// GpgKey GPG key for repository
