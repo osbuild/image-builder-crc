@@ -1000,6 +1000,8 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 			composerImageType = composer.ImageTypesWsl
 		case ImageTypesBootableContainerIso:
 			composerImageType = composer.ImageTypesBootableContainerIso
+		case ImageTypesPxeTarXz:
+			composerImageType = composer.ImageTypesPxeTarXz
 		default:
 			return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, "Invalid image type for upload target")
 		}
