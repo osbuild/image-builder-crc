@@ -1283,15 +1283,6 @@ func TestComposeWithSnapshots(t *testing.T) {
 							PackageSets: nil,
 						},
 						{
-							Baseurl:     common.ToPtr("https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64"),
-							Rhsm:        common.ToPtr(false),
-							CheckGpg:    common.ToPtr(false),
-							IgnoreSsl:   nil,
-							Metalink:    nil,
-							Mirrorlist:  nil,
-							PackageSets: nil,
-						},
-						{
 							Baseurl:     common.ToPtr("https://content-sources.org/api/neat/snappy/baseos"),
 							Rhsm:        common.ToPtr(false),
 							Gpgkey:      common.ToPtr(mocks.RhelGPG),
@@ -3833,11 +3824,6 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 						},
 						{
 							Baseurl:  common.ToPtr("https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable"),
-							Rhsm:     common.ToPtr(false),
-							CheckGpg: common.ToPtr(false),
-						},
-						{
-							Baseurl:  common.ToPtr("https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64"),
 							Rhsm:     common.ToPtr(false),
 							CheckGpg: common.ToPtr(false),
 						},
