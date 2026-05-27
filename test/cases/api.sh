@@ -221,7 +221,7 @@ function createReqFileAWS() {
     "custom_repositories": [
       {
         "baseurl": [
-          "http://nginx.org/packages/rhel/8/$ARCH/"
+          "http://nginx.org/packages/rhel/10/$ARCH/"
         ],
         "check_gpg": false,
         "id": "076119fc-2dbc-49d7-bbd7-b39ca2bc3086",
@@ -237,7 +237,7 @@ function createReqFileAWS() {
     ],
     "payload_repositories": [
       {
-        "baseurl": "http://nginx.org/packages/rhel/8/$ARCH/",
+        "baseurl": "http://nginx.org/packages/rhel/10/$ARCH/",
         "check_gpg": false,
         "check_repo_gpg": false,
         "rhsm": false,
