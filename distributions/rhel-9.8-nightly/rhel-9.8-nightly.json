@@ -23,11 +23,6 @@
       "baseurl": "https://packages.cloud.google.com/yum/repos/google-compute-engine-el9-x86_64-stable",
       "rhsm": false,
       "image_type_tags": ["gcp"]
-    }, {
-      "id": "google-cloud-sdk",
-      "baseurl": "https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64",
-      "rhsm": false,
-      "image_type_tags": ["gcp"]
     }]
   },
   "aarch64": {

@@ -25,12 +25,6 @@
       "rhsm": false,
       "image_type_tags": ["gcp"],
       "check_gpg": false
-    }, {
-      "id": "google-cloud-sdk",
-      "baseurl": "https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64",
-      "rhsm": false,
-      "image_type_tags": ["gcp"],
-      "check_gpg": false
     }]
   },
   "aarch64": {
