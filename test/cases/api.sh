@@ -93,7 +93,7 @@ BASEURLMAJORVERSION="http://$ADDRESS:$PORT/api/image-builder/v1"
 REQUEST_FILE="${WORKDIR}/request.json"
 ARCH=$(uname -m)
 
-DISTRO="rhel-8"
+DISTRO="rhel-10"
 SSH_USER="ec2-user"
 
 if [[ "$ARCH" == "x86_64" ]]; then
