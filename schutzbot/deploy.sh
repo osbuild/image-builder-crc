@@ -8,8 +8,9 @@ function greenprint {
 greenprint "Building test container"
 sudo podman build --label="quay.expires-after=1w" --security-opt "label=disable" -t image-builder-crc -f distribution/Dockerfile-ubi .
 
-greenprint "Pulling osbuild/postgres:13-alpine"
-sudo podman pull docker://quay.io/osbuild/postgres:13-alpine
+db_container="quay.io/osbuild/postgres:13-alpine"
+greenprint "Pulling ${db_container}"
+sudo podman pull "docker://${db_container}"
 
 greenprint "Starting image-builder-db"
 sudo podman run -p 5432:5432 --name image-builder-db \
@@ -18,7 +19,7 @@ sudo podman run -p 5432:5432 --name image-builder-db \
       -e POSTGRES_USER=postgres \
       -e POSTGRES_PASSWORD=foobar \
       -e POSTGRES_DB=imagebuilder \
-      -d postgres
+      -d "${db_container}"
 
 for RETRY in {1..10}; do
     if sudo podman healthcheck run image-builder-db  > /dev/null 2>&1; then
