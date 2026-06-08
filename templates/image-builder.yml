@@ -198,6 +198,7 @@ objects:
           v.blueprint_id::text as blueprint_id,
           v.version as blueprint_version,
           b.deleted as blueprint_deleted,
+          c.request->'bootc'->>'reference' as bootc_reference,
           c.request->'customizations'->'subscription' as subscription,
           c.request->'customizations'->'packages' as packages,
           c.request->'customizations'->'enabled_modules' as enabled_modules,
