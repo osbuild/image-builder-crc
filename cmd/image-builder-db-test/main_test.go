@@ -16,6 +16,10 @@ import (
 	v1 "github.com/osbuild/image-builder-crc/internal/v1"
 
 	"github.com/osbuild/image-builder-crc/internal/tutils"
+
+	// Lock the OpenAPI generator to a specific version in go.mod to prevent random
+	// 'tools/prepare-source.sh` misbehavior.
+	_ "github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen"
 )
 
 const (
