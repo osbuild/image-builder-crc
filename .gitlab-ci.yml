@@ -35,7 +35,7 @@ test:
     - schutzbot/deploy.sh
     - test/cases/api.sh
   variables:
-    RUNNER: aws/rhel-8.10-ga-x86_64
+    RUNNER: aws/rhel-10.2-ga-x86_64
 
 finish:
   stage: finish
