@@ -219,8 +219,7 @@ objects:
                else c.request->'customizations'->'kernel' end as kernel,
           case when c.request->'customizations'->'firewall'='{}' then 'null'
                else c.request->'customizations'->'firewall' end as firewall,
-          jsonb_array_length(c.request->'customizations'->'users') as num_users,
-          c.request->'customizations'->'aap_registration' as aap_registration
+          jsonb_array_length(c.request->'customizations'->'users') as num_users
         from
           composes c
           left outer join blueprint_versions v on c.blueprint_version_id = v.id
