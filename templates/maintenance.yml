@@ -91,9 +91,9 @@ objects:
 parameters:
   - description: maintenance image name
     name: IMAGE_NAME
-    value: quay.io/cloudservices/image-builder
+    value: quay.io/redhat-services-prod/insights-management-tenant/insights-image-builder/image-builder
     required: true
-  - description: composer image tag
+  - description: maintenance image tag
     name: IMAGE_TAG
     required: true
   - name: CPU_REQUEST
