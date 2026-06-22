@@ -1023,6 +1023,11 @@ type ApiTaskInfoResponse struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
+// ApiTemplateAdvisoryIDsResponse defines model for api.TemplateAdvisoryIDsResponse.
+type ApiTemplateAdvisoryIDsResponse struct {
+	AdvisoryIds *[]string `json:"advisory_ids,omitempty"`
+}
+
 // ApiTemplateCollectionResponse defines model for api.TemplateCollectionResponse.
 type ApiTemplateCollectionResponse struct {
 	// Data Requested Data
