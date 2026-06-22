@@ -784,6 +784,10 @@ type BlueprintUser struct {
 
 // Bootc defines model for Bootc.
 type Bootc struct {
+	// BuildReference Optional container image reference used as the build container.
+	// When not set, the base reference is used for building as well.
+	BuildReference *string `json:"build_reference,omitempty"`
+
 	// IsoPayloadReference Optional container image reference for a payload container to embed
 	// in the ISO's container storage. When set, the payload container is
 	// available at install/boot time. Only valid for bootable-container-iso

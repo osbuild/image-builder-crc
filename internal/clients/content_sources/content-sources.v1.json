@@ -1752,6 +1752,17 @@
                 },
                 "type": "object"
             },
+            "api.TemplateAdvisoryIDsResponse": {
+                "properties": {
+                    "advisory_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
             "api.TemplateCollectionResponse": {
                 "properties": {
                     "data": {
@@ -6619,6 +6630,79 @@
                     }
                 },
                 "summary": "Fully update all attributes of a Template",
+                "tags": [
+                    "templates"
+                ]
+            }
+        },
+        "/templates/{uuid}/advisories/ids": {
+            "get": {
+                "description": "This operation enables users to retrieve a template's advisory IDs.",
+                "operationId": "fetchTemplateAdvisoryIDs",
+                "parameters": [
+                    {
+                        "description": "Template ID",
+                        "in": "path",
+                        "name": "uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.TemplateAdvisoryIDsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Fetch template Advisory IDs",
                 "tags": [
                     "templates"
                 ]
