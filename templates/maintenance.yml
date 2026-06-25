@@ -80,6 +80,26 @@ objects:
                 value: "${ENABLE_DB_MAINTENANCE}"
               - name: DB_COMPOSES_RETENTION_MONTHS
                 value: "${DB_COMPOSES_RETENTION_MONTHS}"
+              - name: COMPOSER_URL
+                value: "${COMPOSER_URL}"
+              - name: COMPOSER_TOKEN_URL
+                value: "${COMPOSER_TOKEN_URL}"
+              - name: COMPOSER_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    key: client_id
+                    name: composer-secrets
+              - name: COMPOSER_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    key: client_secret
+                    name: composer-secrets
+              - name: GLITCHTIP_DSN
+                valueFrom:
+                  secretKeyRef:
+                    key: dsn
+                    name: "${GLITCHTIP_DSN_NAME}"
+                    optional: true
 
 - apiVersion: v1
   kind: ServiceAccount
@@ -125,3 +145,10 @@ parameters:
     name: PGSSLMODE
     value: "require"
     required: true
+  - name: COMPOSER_URL
+    required: true
+  - name: COMPOSER_TOKEN_URL
+    value: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
+  - name: GLITCHTIP_DSN_NAME
+    value: "image-builder-stage-dsn"
+    description: Name of the secret for connecting to sentry/glitchtip

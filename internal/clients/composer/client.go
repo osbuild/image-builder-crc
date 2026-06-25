@@ -125,6 +125,10 @@ func (cc *ComposerClient) ComposeMetadata(ctx context.Context, id uuid.UUID) (*h
 	return cc.request(ctx, "GET", fmt.Sprintf("%s/composes/%s/metadata", cc.composerURL, id), nil, nil)
 }
 
+func (cc *ComposerClient) ComposeManifests(ctx context.Context, id uuid.UUID) (*http.Response, error) {
+	return cc.request(ctx, "GET", fmt.Sprintf("%s/composes/%s/manifests", cc.composerURL, id), nil, nil)
+}
+
 func (cc *ComposerClient) ComposeSBOMs(ctx context.Context, id uuid.UUID) (*http.Response, error) {
 	return cc.request(ctx, "GET", fmt.Sprintf("%s/composes/%s/sboms", cc.composerURL, id), nil, nil)
 }
