@@ -18,6 +18,12 @@ type Config struct {
 	PGUser                  string `env:"PGUSER"`
 	PGPassword              string `env:"PGPASSWORD"`
 	PGSSLMode               string `env:"PGSSLMODE"`
+	GlitchTipDSN            string `env:"GLITCHTIP_DSN"`
+	ComposerURL             string `env:"COMPOSER_URL"`
+	ComposerTokenURL        string `env:"COMPOSER_TOKEN_URL"`
+	ComposerClientId        string `env:"COMPOSER_CLIENT_ID"`
+	ComposerClientSecret    string `env:"COMPOSER_CLIENT_SECRET"`
+	ComposerCA              string `env:"COMPOSER_CA_PATH"`
 }
 
 // *string means the value is not required
