@@ -8,7 +8,11 @@ import (
 	"github.com/osbuild/image-builder-crc/internal/common"
 )
 
+// distroReg is shared by tests that use internal/distribution/testdata/distributions.
+var distroReg = MustLoadDistroRegistry("testdata/distributions")
+
 func TestDistroRegistry_List(t *testing.T) {
+	t.Parallel()
 	allDistros := []string{
 		"needs-entitlement",
 		"no-packages",
@@ -31,16 +35,13 @@ func TestDistroRegistry_List(t *testing.T) {
 		"bootc-only",
 	}
 
-	dr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-
-	result := dr.Available(true).List()
+	result := distroReg.Available(true).List()
 	require.Len(t, result, len(allDistros))
 	for _, distro := range result {
 		require.Contains(t, allDistros, distro.Distribution.Name)
 	}
 
-	result = dr.Available(false).List()
+	result = distroReg.Available(false).List()
 	require.Len(t, result, len(notEntitledDistros))
 	for _, distro := range result {
 		require.Contains(t, notEntitledDistros, distro.Distribution.Name)
@@ -48,10 +49,8 @@ func TestDistroRegistry_List(t *testing.T) {
 }
 
 func TestDistroRegistry_Get(t *testing.T) {
-	dr, err := LoadDistroRegistry("./testdata/distributions")
-	require.NoError(t, err)
-
-	result, err := dr.Available(true).Get("standard")
+	t.Parallel()
+	result, err := distroReg.Available(true).Get("standard")
 	require.NoError(t, err)
 	require.Equal(t, "standard", result.Distribution.Name)
 	require.Nil(t, err)
@@ -135,12 +134,13 @@ func TestDistroRegistry_Get(t *testing.T) {
 		},
 	}, result)
 
-	result, err = dr.Available(false).Get("toucan-42")
+	result, err = distroReg.Available(false).Get("toucan-42")
 	require.Nil(t, result)
 	require.Equal(t, ErrDistributionNotFound, err)
 }
 
 func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
+	t.Parallel()
 	dr, err := LoadDistroRegistry("./testdata/distributions")
 	require.NoError(t, err)
 	registry := dr.Available(true)
@@ -165,6 +165,7 @@ func TestDistroRegistry_FindByMajorMinorStr(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
+			t.Parallel()
 			require.Equal(t, tc.expected, registry.FindByMajorMinorStr(tc.input))
 		})
 	}
@@ -231,6 +232,7 @@ func TestDistroRegistry_ValidateBootcReferences(t *testing.T) {
 }
 
 func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
+	t.Parallel()
 	loaded, err := LoadDistroRegistry("testdata/distributions")
 	require.NoError(t, err)
 
@@ -292,6 +294,7 @@ func TestDistroRegistry_CollectBootcFromRegistry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			list := tt.registry.CollectBootcFromRegistry()
 			if tt.wantEmpty {
 				require.Empty(t, list)

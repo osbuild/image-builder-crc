@@ -13,6 +13,7 @@ import (
 // It checks the creation of the paginator with various limit and offset values.
 // It also checks the getters for the paginator base properties.
 func TestPaginatorBasic(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name   string
 		items  []int
@@ -73,6 +74,7 @@ func TestPaginatorBasic(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			paginator, err := common.NewPaginator(tc.items, tc.limit, tc.offset)
 			if tc.err != nil {
 				require.Error(t, err)
@@ -89,6 +91,7 @@ func TestPaginatorBasic(t *testing.T) {
 }
 
 func TestGetPage(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name   string
 		items  []int
@@ -142,6 +145,7 @@ func TestGetPage(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			paginator, err := common.NewPaginator(tc.items, tc.limit, tc.offset)
 			require.NoError(t, err)
 			page := paginator.Page()
@@ -151,6 +155,7 @@ func TestGetPage(t *testing.T) {
 }
 
 func TestLastPageOffset(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name           string
 		items          []int
@@ -204,6 +209,7 @@ func TestLastPageOffset(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			paginator, err := common.NewPaginator(tc.items, tc.limit, tc.offset)
 			require.NoError(t, err)
 			lastPageOffset := paginator.LastPageOffset()

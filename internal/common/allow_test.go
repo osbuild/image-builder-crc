@@ -9,6 +9,7 @@ import (
 var mockAllowList = AllowList{"000000": {"fedora-*", "centos-*"}, "000001": {}}
 
 func TestIsAllowed(t *testing.T) {
+	t.Parallel()
 	t.Run("orgId in allow list, allowed", func(t *testing.T) {
 		actual, _ := mockAllowList.IsAllowed("000000", "fedora-36")
 		expected := true
@@ -29,6 +30,7 @@ func TestIsAllowed(t *testing.T) {
 }
 
 func TestLoadAllowList(t *testing.T) {
+	t.Parallel()
 	t.Run("no allow file", func(t *testing.T) {
 		actual, err := LoadAllowList("")
 		expected := AllowList{}
