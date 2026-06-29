@@ -414,6 +414,9 @@ type ApiRepositoryImportResponse struct {
 	// PackageCount Number of packages last read in the repository
 	PackageCount *int `json:"package_count,omitempty"`
 
+	// Partner Whether this upload repository is marked as a partner repository
+	Partner *bool `json:"partner,omitempty"`
+
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
 
@@ -593,6 +596,9 @@ type ApiRepositoryResponse struct {
 
 	// PackageCount Number of packages last read in the repository
 	PackageCount *int `json:"package_count,omitempty"`
+
+	// Partner Whether this upload repository is marked as a partner repository
+	Partner *bool `json:"partner,omitempty"`
 
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
@@ -879,6 +885,9 @@ type ApiSnapshotResponse struct {
 
 	// DetectedOsVersion Release version of the repository (BaseOS)
 	DetectedOsVersion *string `json:"detected_os_version,omitempty"`
+
+	// Published Whether this snapshot is published for cross-org partner visibility
+	Published *bool `json:"published,omitempty"`
 
 	// RemovedCounts Count of each content type
 	RemovedCounts *map[string]int64 `json:"removed_counts,omitempty"`
