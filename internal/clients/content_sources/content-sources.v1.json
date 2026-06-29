@@ -699,6 +699,11 @@
                         "description": "Number of packages last read in the repository",
                         "type": "integer"
                     },
+                    "partner": {
+                        "description": "Whether this upload repository is marked as a partner repository",
+                        "readOnly": true,
+                        "type": "boolean"
+                    },
                     "snapshot": {
                         "description": "Enable snapshotting and hosting of this repository",
                         "type": "boolean"
@@ -1005,6 +1010,11 @@
                     "package_count": {
                         "description": "Number of packages last read in the repository",
                         "type": "integer"
+                    },
+                    "partner": {
+                        "description": "Whether this upload repository is marked as a partner repository",
+                        "readOnly": true,
+                        "type": "boolean"
                     },
                     "snapshot": {
                         "description": "Enable snapshotting and hosting of this repository",
@@ -1507,6 +1517,10 @@
                     "detected_os_version": {
                         "description": "Release version of the repository (BaseOS)",
                         "type": "string"
+                    },
+                    "published": {
+                        "description": "Whether this snapshot is published for cross-org partner visibility",
+                        "type": "boolean"
                     },
                     "removed_counts": {
                         "additionalProperties": {
