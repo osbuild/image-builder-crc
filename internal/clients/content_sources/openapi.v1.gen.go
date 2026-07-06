@@ -150,6 +150,34 @@ type ApiListSnapshotByDateResponse struct {
 	Data *[]ApiSnapshotForDate `json:"data,omitempty"`
 }
 
+// ApiMavenPackageDetailResponse defines model for api.MavenPackageDetailResponse.
+type ApiMavenPackageDetailResponse struct {
+	Author     *string           `json:"author,omitempty"`
+	Builds     *[]ApiReleaseInfo `json:"builds,omitempty"`
+	Group      *string           `json:"group,omitempty"`
+	License    *string           `json:"license,omitempty"`
+	Name       *string           `json:"name,omitempty"`
+	ProjectUrl *string           `json:"project_url,omitempty"`
+	Summary    *string           `json:"summary,omitempty"`
+	Version    *string           `json:"version,omitempty"`
+}
+
+// ApiPackageItem defines model for api.PackageItem.
+type ApiPackageItem struct {
+	Group          *string           `json:"group,omitempty"`
+	LatestReleases *[]ApiReleaseInfo `json:"latest_releases,omitempty"`
+	Name           *string           `json:"name,omitempty"`
+	Versions       *[]string         `json:"versions,omitempty"`
+}
+
+// ApiPackageResponse defines model for api.PackageResponse.
+type ApiPackageResponse struct {
+	Limit   *int              `json:"limit,omitempty"`
+	Offset  *int              `json:"offset,omitempty"`
+	Results *[]ApiPackageItem `json:"results,omitempty"`
+	Total   *int              `json:"total,omitempty"`
+}
+
 // ApiPackageSourcesResponse defines model for api.PackageSourcesResponse.
 type ApiPackageSourcesResponse struct {
 	// Arch Architecture of the module
@@ -254,6 +282,50 @@ type ApiPublicRepositoryResponse struct {
 
 	// Url URL of the remote yum repository
 	Url *string `json:"url,omitempty"`
+}
+
+// ApiPythonDistribution defines model for api.PythonDistribution.
+type ApiPythonDistribution struct {
+	CreatedAt     *string `json:"created_at,omitempty"`
+	Filename      *string `json:"filename,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Packagetype   *string `json:"packagetype,omitempty"`
+	PythonVersion *string `json:"python_version,omitempty"`
+	Sha256        *string `json:"sha256,omitempty"`
+	Size          *int    `json:"size,omitempty"`
+}
+
+// ApiPythonPackageAuthor defines model for api.PythonPackageAuthor.
+type ApiPythonPackageAuthor struct {
+	Email *string `json:"email,omitempty"`
+	Name  *string `json:"name,omitempty"`
+}
+
+// ApiPythonPackageDetailResponse defines model for api.PythonPackageDetailResponse.
+type ApiPythonPackageDetailResponse struct {
+	Author           *ApiPythonPackageAuthor  `json:"author,omitempty"`
+	Description      *string                  `json:"description,omitempty"`
+	Distributions    *[]ApiPythonDistribution `json:"distributions,omitempty"`
+	LastUpdated      *string                  `json:"last_updated,omitempty"`
+	License          *string                  `json:"license,omitempty"`
+	Name             *string                  `json:"name,omitempty"`
+	ProjectUrl       *string                  `json:"project_url,omitempty"`
+	Summary          *string                  `json:"summary,omitempty"`
+	UpstreamVersions *[]string                `json:"upstream_versions,omitempty"`
+	Version          *string                  `json:"version,omitempty"`
+}
+
+// ApiPythonPackageVersionsResponse defines model for api.PythonPackageVersionsResponse.
+type ApiPythonPackageVersionsResponse struct {
+	Name     *string                           `json:"name,omitempty"`
+	Versions *[]ApiPythonPackageDetailResponse `json:"versions,omitempty"`
+}
+
+// ApiReleaseInfo defines model for api.ReleaseInfo.
+type ApiReleaseInfo struct {
+	CreatedAt *string `json:"created_at,omitempty"`
+	Release   *string `json:"release,omitempty"`
+	Version   *string `json:"version,omitempty"`
 }
 
 // ApiRepositoryCollectionResponse defines model for api.RepositoryCollectionResponse.
@@ -416,6 +488,12 @@ type ApiRepositoryImportResponse struct {
 
 	// Partner Whether this upload repository is marked as a partner repository
 	Partner *bool `json:"partner,omitempty"`
+
+	// PublishedDistributionUrl Published distribution URL from Pulp
+	PublishedDistributionUrl *string `json:"published_distribution_url,omitempty"`
+
+	// SecurityLevel Security level of the repository (e.g. validated, remediated)
+	SecurityLevel *string `json:"security_level,omitempty"`
 
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
@@ -599,6 +677,12 @@ type ApiRepositoryResponse struct {
 
 	// Partner Whether this upload repository is marked as a partner repository
 	Partner *bool `json:"partner,omitempty"`
+
+	// PublishedDistributionUrl Published distribution URL from Pulp
+	PublishedDistributionUrl *string `json:"published_distribution_url,omitempty"`
+
+	// SecurityLevel Security level of the repository (e.g. validated, remediated)
+	SecurityLevel *string `json:"security_level,omitempty"`
 
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
@@ -1345,6 +1429,9 @@ type ListRepositoriesParams struct {
 
 	// ExtendedReleaseVersion A comma separated list of extended release versions to filter on (e.g. 9.4,9.6). Use 'none' to filter repositories without extended release versions.
 	ExtendedReleaseVersion *string `form:"extended_release_version,omitempty" json:"extended_release_version,omitempty"`
+
+	// FeatureName A comma separated list of feature names to filter on (e.g. feature1,feature2)
+	FeatureName *string `form:"feature_name,omitempty" json:"feature_name,omitempty"`
 }
 
 // BulkCreateRepositoriesJSONBody defines parameters for BulkCreateRepositories.
@@ -1396,6 +1483,18 @@ type ListRepositoriesPackageGroupsParams struct {
 
 	// SortBy Sort the response based on specific repository parameters. Sort criteria can include `id`, `name`, `description`, and `package_list`.
 	SortBy *string `form:"sort_by,omitempty" json:"sort_by,omitempty"`
+}
+
+// ListPackagesParams defines parameters for ListPackages.
+type ListPackagesParams struct {
+	// Offset Starting point for pagination. Default: 0
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Limit Number of items per page. Default: 100
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Search Term to filter and retrieve items that match the specified search criteria. For Maven, search term can include name or group. For Python, search term can include name.
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
 // ListRepositoriesRpmsParams defines parameters for ListRepositoriesRpms.
