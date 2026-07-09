@@ -173,6 +173,7 @@ const (
 	Fedora42       Distributions = "fedora-42"
 	Fedora43       Distributions = "fedora-43"
 	Fedora44       Distributions = "fedora-44"
+	Fedora45       Distributions = "fedora-45"
 	Hummingbird    Distributions = "hummingbird"
 	Rhel10         Distributions = "rhel-10"
 	Rhel100        Distributions = "rhel-10.0"
@@ -233,6 +234,8 @@ func (e Distributions) Valid() bool {
 	case Fedora43:
 		return true
 	case Fedora44:
+		return true
+	case Fedora45:
 		return true
 	case Hummingbird:
 		return true
