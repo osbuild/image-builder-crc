@@ -286,6 +286,23 @@
                 },
                 "type": "object"
             },
+            "api.MavenPackageVersionsResponse": {
+                "properties": {
+                    "group": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "versions": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.MavenPackageDetailResponse"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
             "api.PackageItem": {
                 "properties": {
                     "group": {
@@ -759,6 +776,10 @@
                         "readOnly": true,
                         "type": "string"
                     },
+                    "build_count": {
+                        "description": "Number of builds last read in the repository, not applicable to all repositories",
+                        "type": "integer"
+                    },
                     "content_type": {
                         "description": "Content Type (rpm) of the repository",
                         "type": "string"
@@ -911,6 +932,10 @@
                         "description": "UUID of the object",
                         "readOnly": true,
                         "type": "string"
+                    },
+                    "version_count": {
+                        "description": "Number of versions last read in the repository, not applicable to all repositories",
+                        "type": "integer"
                     },
                     "warnings": {
                         "description": "Warnings to alert user of mismatched fields if there is an existing repo with the same URL",
@@ -1081,6 +1106,10 @@
                         "readOnly": true,
                         "type": "string"
                     },
+                    "build_count": {
+                        "description": "Number of builds last read in the repository, not applicable to all repositories",
+                        "type": "integer"
+                    },
                     "content_type": {
                         "description": "Content Type (rpm) of the repository",
                         "type": "string"
@@ -1233,6 +1262,10 @@
                         "description": "UUID of the object",
                         "readOnly": true,
                         "type": "string"
+                    },
+                    "version_count": {
+                        "description": "Number of versions last read in the repository, not applicable to all repositories",
+                        "type": "integer"
                     }
                 },
                 "type": "object"
@@ -4458,6 +4491,87 @@
                 "summary": "introspect a repository",
                 "tags": [
                     "repositories"
+                ]
+            }
+        },
+        "/repositories/{uuid}/maven_packages/{group}/{name}": {
+            "get": {
+                "description": "List all versions (builds) for a specific Maven package by group and name.",
+                "operationId": "listMavenPackageVersions",
+                "parameters": [
+                    {
+                        "description": "Repository UUID",
+                        "in": "path",
+                        "name": "uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Maven package group ID",
+                        "in": "path",
+                        "name": "group",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Maven package artifact ID",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.MavenPackageVersionsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Maven Package Versions",
+                "tags": [
+                    "packages"
                 ]
             }
         },

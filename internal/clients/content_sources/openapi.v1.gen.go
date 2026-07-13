@@ -162,6 +162,13 @@ type ApiMavenPackageDetailResponse struct {
 	Version    *string           `json:"version,omitempty"`
 }
 
+// ApiMavenPackageVersionsResponse defines model for api.MavenPackageVersionsResponse.
+type ApiMavenPackageVersionsResponse struct {
+	Group    *string                          `json:"group,omitempty"`
+	Name     *string                          `json:"name,omitempty"`
+	Versions *[]ApiMavenPackageDetailResponse `json:"versions,omitempty"`
+}
+
 // ApiPackageItem defines model for api.PackageItem.
 type ApiPackageItem struct {
 	Group          *string           `json:"group,omitempty"`
@@ -408,6 +415,9 @@ type ApiRepositoryImportResponse struct {
 	// AccountId Account ID of the owner
 	AccountId *string `json:"account_id,omitempty"`
 
+	// BuildCount Number of builds last read in the repository, not applicable to all repositories
+	BuildCount *int `json:"build_count,omitempty"`
+
 	// ContentType Content Type (rpm) of the repository
 	ContentType *string `json:"content_type,omitempty"`
 
@@ -506,6 +516,9 @@ type ApiRepositoryImportResponse struct {
 
 	// Uuid UUID of the object
 	Uuid *string `json:"uuid,omitempty"`
+
+	// VersionCount Number of versions last read in the repository, not applicable to all repositories
+	VersionCount *int `json:"version_count,omitempty"`
 
 	// Warnings Warnings to alert user of mismatched fields if there is an existing repo with the same URL
 	Warnings *[]map[string]interface{} `json:"warnings,omitempty"`
@@ -597,6 +610,9 @@ type ApiRepositoryResponse struct {
 	// AccountId Account ID of the owner
 	AccountId *string `json:"account_id,omitempty"`
 
+	// BuildCount Number of builds last read in the repository, not applicable to all repositories
+	BuildCount *int `json:"build_count,omitempty"`
+
 	// ContentType Content Type (rpm) of the repository
 	ContentType *string `json:"content_type,omitempty"`
 
@@ -695,6 +711,9 @@ type ApiRepositoryResponse struct {
 
 	// Uuid UUID of the object
 	Uuid *string `json:"uuid,omitempty"`
+
+	// VersionCount Number of versions last read in the repository, not applicable to all repositories
+	VersionCount *int `json:"version_count,omitempty"`
 }
 
 // ApiRepositoryRpm defines model for api.RepositoryRpm.
