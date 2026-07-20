@@ -303,6 +303,72 @@
                 },
                 "type": "object"
             },
+            "api.NpmPackageDetailResponse": {
+                "properties": {
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "latest_versions": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.ReleaseInfo"
+                        },
+                        "type": "array"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "scope": {
+                        "type": "string"
+                    },
+                    "tarball": {
+                        "$ref": "#/components/schemas/api.NpmTarball"
+                    },
+                    "upstream_versions": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "version": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "api.NpmPackageVersionsResponse": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "scope": {
+                        "type": "string"
+                    },
+                    "versions": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.NpmPackageDetailResponse"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
+            "api.NpmTarball": {
+                "properties": {
+                    "filename": {
+                        "type": "string"
+                    },
+                    "relative_path": {
+                        "type": "string"
+                    },
+                    "sha256": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
             "api.PackageItem": {
                 "properties": {
                     "group": {
@@ -4665,6 +4731,177 @@
                 ]
             }
         },
+        "/repositories/{uuid}/npm_packages/{scope}/{name}": {
+            "get": {
+                "description": "Get tarball info for all versions of an npm package by scope and name. Use \"-\" as the scope for unscoped packages.",
+                "operationId": "getNpmPackageVersions",
+                "parameters": [
+                    {
+                        "description": "Repository UUID",
+                        "in": "path",
+                        "name": "uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "NPM package scope (e.g. @types). Use - for unscoped packages.",
+                        "in": "path",
+                        "name": "scope",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "NPM package name",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.NpmPackageVersionsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Get NPM Package Versions",
+                "tags": [
+                    "packages"
+                ]
+            }
+        },
+        "/repositories/{uuid}/npm_packages/{scope}/{name}/{version}": {
+            "get": {
+                "description": "Get tarball info for a specific npm package by scope, name, and version. Use \"-\" as the scope for unscoped packages.",
+                "operationId": "getNpmPackageDetail",
+                "parameters": [
+                    {
+                        "description": "Repository UUID",
+                        "in": "path",
+                        "name": "uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "NPM package scope (e.g. @types). Use - for unscoped packages.",
+                        "in": "path",
+                        "name": "scope",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "NPM package name",
+                        "in": "path",
+                        "name": "name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "NPM package version",
+                        "in": "path",
+                        "name": "version",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.NpmPackageDetailResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Get NPM Package Detail",
+                "tags": [
+                    "packages"
+                ]
+            }
+        },
         "/repositories/{uuid}/package_groups": {
             "get": {
                 "description": "List package groups in a repository.",
@@ -4772,7 +5009,7 @@
         },
         "/repositories/{uuid}/packages": {
             "get": {
-                "description": "List packages for Maven (group and name) or Python (name) repositories. Returns empty results for other content types.",
+                "description": "List packages for Maven (group and name), Python (name), or npm (scope and name) repositories. Returns empty results for other content types.",
                 "operationId": "listPackages",
                 "parameters": [
                     {
@@ -4801,7 +5038,7 @@
                         }
                     },
                     {
-                        "description": "Term to filter and retrieve items that match the specified search criteria. For Maven, search term can include name or group. For Python, search term can include name.",
+                        "description": "Term to filter and retrieve items that match the specified search criteria. For Maven, search term can include name or group. For Python and npm, search term can include name (including scoped names like @types/).",
                         "in": "query",
                         "name": "search",
                         "schema": {
