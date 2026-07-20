@@ -169,6 +169,32 @@ type ApiMavenPackageVersionsResponse struct {
 	Versions *[]ApiMavenPackageDetailResponse `json:"versions,omitempty"`
 }
 
+// ApiNpmPackageDetailResponse defines model for api.NpmPackageDetailResponse.
+type ApiNpmPackageDetailResponse struct {
+	CreatedAt        *string           `json:"created_at,omitempty"`
+	LatestVersions   *[]ApiReleaseInfo `json:"latest_versions,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	Scope            *string           `json:"scope,omitempty"`
+	Tarball          *ApiNpmTarball    `json:"tarball,omitempty"`
+	UpstreamVersions *[]string         `json:"upstream_versions,omitempty"`
+	Version          *string           `json:"version,omitempty"`
+}
+
+// ApiNpmPackageVersionsResponse defines model for api.NpmPackageVersionsResponse.
+type ApiNpmPackageVersionsResponse struct {
+	Name     *string                        `json:"name,omitempty"`
+	Scope    *string                        `json:"scope,omitempty"`
+	Versions *[]ApiNpmPackageDetailResponse `json:"versions,omitempty"`
+}
+
+// ApiNpmTarball defines model for api.NpmTarball.
+type ApiNpmTarball struct {
+	Filename     *string `json:"filename,omitempty"`
+	RelativePath *string `json:"relative_path,omitempty"`
+	Sha256       *string `json:"sha256,omitempty"`
+	Size         *int    `json:"size,omitempty"`
+}
+
 // ApiPackageItem defines model for api.PackageItem.
 type ApiPackageItem struct {
 	Group          *string           `json:"group,omitempty"`
@@ -1512,7 +1538,7 @@ type ListPackagesParams struct {
 	// Limit Number of items per page. Default: 100
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
-	// Search Term to filter and retrieve items that match the specified search criteria. For Maven, search term can include name or group. For Python, search term can include name.
+	// Search Term to filter and retrieve items that match the specified search criteria. For Maven, search term can include name or group. For Python and npm, search term can include name (including scoped names like @types/).
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
