@@ -53,25 +53,14 @@ func main() {
 			Level:   "debug",
 			Format:  "text",
 		},
-		SentryConfig: sinit.SentryConfig{
-			Enabled: conf.GlitchTipDSN != "",
-			DSN:     conf.GlitchTipDSN,
-		},
 	}
 
 	err = sinit.InitializeLogging(ctx, loggingConfig)
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		if flushErr := sinit.Flush(); flushErr != nil {
-			slog.ErrorContext(ctx, "error flushing logs", "err", flushErr)
-		}
-	}()
 
-	slog.InfoContext(ctx, "starting image-builder maintainance",
-		"sentry", loggingConfig.SentryConfig.Enabled,
-	)
+	slog.InfoContext(ctx, "starting image-builder maintainance")
 
 	if conf.DryRun {
 		slog.InfoContext(ctx, "dry run, no state will be changed")
@@ -89,12 +78,6 @@ func main() {
 		conf.PGDatabase,
 		conf.PGSSLMode,
 	)
-
-	err = ReportFailedBuilds(ctx, conf, dbURL)
-	if err != nil {
-		slog.ErrorContext(ctx, "error during failed build reporting", "err", err)
-	}
-
 	err = DBCleanup(ctx, dbURL, conf.DryRun, conf.ComposesRetentionMonths)
 	if err != nil {
 		slog.ErrorContext(ctx, "error during DBCleanup", "err", err)
