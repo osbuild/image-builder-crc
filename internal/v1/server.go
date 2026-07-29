@@ -97,7 +97,7 @@ func Attach(conf *ServerConfig) (*Server, error) {
 		return nil, err
 	}
 
-	router, err := legacyrouter.NewRouter(spec)
+	router, err := legacyrouter.NewRouter(spec, openapi3.AllowExtraSiblingFields("description"))
 	if err != nil {
 		return nil, err
 	}

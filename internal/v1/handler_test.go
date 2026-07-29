@@ -373,7 +373,7 @@ func TestMetrics(t *testing.T) {
 func TestValidateSpec(t *testing.T) {
 	spec, err := v1.GetSwagger()
 	require.NoError(t, err)
-	err = spec.Validate(t.Context())
+	err = spec.Validate(t.Context(), openapi3.AllowExtraSiblingFields("description"))
 	require.NoError(t, err)
 }
 
