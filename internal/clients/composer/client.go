@@ -40,7 +40,7 @@ func NewClient(conf ComposerClientConfig) (*ComposerClient, error) {
 	}
 	client, err := createClient(conf.URL, conf.CA)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating compose http client")
+		return nil, fmt.Errorf("error creating compose http client")
 	}
 
 	cc := ComposerClient{

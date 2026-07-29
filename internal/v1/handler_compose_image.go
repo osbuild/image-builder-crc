@@ -831,16 +831,16 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	template, err := h.server.csClient.GetTemplateByID(ctx.Request().Context(), templateID)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("Unable to retrieve template: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve template: %v", err)
 	}
 
 	if template == nil || template.RepositoryUuids == nil {
-		return nil, nil, nil, nil, fmt.Errorf("Template %v has no repositories", templateID)
+		return nil, nil, nil, nil, fmt.Errorf("template %v has no repositories", templateID)
 	}
 
 	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, false)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("Unable to retrieve Red Hat repositories: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve Red Hat repositories: %v", err)
 	}
 	for repoID := range rhRepoMap {
 		rhRepoIDs = append(rhRepoIDs, repoID)
@@ -848,7 +848,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	customRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, true)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("Unable to retrieve custom repositories: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve custom repositories: %v", err)
 	}
 	for repoID := range customRepoMap {
 		customRepoIDs = append(customRepoIDs, repoID)
@@ -864,11 +864,11 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	// We should never hit this condition, but checking just in case
 	if template.Snapshots == nil {
-		return nil, nil, nil, nil, fmt.Errorf("Template %v has no snapshots", templateID)
+		return nil, nil, nil, nil, fmt.Errorf("template %v has no snapshots", templateID)
 	}
 	for _, snap := range *template.Snapshots {
 		if snap.RepositoryUuid == nil {
-			return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("No repository UUID is associated with this snapshot")
+			return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("no repository UUID is associated with this snapshot")
 		}
 
 		// Capture the first non-empty detected OS version seen across all template
@@ -881,7 +881,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 		if slices.Contains(customRepoIDs, *snap.RepositoryUuid) {
 			repo, ok := customRepoMap[*snap.RepositoryUuid]
 			if !ok {
-				return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+				return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
 			}
 			// We don't want to set custom repositories when using a template, so here we only set the payload repositories
 			composerRepo := composer.Repository{
@@ -902,7 +902,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 			// Set the Red Hat repositories from the template
 			repo, ok := rhRepoMap[*snap.RepositoryUuid]
 			if !ok {
-				return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("Returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
+				return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, fmt.Errorf("returned snapshot %v unexpected repository id %v", *snap.Uuid, *snap.RepositoryUuid)
 			}
 			rhRepo := composer.Repository{
 				Baseurl:  common.ToPtr(h.server.csReposURL.JoinPath(h.server.csReposPrefix, *snap.RepositoryPath).String()),
@@ -963,7 +963,7 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 					return uploadOptions, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unable to resolve source %s to an aws account id", source))
 				}
 
-				ctx.Logger().Info(fmt.Sprintf("Resolved source %s, to account id %s", strings.Replace(source, "\n", "", -1), *uploadInfo.Aws.AccountId))
+				ctx.Logger().Info(fmt.Sprintf("Resolved source %s, to account id %s", strings.ReplaceAll(source, "\n", ""), *uploadInfo.Aws.AccountId))
 				shareWithAccounts = append(shareWithAccounts, *uploadInfo.Aws.AccountId)
 			}
 		}
