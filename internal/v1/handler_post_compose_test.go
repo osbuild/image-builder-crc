@@ -3956,3 +3956,40 @@ func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
 	// default "rhel-9.8" distribution, not attempt to look up an empty version.
 	require.Equal(t, common.ToPtr("rhel-9.8"), composerRequest.Distribution)
 }
+
+func TestComposeContentSourcesUnauthorized(t *testing.T) {
+	apiSrv := httptest.NewServer(validatingComposerHandler(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	})))
+	defer apiSrv.Close()
+
+	csHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	})
+
+	srv := startServer(t, &testServerClientsConf{
+		ComposerURL: apiSrv.URL,
+		CSHandler:   csHandler,
+	}, nil)
+	defer srv.Shutdown(t)
+
+	var uo v1.UploadRequest_Options
+	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
+	payload := v1.ComposeRequest{
+		Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+		ImageRequests: []v1.ImageRequest{
+			{
+				Architecture: "x86_64",
+				ImageType:    v1.ImageTypesGuestImage,
+				SnapshotDate: common.ToPtr("1999-01-30T00:00:00Z"),
+				UploadRequest: v1.UploadRequest{
+					Type:    v1.UploadTypesAwsS3,
+					Options: uo,
+				},
+			},
+		},
+	}
+
+	respStatusCode, body := tutils.PostResponseBody(t, srv.URL+"/api/image-builder/v1/compose", payload)
+	require.Equal(t, http.StatusForbidden, respStatusCode, "expected 403 when content-sources returns unauthorized, got %d: %s", respStatusCode, body)
+}
