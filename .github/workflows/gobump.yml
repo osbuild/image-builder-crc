@@ -17,6 +17,6 @@ jobs:
       - name: Run gobump-deps action
         uses: lzap/gobump@main
         with:
-          go_version: "1.24.12"
+          go_version: "1.26.5"
           token: ${{ secrets.SCHUTZBOT_GITHUB_ACCESS_TOKEN }}
           exec: ./tools/prepare-source.sh
