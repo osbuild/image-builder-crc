@@ -452,7 +452,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
 		if err != nil {
 			ctx.Logger().Warnf("Unable to get RH repositories for base urls: %v", err)
-			return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+			return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %w", err)
 		} else {
 			for id, repo := range rhRepoMap {
 				repoMap[id] = repo
@@ -462,7 +462,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		nonRHRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, true)
 		if err != nil {
 			ctx.Logger().Warnf("Unable to get non-RH repositories for base urls: %v", err)
-			return nil, nil, nil, fmt.Errorf("unable to retrieve non-RH repositories: %v", err)
+			return nil, nil, nil, fmt.Errorf("unable to retrieve non-RH repositories: %w", err)
 		} else {
 			for id, repo := range nonRHRepoMap {
 				repoMap[id] = repo
@@ -472,7 +472,7 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 		repoMap, err = h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, external)
 		if err != nil {
 			ctx.Logger().Warnf("Unable to get repositories for base urls: %v", err)
-			return nil, nil, nil, fmt.Errorf("unable to retrieve repositories: %v", err)
+			return nil, nil, nil, fmt.Errorf("unable to retrieve repositories: %w", err)
 		}
 	}
 
@@ -696,7 +696,7 @@ func (h *Handlers) checkForRHReposInCustom(ctx echo.Context, customRepos []Custo
 
 	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+		return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %w", err)
 	}
 
 	var rhRepos []content_sources.ApiRepositoryResponse
@@ -726,7 +726,7 @@ func (h *Handlers) checkForRHReposInPayload(ctx echo.Context, payloadRepos []Rep
 	}
 	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), repoURLs, repoIDs, false)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+		return nil, nil, nil, fmt.Errorf("unable to retrieve RH repositories: %w", err)
 	}
 
 	var rhRepos []content_sources.ApiRepositoryResponse
@@ -832,7 +832,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	template, err := h.server.csClient.GetTemplateByID(ctx.Request().Context(), templateID)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve template: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve template: %w", err)
 	}
 
 	if template == nil || template.RepositoryUuids == nil {
@@ -841,7 +841,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	rhRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, false)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve Red Hat repositories: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve Red Hat repositories: %w", err)
 	}
 	for repoID := range rhRepoMap {
 		rhRepoIDs = append(rhRepoIDs, repoID)
@@ -849,7 +849,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 
 	customRepoMap, err := h.server.csClient.GetRepositories(ctx.Request().Context(), []string{}, *template.RepositoryUuids, true)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve custom repositories: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("unable to retrieve custom repositories: %w", err)
 	}
 	for repoID := range customRepoMap {
 		customRepoIDs = append(customRepoIDs, repoID)
