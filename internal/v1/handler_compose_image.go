@@ -103,6 +103,9 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		customizations, _, err = h.buildCustomizations(ctx, &composeRequest, nil)
 		if err != nil {
 			ctx.Logger().Errorf("Failed building customizations: %v", err)
+			if errors.Is(err, content_sources.ErrorAuth) {
+				return ComposeResponse{}, echo.NewHTTPError(http.StatusForbidden, err)
+			}
 			if _, ok := err.(*echo.HTTPError); ok {
 				return ComposeResponse{}, err
 			}
@@ -133,6 +136,9 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		customizations, extraRHRepos, err = h.buildCustomizations(ctx, &composeRequest, d)
 		if err != nil {
 			ctx.Logger().Errorf("Failed building customizations: %v", err)
+			if errors.Is(err, content_sources.ErrorAuth) {
+				return ComposeResponse{}, echo.NewHTTPError(http.StatusForbidden, err)
+			}
 			if _, ok := err.(*echo.HTTPError); ok {
 				return ComposeResponse{}, err
 			}
@@ -142,6 +148,9 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		var detectedOsVersion *string
 		repositories, detectedOsVersion, err = h.buildRepositories(ctx, composeRequest, arch, extraRHRepos)
 		if err != nil {
+			if errors.Is(err, content_sources.ErrorAuth) {
+				return ComposeResponse{}, echo.NewHTTPError(http.StatusForbidden, err)
+			}
 			return ComposeResponse{}, err
 		}
 

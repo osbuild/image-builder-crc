@@ -569,7 +569,7 @@ func (h *Handlers) ExportBlueprint(ctx echo.Context, id openapi_types.UUID) erro
 	defer closeBody(ctx, exportedRepositoriesResp.Body)
 
 	if exportedRepositoriesResp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("unable to fetch custom repositories, got %v response", exportedRepositoriesResp.StatusCode)
+		return echo.NewHTTPError(http.StatusForbidden, content_sources.ErrorAuth.Error())
 	}
 
 	if exportedRepositoriesResp.Body == nil {
