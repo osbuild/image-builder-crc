@@ -452,7 +452,7 @@ paths:
             type: array
             items:
               $ref: '#/components/schemas/ImageTypes'
-              example: ['rhel-edge-installer', 'rhel-edge-commit', ...]
+            example: ['rhel-edge-installer', 'rhel-edge-commit']
           description: |
             Filter the composes on image type. The filter is optional and can be specified multiple times.
       responses:
@@ -497,7 +497,7 @@ paths:
             type: array
             items:
               $ref: '#/components/schemas/ImageTypes'
-              example: ['rhel-edge-installer', 'rhel-edge-commit', ...]
+            example: ['rhel-edge-installer', 'rhel-edge-commit']
           description: |
             Filter the composes on image type. The filter is optional and can be specified multiple times.
       responses:
