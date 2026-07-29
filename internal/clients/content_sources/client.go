@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 	"github.com/osbuild/logging/pkg/strc"
 	"github.com/redhatinsights/identity"
 )
+
+var ErrorAuth = errors.New("user is not authorized - please check your 'Repositories viewer' or 'Content Template viewer' permissions")
 
 type RepositoryByID map[string]ApiRepositoryResponse
 
@@ -83,13 +86,14 @@ func (csc *ContentSourcesClient) fetchRepositories(ctx context.Context, repoURLs
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode != http.StatusUnauthorized {
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, fmt.Errorf("unable to fetch repositories from %s, got %v response, body: %s", csReposURL.String(), resp.StatusCode, body)
-			}
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, ErrorAuth
 		}
-		return nil, fmt.Errorf("unable to fetch repositories from %s, got %v response", csReposURL.String(), resp.StatusCode)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch repositories from %s, got %v response", csReposURL.String(), resp.StatusCode)
+		}
+		return nil, fmt.Errorf("unable to fetch repositories from %s, got %v response, body: %s", csReposURL.String(), resp.StatusCode, body)
 	}
 
 	var repos *ApiRepositoryCollectionResponse
@@ -223,13 +227,14 @@ func (csc *ContentSourcesClient) GetTemplateByID(ctx context.Context, uuid strin
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode != http.StatusUnauthorized {
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, fmt.Errorf("unable to fetch template, got %v response, body: %s", resp.StatusCode, body)
-			}
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, ErrorAuth
 		}
-		return nil, fmt.Errorf("unable to fetch template, got %v response", resp.StatusCode)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch template, got %v response", resp.StatusCode)
+		}
+		return nil, fmt.Errorf("unable to fetch template, got %v response, body: %s", resp.StatusCode, body)
 	}
 
 	var template *ApiTemplateResponse
