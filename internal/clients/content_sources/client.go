@@ -158,7 +158,7 @@ func (csc *ContentSourcesClient) FindRepoByID(repos []ApiRepositoryResponse, tar
 func (csc *ContentSourcesClient) FetchLabelsFromNonBaseRHRepos(ctx context.Context, repoIDs []string) ([]string, error) {
 	rhRepoMap, err := csc.GetRepositories(ctx, nil, repoIDs, false)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve RH repositories: %v", err)
+		return nil, fmt.Errorf("unable to retrieve RH repositories: %w", err)
 	}
 
 	var labels []string
