@@ -492,13 +492,14 @@ func (h *Handlers) buildRepositorySnapshots(ctx echo.Context, repoURLs []string,
 	defer closeBody(ctx, snapResp.Body)
 
 	if snapResp.StatusCode != http.StatusOK {
-		if snapResp.StatusCode != http.StatusUnauthorized {
-			body, err := io.ReadAll(snapResp.Body)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-			ctx.Logger().Warnf("Unable to resolve snapshots: %s", body)
+		if snapResp.StatusCode == http.StatusUnauthorized {
+			return nil, nil, nil, content_sources.ErrorAuth
 		}
+		body, err := io.ReadAll(snapResp.Body)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		ctx.Logger().Warnf("Unable to resolve snapshots: %s", body)
 		return nil, nil, nil, fmt.Errorf("unable to fetch snapshots for date, got %v response", snapResp.StatusCode)
 	}
 
