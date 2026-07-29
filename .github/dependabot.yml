@@ -1,0 +1,13 @@
+---
+version: 2
+updates:
+  # Gobump does go.mod/go.sum updates
+
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    rebase-strategy: "disabled"
