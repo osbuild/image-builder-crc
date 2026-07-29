@@ -27,9 +27,9 @@ func TestDefault(t *testing.T) {
 
 func TestEnv(t *testing.T) {
 	os.Clearenv()
-	os.Setenv("LISTEN_ADDRESS", "localhost:8000")
-	os.Setenv("LOG_LEVEL", "INFO")
-	os.Setenv("FEDORA_AUTH", "true")
+	t.Setenv("LISTEN_ADDRESS", "localhost:8000")
+	t.Setenv("LOG_LEVEL", "INFO")
+	t.Setenv("FEDORA_AUTH", "true")
 
 	config := ImageBuilderConfig{
 		ListenAddress: "localhost",
@@ -48,8 +48,8 @@ func TestEnv(t *testing.T) {
 
 func TestEnvPointerValues(t *testing.T) {
 	os.Clearenv()
-	os.Setenv("CW_LOG_GROUP", "somegroup")
-	os.Setenv("CW_AWS_REGION", "us-east-1")
+	t.Setenv("CW_LOG_GROUP", "somegroup")
+	t.Setenv("CW_AWS_REGION", "us-east-1")
 
 	var config ImageBuilderConfig
 	err := LoadConfigFromEnv(&config)

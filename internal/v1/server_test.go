@@ -32,7 +32,7 @@ import (
 var dbc *tutils.PSQLContainer
 
 func TestMain(m *testing.M) {
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	slog.SetDefault(logger)
 
 	code := runTests(m)

@@ -155,7 +155,7 @@ func (u *User) Valid() error {
 
 func (u *User) MergeForUpdate(userData []User) error {
 	// If both password and ssh_key in request user we don't need to fetch user from DB
-	if !(u.Password != nil && len(*u.Password) > 0 && u.SshKey != nil && len(*u.SshKey) > 0) {
+	if u.Password == nil || len(*u.Password) == 0 || u.SshKey == nil || len(*u.SshKey) == 0 {
 		eui := slices.IndexFunc(userData, func(eu User) bool {
 			return eu.Name == u.Name
 		})

@@ -329,7 +329,8 @@ func exports(uuids []string) (res []content_sources.ApiRepositoryExportResponse)
 }
 
 func templateByID(uuid string) (res content_sources.ApiTemplateResponse) {
-	if uuid == TemplateID {
+	switch uuid {
+	case TemplateID:
 		res = content_sources.ApiTemplateResponse{
 			Uuid:            common.ToPtr(uuid),
 			Name:            common.ToPtr("template1"),
@@ -356,7 +357,7 @@ func templateByID(uuid string) (res content_sources.ApiTemplateResponse) {
 				},
 			},
 		}
-	} else if uuid == TemplateID2 {
+	case TemplateID2:
 		res = content_sources.ApiTemplateResponse{
 			Uuid:            common.ToPtr(uuid),
 			Name:            common.ToPtr("template2"),
@@ -389,7 +390,7 @@ func templateByID(uuid string) (res content_sources.ApiTemplateResponse) {
 				},
 			},
 		}
-	} else if uuid == TemplateID3 {
+	case TemplateID3:
 		res = content_sources.ApiTemplateResponse{
 			Uuid:            common.ToPtr(uuid),
 			Name:            common.ToPtr("template3"),

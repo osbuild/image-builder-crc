@@ -111,7 +111,7 @@ func TestGetComposeEntryNotFoundResponse(t *testing.T) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "404 during tests")
+		_, _ = fmt.Fprint(w, "404 during tests")
 	}))
 	defer apiSrv.Close()
 
@@ -195,7 +195,7 @@ func TestGetComposeMetadata404(t *testing.T) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "404 during tests")
+		_, _ = fmt.Fprint(w, "404 during tests")
 	}))
 	defer apiSrv.Close()
 
@@ -348,7 +348,7 @@ func TestReadinessProbeReady(t *testing.T) {
 		require.Equal(t, "Bearer accesstoken", r.Header.Get("Authorization"))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "{\"version\":\"fake\"}")
+		_, _ = fmt.Fprint(w, "{\"version\":\"fake\"}")
 	}))
 	defer apiSrv.Close()
 
@@ -516,7 +516,7 @@ func TestGetDistribution(t *testing.T) {
 		apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, `{"message": "distribution not found"}`)
+			_, _ = fmt.Fprint(w, `{"message": "distribution not found"}`)
 		}))
 		defer apiSrv.Close()
 

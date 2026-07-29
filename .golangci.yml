@@ -16,3 +16,12 @@ linters:
       key-naming-case: snake
       # Enforce lowercase messages (https://github.com/go-simpler/sloglint/pull/76)
       #lowercase-msg: true
+
+  exclusions:
+    rules:
+      - linters:
+          - errcheck
+        source: "defer .*\\.Close\\(\\)"
+      - linters:
+          - errcheck
+        source: "defer .*\\.Flush\\(\\)"

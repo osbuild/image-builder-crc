@@ -60,7 +60,7 @@ func NewPSQLContainer() (*PSQLContainer, error) {
 		image,
 	).Output()
 	if err != nil {
-		fmt.Println(out, err)
+		fmt.Println(string(out), err)
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func callTernMigrate(ctx context.Context, opt TernMigrateOptions) ([]byte, error
 }
 
 func (p *PSQLContainer) NewDB(ctx context.Context) (db.DB, error) {
-	dbName := fmt.Sprintf("test%s", strings.Replace(uuid.New().String(), "-", "", -1))
+	dbName := fmt.Sprintf("test%s", strings.ReplaceAll(uuid.New().String(), "-", ""))
 	_, err := p.execQuery("", fmt.Sprintf("CREATE DATABASE %s", dbName))
 	if err != nil {
 		return nil, err
