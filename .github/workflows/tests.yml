@@ -19,7 +19,7 @@ jobs:
         id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v7
 
       - name: Check that source has been prepared
         run: |
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v7
       - name: Install openapi-spec-validator
         run: pip install openapi-spec-validator
       - name: Check v1 spec
@@ -70,7 +70,7 @@ jobs:
     name: "🐚 Shellcheck"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v7
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@2.0.0
         with:
@@ -99,7 +99,7 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24.12' # also update tools/prepare-source.sh
@@ -119,7 +119,7 @@ jobs:
     name: "🎀 kube-linter"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v7
       - uses: redhat-actions/oc-installer@v1
       - name: Process template
         run: |
@@ -137,7 +137,7 @@ jobs:
     name: "🚢 container test"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v7
       - name: Install Prerequisites
         run: |
           sudo apt update
