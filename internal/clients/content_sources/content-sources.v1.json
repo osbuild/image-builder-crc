@@ -1792,6 +1792,18 @@
                 },
                 "type": "object"
             },
+            "api.SnapshotPublishedUpdateRequest": {
+                "properties": {
+                    "published": {
+                        "description": "Update snapshot published status to this value.",
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "published"
+                ],
+                "type": "object"
+            },
             "api.SnapshotResponse": {
                 "properties": {
                     "added_counts": {
@@ -2388,6 +2400,19 @@
                     "valid": {
                         "description": "Valid if not skipped and the provided attribute is valid",
                         "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "api.UserPreferenceResponse": {
+                "properties": {
+                    "label": {
+                        "description": "Preference label",
+                        "type": "string"
+                    },
+                    "value": {
+                        "description": "Preference value",
+                        "type": "string"
                     }
                 },
                 "type": "object"
@@ -3065,6 +3090,14 @@
                         "description": "A comma separated list of feature names to filter on (e.g. feature1,feature2)",
                         "in": "query",
                         "name": "feature_name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter repositories by type partner",
+                        "in": "query",
+                        "name": "partner",
                         "schema": {
                             "type": "string"
                         }
@@ -3896,6 +3929,110 @@
                     }
                 },
                 "summary": "Delete a snapshot",
+                "tags": [
+                    "snapshots"
+                ]
+            }
+        },
+        "/repositories/{repo_uuid}/snapshots/{snapshot_uuid}/published": {
+            "patch": {
+                "description": "This enables changing the published status of a specific snapshot.",
+                "operationId": "publishSnapshot",
+                "parameters": [
+                    {
+                        "description": "Repository UUID.",
+                        "in": "path",
+                        "name": "repo_uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Snapshot UUID.",
+                        "in": "path",
+                        "name": "snapshot_uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "*/*": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api.SnapshotPublishedUpdateRequest"
+                            }
+                        }
+                    },
+                    "description": "Published status.",
+                    "required": true,
+                    "x-originalParamName": "body"
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.SnapshotResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Publish or unpublish a snapshot",
                 "tags": [
                     "snapshots"
                 ]
@@ -7932,6 +8069,120 @@
                 "summary": "List snapshots for a template",
                 "tags": [
                     "snapshots"
+                ]
+            }
+        },
+        "/user_preferences/": {
+            "get": {
+                "description": "List preference labels and values for the authenticated user.",
+                "operationId": "listUserPreferences",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/api.UserPreferenceResponse"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List user preferences",
+                "tags": [
+                    "user_preferences"
+                ]
+            }
+        },
+        "/user_preferences/{label}": {
+            "put": {
+                "description": "Create or update a user preference for the given label. The request body is a JSON string value (for example `\"true\"`).",
+                "operationId": "setUserPreference",
+                "parameters": [
+                    {
+                        "description": "Preference label",
+                        "in": "path",
+                        "name": "label",
+                        "required": true,
+                        "schema": {
+                            "enum": [
+                                "lightwell-notification-enabled",
+                                "lightwell-notification-minimum"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "description": "Preference value as a JSON string",
+                    "required": true,
+                    "x-originalParamName": "body"
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.UserPreferenceResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Set a user preference",
+                "tags": [
+                    "user_preferences"
                 ]
             }
         }
