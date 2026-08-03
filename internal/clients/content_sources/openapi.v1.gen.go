@@ -7,6 +7,24 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for SetUserPreferenceParamsLabel.
+const (
+	LightwellNotificationEnabled SetUserPreferenceParamsLabel = "lightwell-notification-enabled"
+	LightwellNotificationMinimum SetUserPreferenceParamsLabel = "lightwell-notification-minimum"
+)
+
+// Valid indicates whether the value is a known member of the SetUserPreferenceParamsLabel enum.
+func (e SetUserPreferenceParamsLabel) Valid() bool {
+	switch e {
+	case LightwellNotificationEnabled:
+		return true
+	case LightwellNotificationMinimum:
+		return true
+	default:
+		return false
+	}
+}
+
 // ApiAddUploadsRequest defines model for api.AddUploadsRequest.
 type ApiAddUploadsRequest struct {
 	// Artifacts List of created artifacts
@@ -1001,6 +1019,12 @@ type ApiSnapshotForDate struct {
 	RepositoryUuid *string `json:"repository_uuid,omitempty"`
 }
 
+// ApiSnapshotPublishedUpdateRequest defines model for api.SnapshotPublishedUpdateRequest.
+type ApiSnapshotPublishedUpdateRequest struct {
+	// Published Update snapshot published status to this value.
+	Published bool `json:"published"`
+}
+
 // ApiSnapshotResponse defines model for api.SnapshotResponse.
 type ApiSnapshotResponse struct {
 	// AddedCounts Count of each content type
@@ -1358,6 +1382,15 @@ type ApiUrlValidationResponse struct {
 	Valid *bool `json:"valid,omitempty"`
 }
 
+// ApiUserPreferenceResponse defines model for api.UserPreferenceResponse.
+type ApiUserPreferenceResponse struct {
+	// Label Preference label
+	Label *string `json:"label,omitempty"`
+
+	// Value Preference value
+	Value *string `json:"value,omitempty"`
+}
+
 // ConfigDistributionArch defines model for config.DistributionArch.
 type ConfigDistributionArch struct {
 	// Label Static label of the architecture
@@ -1477,6 +1510,9 @@ type ListRepositoriesParams struct {
 
 	// FeatureName A comma separated list of feature names to filter on (e.g. feature1,feature2)
 	FeatureName *string `form:"feature_name,omitempty" json:"feature_name,omitempty"`
+
+	// Partner Filter repositories by type partner
+	Partner *string `form:"partner,omitempty" json:"partner,omitempty"`
 }
 
 // BulkCreateRepositoriesJSONBody defines parameters for BulkCreateRepositories.
@@ -1716,6 +1752,12 @@ type ListSnapshotsForTemplateParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// SetUserPreferenceJSONBody defines parameters for SetUserPreference.
+type SetUserPreferenceJSONBody = string
+
+// SetUserPreferenceParamsLabel defines parameters for SetUserPreference.
+type SetUserPreferenceParamsLabel string
+
 // SearchEnvironmentsJSONRequestBody defines body for SearchEnvironments for application/json ContentType.
 type SearchEnvironmentsJSONRequestBody = ApiContentUnitSearchRequest
 
@@ -1790,3 +1832,6 @@ type PartialUpdateTemplateJSONRequestBody = ApiTemplateUpdateRequest
 
 // FullUpdateTemplateJSONRequestBody defines body for FullUpdateTemplate for application/json ContentType.
 type FullUpdateTemplateJSONRequestBody = ApiTemplateUpdateRequest
+
+// SetUserPreferenceJSONRequestBody defines body for SetUserPreference for application/json ContentType.
+type SetUserPreferenceJSONRequestBody = SetUserPreferenceJSONBody
