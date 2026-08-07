@@ -129,7 +129,7 @@ jobs:
             --local \
             -o yaml > processed-templates/image-builder.yml
 
-      - uses: stackrox/kube-linter-action@v1.0.5
+      - uses: stackrox/kube-linter-action@v1.0.7
         with:
           directory: processed-templates
           config: templates/.kube-linter-config.yml
