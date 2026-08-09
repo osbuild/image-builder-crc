@@ -16,7 +16,7 @@ require (
 	github.com/oapi-codegen/runtime v1.6.0
 	github.com/osbuild/blueprint v1.32.0
 	github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32
-	github.com/osbuild/images v0.264.0
+	github.com/osbuild/images v0.274.0
 	github.com/osbuild/logging v0.0.10
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redhatinsights/app-common-go v1.6.9
