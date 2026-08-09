@@ -163,8 +163,8 @@ github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32/go.mod h1:CecYUdLQNeKEkEC0DOejBTaVxs8Xbr30tRtgOIpbuKo=
 github.com/osbuild/image-builder v0.274.1-0.20260619004246-4bef593e25f5 h1:FfET/krvO3snLaVJztMcWIiSWhwt+lYj1kCzlhgd8EI=
 github.com/osbuild/image-builder v0.274.1-0.20260619004246-4bef593e25f5/go.mod h1:TwomWamj40Bc+fGOGFgQXMsE5EXy3y1Wt84l+uRL5is=
-github.com/osbuild/images v0.264.0 h1:zb8OMWN1xHnG82bjTRKFcZr4O762bTXaus4g7UVNPy8=
-github.com/osbuild/images v0.264.0/go.mod h1:KbIq93dxz8WASGXEx1Mp2L1OjlpBKLru3UFSNvhAMYM=
+github.com/osbuild/images v0.274.0 h1:VOcVaFqOoCe8xbngF/qGPlxxh9gjMfS4wByE7nM1wbo=
+github.com/osbuild/images v0.274.0/go.mod h1:zMAq/7TbRZ6xTu8Ww2UXz1KOBVhvTUvN/A3yh1bt58k=
 github.com/osbuild/logging v0.0.10 h1:PsZVW+5GtUUQpCwSUQoxAXq5Fp6z/LUg3rKXSfgt/qA=
 github.com/osbuild/logging v0.0.10/go.mod h1:e0Gy63ww/fgQbdDt6iW0IcYBEMn5HAG1H+HG4n08CUk=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
