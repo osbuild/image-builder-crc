@@ -1457,6 +1457,31 @@ components:
           items:
             type: string
           uniqueItems: true
+        tags:
+          type: array
+          description: |
+            Optional AWS tags applied to the AMI and its snapshot when the
+            image is uploaded. The compose `image_name` is used as the AMI
+            name when set.
+          items:
+            $ref: '#/components/schemas/AWSTag'
+    AWSTag:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+          example: 'environment'
+          minLength: 1
+          maxLength: 128
+        value:
+          type: string
+          example: 'production'
+          minLength: 1
+          maxLength: 256
     AWSS3UploadRequestOptions:
       type: object
     GCPUploadRequestOptions:

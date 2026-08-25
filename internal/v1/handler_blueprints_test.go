@@ -658,6 +658,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			Repositories: repos,
 			UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
 				ShareWithAccounts: []string{"test-account"},
+				SnapshotName:      common.ToPtr("Blueprint Human Name"),
 			}),
 		},
 	}
@@ -683,6 +684,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			Repositories: reposAarch,
 			UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
 				ShareWithAccounts: []string{"test-account"},
+				SnapshotName:      common.ToPtr("Blueprint Human Name"),
 			}),
 		},
 	}
@@ -742,6 +744,7 @@ func TestHandlers_ComposeBlueprint(t *testing.T) {
 			Repositories: []composer.Repository{},
 			UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
 				ShareWithAccounts: []string{"test-account"},
+				SnapshotName:      common.ToPtr("bootc bp"),
 			}),
 		},
 		Customizations: &composer.Customizations{},

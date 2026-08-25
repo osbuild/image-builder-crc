@@ -536,6 +536,15 @@ type AWSS3UploadStatus struct {
 	Url string `json:"url"`
 }
 
+// AWSTag defines model for AWSTag.
+type AWSTag struct {
+	// Key Example: environment
+	Key string `json:"key"`
+
+	// Value Example: production
+	Value string `json:"value"`
+}
+
 // AWSUploadRequestOptions defines model for AWSUploadRequestOptions.
 type AWSUploadRequestOptions struct {
 	// ShareWithAccounts Example: ["123456789012"]
@@ -543,6 +552,11 @@ type AWSUploadRequestOptions struct {
 
 	// ShareWithSources Example: ["12345"]
 	ShareWithSources *[]string `json:"share_with_sources,omitempty"`
+
+	// Tags Optional AWS tags applied to the AMI and its snapshot when the
+	// image is uploaded. The compose `image_name` is used as the AMI
+	// name when set.
+	Tags *[]AWSTag `json:"tags,omitempty"`
 }
 
 // AWSUploadStatus defines model for AWSUploadStatus.
