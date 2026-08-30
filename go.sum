@@ -155,8 +155,8 @@ github.com/onsi/gomega v1.16.0/go.mod h1:HnhC7FXeEQY45zxNK3PPoIUhzk/80Xly9PcubAl
 github.com/onsi/gomega v1.17.0/go.mod h1:HnhC7FXeEQY45zxNK3PPoIUhzk/80Xly9PcubAlGdZY=
 github.com/onsi/gomega v1.19.0 h1:4ieX6qQjPP/BfC3mpsAtIGGlxTWPeA3Inl/7DtXw1tw=
 github.com/onsi/gomega v1.19.0/go.mod h1:LY+I3pBVzYsTBU1AnDwOSxaYi9WoWiqgwooUqq9yPro=
-github.com/osbuild/blueprint v1.32.0 h1:5uZ2SDPI+pUdmFn5T5G6H8mUw18wK9NzxQGiJ0QQ70E=
-github.com/osbuild/blueprint v1.32.0/go.mod h1:zFiI1IULOe85F/OM8YPhHek7YCpWZENJoxZezJgRvto=
+github.com/osbuild/blueprint v1.33.0 h1:TewO/XA3QZ/HBYKPycsLBOSz7x++o9iay4wyG8sGYOQ=
+github.com/osbuild/blueprint v1.33.0/go.mod h1:zFiI1IULOe85F/OM8YPhHek7YCpWZENJoxZezJgRvto=
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32 h1:cxe72asGz4BAhAIhovew6VtrmIepSQH94siCLMkcCKs=
 github.com/osbuild/community-gateway/oidc-authorizer v0.0.0-20250130090406-1ddb4bec5a32/go.mod h1:CecYUdLQNeKEkEC0DOejBTaVxs8Xbr30tRtgOIpbuKo=
 github.com/osbuild/image-builder v0.274.1-0.20260619004246-4bef593e25f5 h1:FfET/krvO3snLaVJztMcWIiSWhwt+lYj1kCzlhgd8EI=
