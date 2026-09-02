@@ -11,6 +11,7 @@ import (
 type Config struct {
 	DryRun                  bool   `env:"DRY_RUN"`
 	EnableDBMaintenance     bool   `env:"ENABLE_DB_MAINTENANCE"`
+	EnableBlueprintSplit    bool   `env:"ENABLE_BLUEPRINT_SPLIT"`
 	ComposesRetentionMonths int    `env:"DB_COMPOSES_RETENTION_MONTHS"`
 	PGHost                  string `env:"PGHOST"`
 	PGPort                  string `env:"PGPORT"`

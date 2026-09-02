@@ -82,6 +82,9 @@ type DB interface {
 	FindBlueprints(ctx context.Context, orgID, search string, limit, offset int) ([]BlueprintWithNoBody, int, error)
 	FindBlueprintByName(ctx context.Context, orgID, nameQuery string) (*BlueprintWithNoBody, error)
 	DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID string) error
+
+	Close()
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 const (
@@ -141,6 +144,14 @@ func InitDBConnectionPool(ctx context.Context, connStr string) (DB, error) {
 	}
 
 	return &dB{pool}, nil
+}
+
+func (db *dB) Close() {
+	db.Pool.Close()
+}
+
+func (db *dB) Begin(ctx context.Context) (pgx.Tx, error) {
+	return db.Pool.Begin(ctx)
 }
 
 func (db *dB) InsertCompose(ctx context.Context, jobId uuid.UUID, accountNumber, email, orgId string, imageName *string, request json.RawMessage, clientId *string, blueprintVersionId *uuid.UUID) error {

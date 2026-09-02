@@ -39,6 +39,7 @@ func main() {
 	conf := Config{
 		DryRun:                  true,
 		EnableDBMaintenance:     false,
+		EnableBlueprintSplit:    false,
 		ComposesRetentionMonths: 24,
 	}
 
@@ -66,10 +67,6 @@ func main() {
 		slog.InfoContext(ctx, "dry run, no state will be changed")
 	}
 
-	if !conf.EnableDBMaintenance {
-		slog.InfoContext(ctx, "🦀🦀🦀 DB maintenance not enabled, skipping  🦀🦀🦀")
-		return
-	}
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		conf.PGUser,
 		conf.PGPassword,
@@ -78,11 +75,34 @@ func main() {
 		conf.PGDatabase,
 		conf.PGSSLMode,
 	)
-	err = DBCleanup(ctx, dbURL, conf.DryRun, conf.ComposesRetentionMonths)
-	if err != nil {
-		slog.ErrorContext(ctx, "error during DBCleanup", "err", err)
+
+	failed := false
+	if !conf.EnableDBMaintenance {
+		slog.InfoContext(ctx, "🦀🦀🦀 DB maintenance not enabled, skipping  🦀🦀🦀")
+	} else {
+		err = DBCleanup(ctx, dbURL, conf.DryRun, conf.ComposesRetentionMonths)
+		if err != nil {
+			slog.ErrorContext(ctx, "error during DBCleanup", "err", err)
+			failed = true
+		} else {
+			slog.InfoContext(ctx, "🦀🦀🦀 dbqueue cleanup done 🦀🦀🦀")
+		}
+	}
+
+	if !conf.EnableBlueprintSplit {
+		slog.InfoContext(ctx, "🦀🦀🦀 blueprint split not enabled, skipping 🦀🦀🦀")
+	} else {
+		err = SplitMultiTargetBlueprints(ctx, dbURL, conf.DryRun)
+		if err != nil {
+			slog.ErrorContext(ctx, "error during blueprint split", "err", err)
+			failed = true
+		} else {
+			slog.InfoContext(ctx, "🦀🦀🦀 blueprint split done 🦀🦀🦀")
+		}
+	}
+
+	if failed {
 		os.Exit(1)
 	}
-	slog.InfoContext(ctx, "🦀🦀🦀 dbqueue cleanup done 🦀🦀🦀")
 	close(shutdownSignal)
 }

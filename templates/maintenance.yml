@@ -78,6 +78,8 @@ objects:
                 value: "${MAINTENANCE_DRY_RUN}"
               - name: ENABLE_DB_MAINTENANCE
                 value: "${ENABLE_DB_MAINTENANCE}"
+              - name: ENABLE_BLUEPRINT_SPLIT
+                value: "${ENABLE_BLUEPRINT_SPLIT}"
               - name: DB_COMPOSES_RETENTION_MONTHS
                 value: "${DB_COMPOSES_RETENTION_MONTHS}"
 
@@ -115,6 +117,11 @@ parameters:
     required: true
   - description: Enable DB maintenance
     name: ENABLE_DB_MAINTENANCE
+    # don't change this value, overwrite it in app-interface for a specific namespace
+    value: "false"
+    required: true
+  - description: Enable splitting multi-target blueprints into one blueprint per image request
+    name: ENABLE_BLUEPRINT_SPLIT
     # don't change this value, overwrite it in app-interface for a specific namespace
     value: "false"
     required: true
