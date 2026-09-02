@@ -241,6 +241,25 @@ func (db *dB) InsertBlueprint(ctx context.Context, id uuid.UUID, versionId uuid.
 	return err
 }
 
+func InsertBlueprintTx(ctx context.Context, tx pgx.Tx, id uuid.UUID, versionId uuid.UUID, orgID, accountNumber, name, description string, body json.RawMessage, metadata json.RawMessage, serviceSnapshots json.RawMessage) error {
+	tag, err := tx.Exec(ctx, sqlInsertBlueprint, id, orgID, accountNumber, name, description, metadata)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("failed to insert blueprint: %w, expected 1, returned %d", ErrAffectedRowsMismatch, tag.RowsAffected())
+	}
+
+	tag, err = tx.Exec(ctx, sqlInsertVersion, versionId, id, 1, body, serviceSnapshots)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("failed to insert version: %w, expected 1, returned %d", ErrAffectedRowsMismatch, tag.RowsAffected())
+	}
+	return nil
+}
+
 func (db *dB) GetBlueprint(ctx context.Context, id uuid.UUID, orgID string, version *int) (*BlueprintEntry, error) {
 	conn, err := db.Pool.Acquire(ctx)
 	if err != nil {
@@ -258,6 +277,18 @@ func (db *dB) GetBlueprint(ctx context.Context, id uuid.UUID, orgID string, vers
 		return nil, err
 	}
 
+	return &result, nil
+}
+
+func GetBlueprintTx(ctx context.Context, tx pgx.Tx, id uuid.UUID, orgID string, version *int) (*BlueprintEntry, error) {
+	var result BlueprintEntry
+	err := tx.QueryRow(ctx, sqlGetBlueprint, id, orgID, version).Scan(&result.Id, &result.VersionId, &result.Name, &result.Description, &result.Version, &result.Body, &result.Metadata, &result.ServiceSnapshots)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrBlueprintNotFound
+		}
+		return nil, err
+	}
 	return &result, nil
 }
 
@@ -320,6 +351,20 @@ func (db *dB) DeleteBlueprint(ctx context.Context, id uuid.UUID, orgID string) e
 	return nil
 }
 
+func DeleteBlueprintTx(ctx context.Context, tx pgx.Tx, id uuid.UUID, orgID string) error {
+	tag, err := tx.Exec(ctx, sqlDeleteBlueprint, id, orgID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrBlueprintNotFound
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("delete blueprint with versions: %w, expected 1, returned %d", ErrAffectedRowsMismatch, tag.RowsAffected())
+	}
+	return nil
+}
+
 func (db *dB) FindBlueprintByName(ctx context.Context, orgID, nameQuery string) (*BlueprintWithNoBody, error) {
 	conn, err := db.Pool.Acquire(ctx)
 	if err != nil {
@@ -331,6 +376,18 @@ func (db *dB) FindBlueprintByName(ctx context.Context, orgID, nameQuery string) 
 
 	row := conn.QueryRow(ctx, sqlFindBlueprintByName, nameQuery, orgID)
 	err = row.Scan(&result.Id, &result.Name, &result.Description, &result.Version, &result.LastModifiedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &result, nil
+}
+
+func FindBlueprintByNameTx(ctx context.Context, tx pgx.Tx, orgID, nameQuery string) (*BlueprintWithNoBody, error) {
+	var result BlueprintWithNoBody
+	err := tx.QueryRow(ctx, sqlFindBlueprintByName, nameQuery, orgID).Scan(&result.Id, &result.Name, &result.Description, &result.Version, &result.LastModifiedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
