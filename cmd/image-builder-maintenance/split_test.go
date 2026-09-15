@@ -40,16 +40,6 @@ func TestBodyWithSingleImageRequestPreservesOtherFields(t *testing.T) {
 	require.JSONEq(t, string(requests[1]), string(parsed.ImageRequests[0]))
 }
 
-func TestIsMatchingSingleTarget(t *testing.T) {
-	body := json.RawMessage(`{"image_requests":[{"image_type":"aws","architecture":"x86_64"}]}`)
-	require.True(t, isMatchingSingleTarget(body, imageRequestMeta{ImageType: "aws", Architecture: "x86_64"}))
-	require.False(t, isMatchingSingleTarget(body, imageRequestMeta{ImageType: "aws", Architecture: "aarch64"}))
-	require.False(t, isMatchingSingleTarget(body, imageRequestMeta{ImageType: "gcp", Architecture: "x86_64"}))
-
-	multi := json.RawMessage(`{"image_requests":[{"image_type":"aws"},{"image_type":"gcp"}]}`)
-	require.False(t, isMatchingSingleTarget(multi, imageRequestMeta{ImageType: "aws"}))
-}
-
 func TestPreferredSplitNames(t *testing.T) {
 	primary, secondary := preferredSplitNames("multi", imageRequestMeta{ImageType: "aws", Architecture: "x86_64"})
 	require.Equal(t, "multi - aws", primary)

@@ -21,10 +21,7 @@ const (
 	splitBatchSize      = 500
 )
 
-var (
-	errAlreadySplit = errors.New("already split")
-	errNoUniqueName = errors.New("could not allocate unique name")
-)
+var errNoUniqueName = errors.New("could not allocate unique name")
 
 const sqlListMultiTargetBlueprints = `
 		SELECT b.id, b.org_id, b.account_number, b.name,
@@ -72,7 +69,11 @@ func SplitMultiTargetBlueprints(ctx context.Context, dbURL string, dryRun bool) 
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			slog.ErrorContext(ctx, "failed to rollback transaction", "err", err)
+		}
+	}()
 
 	created := 0
 	skipped := 0
@@ -94,12 +95,30 @@ func SplitMultiTargetBlueprints(ctx context.Context, dbURL string, dryRun bool) 
 		}
 
 		for _, src := range batch {
-			nCreated, nSkipped, didDelete, err := splitOneBlueprint(ctx, tx, src, dryRun)
+			sp, err := tx.Begin(ctx)
 			if err != nil {
 				return err
 			}
+
+			nCreated, didDelete, err := splitOneBlueprint(ctx, sp, src, dryRun)
+			if err != nil {
+				_ = sp.Rollback(ctx)
+				slog.ErrorContext(ctx, "skipping blueprint that could not be split",
+					"blueprint_id", src.ID,
+					"org_id", src.OrgID,
+					"source_name", src.Name,
+					"err", err)
+				skipped++
+				sources++
+				afterID = src.ID
+				continue
+			}
+
+			if err := sp.Commit(ctx); err != nil {
+				return err
+			}
+
 			created += nCreated
-			skipped += nSkipped
 			sources++
 			if didDelete {
 				deleted++
@@ -125,7 +144,7 @@ func SplitMultiTargetBlueprints(ctx context.Context, dbURL string, dryRun bool) 
 	return tx.Commit(ctx)
 }
 
-// nextMultiTargetBatch returns the next page of live multi-target blueprints after afterID.
+// nextMultiTargetBatch returns the next page of live multi-target blueprints after `afterID`.
 func nextMultiTargetBatch(ctx context.Context, tx pgx.Tx, afterID uuid.UUID, limit int) ([]multiTargetBlueprint, error) {
 	rows, err := tx.Query(ctx, sqlListMultiTargetBlueprints, afterID, limit)
 	if err != nil {
@@ -146,42 +165,27 @@ func nextMultiTargetBatch(ctx context.Context, tx pgx.Tx, afterID uuid.UUID, lim
 	return result, rows.Err()
 }
 
-// splitOneBlueprint creates one child per image request. The original is
-// soft-deleted only when every request was created or already split.
-func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, dryRun bool) (int, int, bool, error) {
+// splitOneBlueprint creates one child per image request, then soft-deletes the
+// original. Any failure rolls back the caller's savepoint.
+func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, dryRun bool) (int, bool, error) {
 	requests, err := extractImageRequests(src.Body)
 	if err != nil {
-		return 0, 0, false, fmt.Errorf("blueprint %s: parse image_requests: %w", src.ID, err)
+		return 0, false, fmt.Errorf("blueprint %s: parse image_requests: %w", src.ID, err)
 	}
 
 	created := 0
-	skipped := 0
-	complete := true
 	proposed := make([]string, 0, len(requests))
 	claimed := make(map[string]struct{})
 
 	for _, req := range requests {
 		meta, err := parseImageRequestMeta(req)
 		if err != nil {
-			slog.WarnContext(ctx, "skipping image request that could not be parsed",
-				"blueprint_id", src.ID, "err", err)
-			skipped++
-			complete = false
-			continue
+			return 0, false, fmt.Errorf("blueprint %s: parse image request: %w", src.ID, err)
 		}
 
 		name, err := mapOneRequest(ctx, tx, src, req, meta, dryRun, claimed)
-		if errors.Is(err, errAlreadySplit) {
-			skipped++
-			continue
-		}
-		if errors.Is(err, errNoUniqueName) {
-			skipped++
-			complete = false
-			continue
-		}
 		if err != nil {
-			return created, skipped, false, err
+			return 0, false, err
 		}
 		proposed = append(proposed, name)
 		created++
@@ -194,23 +198,19 @@ func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint,
 			"name", src.Name,
 			"target_count", len(requests),
 			"proposed_names", proposed,
-			"would_delete", complete)
-		return created, skipped, false, nil
-	}
-
-	if !complete {
-		return created, skipped, false, nil
+			"would_delete", true)
+		return created, false, nil
 	}
 
 	err = db.DeleteBlueprintTx(ctx, tx, src.ID, src.OrgID)
 	if err != nil {
-		return created, skipped, false, fmt.Errorf("blueprint %s: delete original: %w", src.ID, err)
+		return 0, false, fmt.Errorf("blueprint %s: delete original: %w", src.ID, err)
 	}
 	slog.InfoContext(ctx, "soft-deleted original blueprint after split",
 		"source_id", src.ID,
 		"org_id", src.OrgID,
 		"source_name", src.Name)
-	return created, skipped, true, nil
+	return created, true, nil
 }
 
 // mapOneRequest maps one image request to a new single-target blueprint, or
@@ -219,16 +219,8 @@ func mapOneRequest(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, req
 	for {
 		name, err := chooseSplitName(ctx, tx, src, meta, claimed)
 		if err != nil {
-			if errors.Is(err, errAlreadySplit) || errors.Is(err, errNoUniqueName) {
-				slog.ErrorContext(ctx, "skipping image request",
-					"blueprint_id", src.ID,
-					"org_id", src.OrgID,
-					"source_name", src.Name,
-					"image_type", meta.ImageType,
-					"architecture", meta.Architecture,
-					"reason", err)
-			}
-			return "", err
+			return "", fmt.Errorf("blueprint %s: choose name for %s/%s: %w",
+				src.ID, meta.ImageType, meta.Architecture, err)
 		}
 		claimed[name] = struct{}{}
 
@@ -348,12 +340,11 @@ func preferredSplitNames(srcName string, meta imageRequestMeta) (primary, second
 	return primary, secondary
 }
 
-// chooseSplitName tries the primary name, then the secondary. Returns
-// errAlreadySplit if a matching child exists, or errNoUniqueName if both are taken.
+// chooseSplitName tries the primary name, then the secondary.
 func chooseSplitName(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, meta imageRequestMeta, claimed map[string]struct{}) (string, error) {
 	primary, secondary := preferredSplitNames(src.Name, meta)
 	for _, name := range []string{primary, secondary} {
-		free, err := unusedSplitName(ctx, tx, src.OrgID, name, meta, claimed)
+		free, err := unusedSplitName(ctx, tx, src.OrgID, name, claimed)
 		if err != nil || free != "" {
 			return free, err
 		}
@@ -361,9 +352,8 @@ func chooseSplitName(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, m
 	return "", errNoUniqueName
 }
 
-// unusedSplitName checks one candidate. It returns the name if free,
-// errAlreadySplit if a matching child already exists, or ("", nil) if the name is taken.
-func unusedSplitName(ctx context.Context, tx pgx.Tx, orgID, name string, meta imageRequestMeta, claimed map[string]struct{}) (string, error) {
+// unusedSplitName checks one candidate. It returns the name if free, or ("", nil) if taken.
+func unusedSplitName(ctx context.Context, tx pgx.Tx, orgID, name string, claimed map[string]struct{}) (string, error) {
 	if _, used := claimed[name]; used {
 		return "", nil
 	}
@@ -375,36 +365,5 @@ func unusedSplitName(ctx context.Context, tx pgx.Tx, orgID, name string, meta im
 	if existing == nil {
 		return name, nil
 	}
-
-	// FindBlueprintByNameTx has no body; fetch it to see if this is already a split child.
-	entry, err := db.GetBlueprintTx(ctx, tx, existing.Id, orgID, nil)
-	if err != nil {
-		if errors.Is(err, db.ErrBlueprintNotFound) {
-			return name, nil
-		}
-		return "", err
-	}
-	if isMatchingSingleTarget(entry.Body, meta) {
-		return "", errAlreadySplit
-	}
 	return "", nil
-}
-
-// isMatchingSingleTarget is true if body has exactly one image request with the same type and arch.
-func isMatchingSingleTarget(body json.RawMessage, meta imageRequestMeta) bool {
-	requests, err := extractImageRequests(body)
-	if err != nil || len(requests) != 1 {
-		return false
-	}
-	got, err := parseImageRequestMeta(requests[0])
-	if err != nil {
-		return false
-	}
-	if got.ImageType != meta.ImageType {
-		return false
-	}
-	if meta.Architecture == "" || got.Architecture == "" {
-		return true
-	}
-	return got.Architecture == meta.Architecture
 }
