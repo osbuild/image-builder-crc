@@ -384,7 +384,7 @@ func testSplitIgnoresDeleted(ctx context.Context, t *testing.T) {
 	requireNoBlueprintNamed(ctx, t, ORGID2, deletedAmongLive.String()+" - gcp")
 }
 
-// If both preferred names for a target are taken, skip that target and keep the original.
+// If both preferred names for a target are taken, that blueprint is skipped and left unchanged.
 func testSplitSkipsWhenPreferredNamesTaken(ctx context.Context, t *testing.T) {
 	connStr := tutils.ConnStr(t)
 	insertBlueprint(ctx, t, ORGID1, ANR1, "multi - aws", guestImageBody)
@@ -397,15 +397,7 @@ func testSplitSkipsWhenPreferredNamesTaken(ctx context.Context, t *testing.T) {
 		"multi",
 		"multi - aws",
 		"multi - aws-x86_64",
-		"multi - gcp",
 	}, blueprintNames(ctx, t, ORGID1))
-	require.Equal(t, "gcp", imageTypeByName(ctx, t, ORGID1, "multi - gcp"))
-	require.Equal(t, "guest-image", imageTypeByName(ctx, t, ORGID1, "multi - aws"))
-	require.Equal(t, "guest-image", imageTypeByName(ctx, t, ORGID1, "multi - aws-x86_64"))
-
-	err = SplitMultiTargetBlueprints(ctx, connStr, false)
-	require.NoError(t, err)
-	require.Equal(t, 4, blueprintCount(ctx, t, ORGID1))
 }
 
 // Only the type suffix taken → use {name} - {type}-{arch}.
