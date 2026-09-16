@@ -447,6 +447,65 @@ func testSplitLatestVersionNotMulti(ctx context.Context, t *testing.T) {
 	require.ElementsMatch(t, []string{"multi"}, blueprintNames(ctx, t, ORGID1))
 }
 
+// Composes from any source version are reparented to the matching child's v1.
+func testSplitReparentsComposes(ctx context.Context, t *testing.T) {
+	connStr := tutils.ConnStr(t)
+	d, closePool := testPool(ctx, t)
+	defer closePool()
+
+	blueprintID := insertBlueprint(ctx, t, ORGID1, ANR1, "multi", multiTargetBody)
+	v1, err := d.GetBlueprint(ctx, blueprintID, ORGID1, nil)
+	require.NoError(t, err)
+
+	awsComposeID := uuid.New()
+	err = d.InsertCompose(ctx, awsComposeID, ANR1, EMAIL1, ORGID1, nil,
+		json.RawMessage(`{"image_requests": [{"image_type": "aws", "architecture": "x86_64"}]}`),
+		nil, &v1.VersionId)
+	require.NoError(t, err)
+
+	v2ID := uuid.New()
+	err = d.UpdateBlueprint(ctx, v2ID, blueprintID, ORGID1, "multi", "blueprint desc", json.RawMessage(multiTargetBody), nil)
+	require.NoError(t, err)
+
+	gcpComposeID := uuid.New()
+	err = d.InsertCompose(ctx, gcpComposeID, ANR1, EMAIL1, ORGID1, nil,
+		json.RawMessage(`{"image_requests": [{"image_type": "gcp", "architecture": "x86_64"}]}`),
+		nil, &v2ID)
+	require.NoError(t, err)
+
+	err = SplitMultiTargetBlueprints(ctx, connStr, false)
+	require.NoError(t, err)
+
+	awsChild, err := d.FindBlueprintByName(ctx, ORGID1, "multi - aws")
+	require.NoError(t, err)
+	require.NotNil(t, awsChild)
+	gcpChild, err := d.FindBlueprintByName(ctx, ORGID1, "multi - gcp")
+	require.NoError(t, err)
+	require.NotNil(t, gcpChild)
+
+	awsComposes, err := d.GetBlueprintComposes(ctx, ORGID1, awsChild.Id, nil, fortnight, 100, 0, nil)
+	require.NoError(t, err)
+	require.Len(t, awsComposes, 1)
+	require.Equal(t, awsComposeID, awsComposes[0].Id)
+	require.Equal(t, 1, awsComposes[0].BlueprintVersion)
+
+	gcpComposes, err := d.GetBlueprintComposes(ctx, ORGID1, gcpChild.Id, nil, fortnight, 100, 0, nil)
+	require.NoError(t, err)
+	require.Len(t, gcpComposes, 1)
+	require.Equal(t, gcpComposeID, gcpComposes[0].Id)
+	require.Equal(t, 1, gcpComposes[0].BlueprintVersion)
+
+	_, err = d.GetBlueprint(ctx, blueprintID, ORGID1, nil)
+	require.ErrorIs(t, err, db.ErrBlueprintNotFound)
+
+	awsEntry, err := d.GetCompose(ctx, awsComposeID, ORGID1)
+	require.NoError(t, err)
+	require.NotNil(t, awsEntry)
+	gcpEntry, err := d.GetCompose(ctx, gcpComposeID, ORGID1)
+	require.NoError(t, err)
+	require.NotNil(t, gcpEntry)
+}
+
 // One new blueprint per image_requests entry (aws, gcp, azure).
 func testSplitThreeTargets(ctx context.Context, t *testing.T) {
 	connStr := tutils.ConnStr(t)
@@ -495,6 +554,7 @@ func TestAll(t *testing.T) {
 		testSplitUsesArchWhenOnlyPrimaryTaken,
 		testSplitSameNameOtherOrg,
 		testSplitLatestVersionNotMulti,
+		testSplitReparentsComposes,
 		testSplitThreeTargets,
 		testSplitLongName,
 	}

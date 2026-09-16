@@ -23,6 +23,17 @@ const (
 
 var errNoUniqueName = errors.New("could not allocate unique name")
 
+const sqlReparentComposes = `
+		UPDATE composes c
+		SET blueprint_version_id = $1
+		FROM blueprint_versions bv
+		WHERE c.blueprint_version_id = bv.id
+			AND bv.blueprint_id = $2
+			AND c.org_id = $3
+			AND c.deleted = FALSE
+			AND c.request->'image_requests'->0->>'image_type' = $4
+			AND c.request->'image_requests'->0->>'architecture' = $5`
+
 const sqlListMultiTargetBlueprints = `
 		SELECT b.id, b.org_id, b.account_number, b.name,
 			COALESCE(b.description, ''), b.metadata, bv.body, bv.service_snapshots
@@ -53,6 +64,15 @@ type multiTargetBlueprint struct {
 type imageRequestMeta struct {
 	ImageType    string `json:"image_type"`
 	Architecture string `json:"architecture"`
+}
+
+type targetKey struct {
+	imageType    string
+	architecture string
+}
+
+func targetKeyFromMeta(meta imageRequestMeta) targetKey {
+	return targetKey{imageType: meta.ImageType, architecture: meta.Architecture}
 }
 
 // SplitMultiTargetBlueprints finds latest non-deleted blueprints with more than
@@ -173,25 +193,20 @@ func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint,
 		return 0, false, fmt.Errorf("blueprint %s: parse image_requests: %w", src.ID, err)
 	}
 
-	created := 0
-	proposed := make([]string, 0, len(requests))
-	claimed := make(map[string]struct{})
-
-	for _, req := range requests {
-		meta, err := parseImageRequestMeta(req)
-		if err != nil {
-			return 0, false, fmt.Errorf("blueprint %s: parse image request: %w", src.ID, err)
-		}
-
-		name, err := mapOneRequest(ctx, tx, src, req, meta, dryRun, claimed)
-		if err != nil {
-			return 0, false, err
-		}
-		proposed = append(proposed, name)
-		created++
-	}
-
 	if dryRun {
+		proposed := make([]string, 0, len(requests))
+		claimed := make(map[string]struct{})
+		for _, req := range requests {
+			meta, err := parseImageRequestMeta(req)
+			if err != nil {
+				return 0, false, fmt.Errorf("blueprint %s: parse image request: %w", src.ID, err)
+			}
+			name, _, err := mapOneRequest(ctx, tx, src, req, meta, true, claimed)
+			if err != nil {
+				return 0, false, err
+			}
+			proposed = append(proposed, name)
+		}
 		slog.InfoContext(ctx, "dryrun",
 			"blueprint_id", src.ID,
 			"org_id", src.OrgID,
@@ -199,7 +214,33 @@ func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint,
 			"target_count", len(requests),
 			"proposed_names", proposed,
 			"would_delete", true)
-		return created, false, nil
+		return len(requests), false, nil
+	}
+
+	childVersions := make(map[targetKey]uuid.UUID, len(requests))
+	claimed := make(map[string]struct{})
+	for _, req := range requests {
+		meta, err := parseImageRequestMeta(req)
+		if err != nil {
+			return 0, false, fmt.Errorf("blueprint %s: parse image request: %w", src.ID, err)
+		}
+		_, versionID, err := mapOneRequest(ctx, tx, src, req, meta, false, claimed)
+		if err != nil {
+			return 0, false, err
+		}
+		childVersions[targetKeyFromMeta(meta)] = versionID
+	}
+
+	reparented, err := reparentComposes(ctx, tx, src.OrgID, src.ID, childVersions)
+	if err != nil {
+		return 0, false, fmt.Errorf("blueprint %s: reparent composes: %w", src.ID, err)
+	}
+	if reparented > 0 {
+		slog.InfoContext(ctx, "reparented composes to split children",
+			"source_id", src.ID,
+			"org_id", src.OrgID,
+			"source_name", src.Name,
+			"count", reparented)
 	}
 
 	err = db.DeleteBlueprintTx(ctx, tx, src.ID, src.OrgID)
@@ -210,16 +251,16 @@ func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint,
 		"source_id", src.ID,
 		"org_id", src.OrgID,
 		"source_name", src.Name)
-	return created, true, nil
+	return len(requests), true, nil
 }
 
 // mapOneRequest maps one image request to a new single-target blueprint, or
 // proposes a name in dry-run. claimed tracks names already used in this split.
-func mapOneRequest(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, req json.RawMessage, meta imageRequestMeta, dryRun bool, claimed map[string]struct{}) (string, error) {
+func mapOneRequest(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, req json.RawMessage, meta imageRequestMeta, dryRun bool, claimed map[string]struct{}) (string, uuid.UUID, error) {
 	for {
 		name, err := chooseSplitName(ctx, tx, src, meta, claimed)
 		if err != nil {
-			return "", fmt.Errorf("blueprint %s: choose name for %s/%s: %w",
+			return "", uuid.Nil, fmt.Errorf("blueprint %s: choose name for %s/%s: %w",
 				src.ID, meta.ImageType, meta.Architecture, err)
 		}
 		claimed[name] = struct{}{}
@@ -232,17 +273,17 @@ func mapOneRequest(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, req
 				"new_name", name,
 				"image_type", meta.ImageType,
 				"architecture", meta.Architecture)
-			return name, nil
+			return name, uuid.Nil, nil
 		}
 
 		body, err := bodyWithSingleImageRequest(src.Body, req)
 		if err != nil {
-			return "", fmt.Errorf("blueprint %s: build body: %w", src.ID, err)
+			return "", uuid.Nil, fmt.Errorf("blueprint %s: build body: %w", src.ID, err)
 		}
 
-		inserted, err := insertSplitBlueprint(ctx, tx, src, name, body)
+		inserted, versionID, err := insertSplitBlueprint(ctx, tx, src, name, body)
 		if err != nil {
-			return "", err
+			return "", uuid.Nil, err
 		}
 		if !inserted {
 			slog.InfoContext(ctx, "name collided on insert, retrying with another name",
@@ -259,31 +300,47 @@ func mapOneRequest(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, req
 			"new_name", name,
 			"image_type", meta.ImageType,
 			"architecture", meta.Architecture)
-		return name, nil
+		return name, versionID, nil
 	}
+}
+
+// reparentComposes moves composes from every version of sourceID to each child's v1,
+// matched by image_type and architecture on the compose request.
+func reparentComposes(ctx context.Context, tx pgx.Tx, orgID string, sourceID uuid.UUID, childVersions map[targetKey]uuid.UUID) (int, error) {
+	reparented := 0
+	for key, versionID := range childVersions {
+		tag, err := tx.Exec(ctx, sqlReparentComposes, versionID, sourceID, orgID, key.imageType, key.architecture)
+		if err != nil {
+			return reparented, err
+		}
+		reparented += int(tag.RowsAffected())
+	}
+	return reparented, nil
 }
 
 // insertSplitBlueprint inserts the child in a savepoint so a unique-name
 // collision can be retried without aborting the outer transaction.
-func insertSplitBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, name string, body json.RawMessage) (inserted bool, err error) {
+func insertSplitBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, name string, body json.RawMessage) (inserted bool, versionID uuid.UUID, err error) {
+	blueprintID := uuid.New()
+	versionID = uuid.New()
 	sp, err := tx.Begin(ctx)
 	if err != nil {
-		return false, fmt.Errorf("blueprint %s: begin savepoint: %w", src.ID, err)
+		return false, uuid.Nil, fmt.Errorf("blueprint %s: begin savepoint: %w", src.ID, err)
 	}
-	err = db.InsertBlueprintTx(ctx, sp, uuid.New(), uuid.New(), src.OrgID, src.AccountNumber,
+	err = db.InsertBlueprintTx(ctx, sp, blueprintID, versionID, src.OrgID, src.AccountNumber,
 		name, src.Description, body, src.Metadata, src.ServiceSnapshots)
 	if err == nil {
 		if err := sp.Commit(ctx); err != nil {
-			return false, fmt.Errorf("blueprint %s: insert %q: %w", src.ID, name, err)
+			return false, uuid.Nil, fmt.Errorf("blueprint %s: insert %q: %w", src.ID, name, err)
 		}
-		return true, nil
+		return true, versionID, nil
 	}
 	_ = sp.Rollback(ctx)
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-		return false, nil
+		return false, uuid.Nil, nil
 	}
-	return false, fmt.Errorf("blueprint %s: insert %q: %w", src.ID, name, err)
+	return false, uuid.Nil, fmt.Errorf("blueprint %s: insert %q: %w", src.ID, name, err)
 }
 
 // extractImageRequests returns the image_requests array from a blueprint body.
