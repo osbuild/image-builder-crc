@@ -52,6 +52,33 @@ func makeTestServer(t *testing.T, apiSrv *string) (dbase db.DB, srvURL string, s
 	}
 }
 
+func TestCreateBlueprintErrorsForTwoImageRequests(t *testing.T) {
+	_, srvURL, shutdownFn := makeTestServer(t, nil)
+	defer shutdownFn(t)
+
+	body := map[string]any{
+		"name":           "multi-target-blueprint",
+		"description":    "desc",
+		"customizations": map[string]any{},
+		"distribution":   "centos-9",
+		"image_requests": []map[string]any{
+			{
+				"architecture":   "x86_64",
+				"image_type":     "aws",
+				"upload_request": map[string]any{"type": "aws", "options": map[string]any{"share_with_accounts": []string{"test-account"}}},
+			},
+			{
+				"architecture":   "x86_64",
+				"image_type":     "gcp",
+				"upload_request": map[string]any{"type": "gcp", "options": map[string]any{}},
+			},
+		},
+	}
+	statusCode, resp := tutils.PostResponseBody(t, srvURL+"/api/image-builder/v1/blueprints", body)
+	require.Equal(t, http.StatusBadRequest, statusCode)
+	require.Contains(t, resp, `Error at \"/image_requests\": maximum number of items is 1`)
+}
+
 func TestHandlers_CreateBlueprint(t *testing.T) {
 	if runtime.GOOS == "darwin" {
 		t.Skip("crypt() not supported on darwin")

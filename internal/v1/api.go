@@ -874,7 +874,7 @@ type CreateBlueprintRequest struct {
 	// Restricted distributions include the RHEL nightlies and the Fedora distributions.
 	Distribution *Distributions `json:"distribution,omitempty"`
 
-	// ImageRequests Array of image requests. Having more image requests in a single blueprint is currently not supported.
+	// ImageRequests Array of exactly one image request. Having more image requests in a single blueprint is currently not supported.
 	ImageRequests []ImageRequest     `json:"image_requests"`
 	Metadata      *BlueprintMetadata `json:"metadata,omitempty"`
 

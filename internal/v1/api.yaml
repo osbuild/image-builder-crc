@@ -1093,11 +1093,12 @@ components:
         image_requests:
           type: array
           minItems: 1
+          maxItems: 1
           items:
             $ref: '#/components/schemas/ImageRequest'
           uniqueItems: true
           description: |
-            Array of image requests. Having more image requests in a single blueprint is currently not supported.
+            Array of exactly one image request. Having more image requests in a single blueprint is currently not supported.
         customizations:
           $ref: '#/components/schemas/Customizations'
         metadata:
