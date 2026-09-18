@@ -2313,6 +2313,71 @@ func TestComposeCustomizations(t *testing.T) {
 				},
 			},
 		},
+		// AWS upload preserves preferred image name and cloud tags
+		{
+			imageBuilderRequest: v1.ComposeRequest{
+				Distribution: common.ToPtr(v1.Distributions("centos-9")),
+				ImageName:    common.ToPtr("preferred-ami-name"),
+				ImageRequests: []v1.ImageRequest{
+					{
+						Architecture: "x86_64",
+						ImageType:    v1.ImageTypesAws,
+						UploadRequest: v1.UploadRequest{
+							Type: v1.UploadTypesAws,
+							Options: func() v1.UploadRequest_Options {
+								var opts v1.UploadRequest_Options
+								require.NoError(t, opts.FromAWSUploadRequestOptions(v1.AWSUploadRequestOptions{
+									ShareWithAccounts: &[]string{awsAccountId},
+									Tags: &[]v1.AWSTag{
+										{Key: "environment", Value: "production"},
+										{Key: "owner", Value: "image-builder"},
+									},
+								}))
+								return opts
+							}(),
+						},
+					},
+				},
+			},
+			composerRequest: composer.ComposeRequest{
+				Distribution:   common.ToPtr("centos-9"),
+				Customizations: nil,
+				ImageRequest: &composer.ImageRequest{
+					Architecture: "x86_64",
+					ImageType:    composer.ImageTypesAws,
+					Repositories: []composer.Repository{
+						{
+							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"),
+							IgnoreSsl:   nil,
+							Metalink:    nil,
+							Mirrorlist:  nil,
+							PackageSets: nil,
+							Rhsm:        common.ToPtr(false),
+							Gpgkey:      common.ToPtr(mocks.CentosGPG),
+							CheckGpg:    common.ToPtr(true),
+						},
+						{
+							Baseurl:     common.ToPtr("http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/"),
+							IgnoreSsl:   nil,
+							Metalink:    nil,
+							Mirrorlist:  nil,
+							PackageSets: nil,
+							Rhsm:        common.ToPtr(false),
+							Gpgkey:      common.ToPtr(mocks.CentosGPG),
+							CheckGpg:    common.ToPtr(true),
+						},
+					},
+					UploadOptions: makeUploadOptions(t, composer.AWSEC2UploadOptions{
+						ShareWithAccounts: []string{awsAccountId},
+						SnapshotName:      common.ToPtr("preferred-ami-name"),
+						Tags: &[]composer.AWSTag{
+							{Key: "environment", Value: "production"},
+							{Key: "owner", Value: "image-builder"},
+						},
+					}),
+				},
+			},
+		},
 		// Image size
 		{
 			imageBuilderRequest: v1.ComposeRequest{
