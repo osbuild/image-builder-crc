@@ -178,8 +178,8 @@ github.com/prometheus/common v0.70.1 h1:1HvjP4D5oL3t8RsPlwxA9onvvStjtIHYE5XuuwOi
 github.com/prometheus/common v0.70.1/go.mod h1:VdFUQDMZK3VLkurFUVhia6uys/0suUp86TJz5qbJRhc=
 github.com/prometheus/procfs v0.21.1 h1:GljZCt+zSTS+NZq88cyQ1LjZ+RCHp3uVuabBWA5+OJI=
 github.com/prometheus/procfs v0.21.1/go.mod h1:aB55Cww9pdSJVHk0hUf0inxWyyjPogFIjmHKYgMKmtY=
-github.com/redhatinsights/app-common-go v1.6.9 h1:juGobZnDvMqpx6DAO2qq9aFk/g93MblQQVVPPwTAfdM=
-github.com/redhatinsights/app-common-go v1.6.9/go.mod h1:KW0BK+bnhp3kXU8BFwebQXqCqjdkcRewZsDlXCSNMyo=
+github.com/redhatinsights/app-common-go v1.7.0 h1:9hIYIF33FWbzdafa+dEuoWMw8OoFs2DtMQRsdK1I7yI=
+github.com/redhatinsights/app-common-go v1.7.0/go.mod h1:dynBLCRYgiq/57WDdxEJ0G79lhUWCURcfmWZ4zj/f9Y=
 github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1 h1:oCJ53EClFw5LdNWLKYmwGeqkUoYLV0Wy6ZaZlwjDYDY=
 github.com/redhatinsights/identity v0.0.0-20220719174832-36a7b1cbeff1/go.mod h1:B0Dwuuaghxyqo8ltmLZyLpKQFKU6r8cE2YRrO0bVdXM=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
