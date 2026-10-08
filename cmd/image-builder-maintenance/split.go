@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	blueprintNameMaxLen = 200
+	blueprintNameMaxLen = 100
 	splitBatchSize      = 500
 )
 
@@ -127,6 +127,7 @@ func SplitMultiTargetBlueprints(ctx context.Context, dbURL string, dryRun bool) 
 					"blueprint_id", src.ID,
 					"org_id", src.OrgID,
 					"source_name", src.Name,
+					"skip_reason", err.Error(),
 					"err", err)
 				skipped++
 				sources++
@@ -192,18 +193,24 @@ func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint,
 	if err != nil {
 		return 0, false, fmt.Errorf("blueprint %s: parse image_requests: %w", src.ID, err)
 	}
+	slog.InfoContext(ctx, "evaluating blueprint for split",
+		"blueprint_id", src.ID,
+		"org_id", src.OrgID,
+		"source_name", src.Name,
+		"target_count", len(requests),
+		"dry_run", dryRun)
 
 	if dryRun {
 		proposed := make([]string, 0, len(requests))
 		claimed := make(map[string]struct{})
-		for _, req := range requests {
+		for targetIndex, req := range requests {
 			meta, err := parseImageRequestMeta(req)
 			if err != nil {
-				return 0, false, fmt.Errorf("blueprint %s: parse image request: %w", src.ID, err)
+				return 0, false, fmt.Errorf("blueprint %s: parse image request at target_index=%d: %w", src.ID, targetIndex, err)
 			}
 			name, _, err := mapOneRequest(ctx, tx, src, req, meta, true, claimed)
 			if err != nil {
-				return 0, false, err
+				return 0, false, fmt.Errorf("blueprint %s: target_index=%d image_type=%s architecture=%s: %w", src.ID, targetIndex, meta.ImageType, meta.Architecture, err)
 			}
 			proposed = append(proposed, name)
 		}
@@ -219,14 +226,14 @@ func splitOneBlueprint(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint,
 
 	childVersions := make(map[targetKey]uuid.UUID, len(requests))
 	claimed := make(map[string]struct{})
-	for _, req := range requests {
+	for targetIndex, req := range requests {
 		meta, err := parseImageRequestMeta(req)
 		if err != nil {
-			return 0, false, fmt.Errorf("blueprint %s: parse image request: %w", src.ID, err)
+			return 0, false, fmt.Errorf("blueprint %s: parse image request at target_index=%d: %w", src.ID, targetIndex, err)
 		}
 		_, versionID, err := mapOneRequest(ctx, tx, src, req, meta, false, claimed)
 		if err != nil {
-			return 0, false, err
+			return 0, false, fmt.Errorf("blueprint %s: target_index=%d image_type=%s architecture=%s: %w", src.ID, targetIndex, meta.ImageType, meta.Architecture, err)
 		}
 		childVersions[targetKeyFromMeta(meta)] = versionID
 	}
@@ -278,12 +285,12 @@ func mapOneRequest(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, req
 
 		body, err := bodyWithSingleImageRequest(src.Body, req)
 		if err != nil {
-			return "", uuid.Nil, fmt.Errorf("blueprint %s: build body: %w", src.ID, err)
+			return "", uuid.Nil, fmt.Errorf("blueprint %s: build body for image_type=%s architecture=%s: %w", src.ID, meta.ImageType, meta.Architecture, err)
 		}
 
 		inserted, versionID, err := insertSplitBlueprint(ctx, tx, src, name, body)
 		if err != nil {
-			return "", uuid.Nil, err
+			return "", uuid.Nil, fmt.Errorf("blueprint %s: insert split blueprint for image_type=%s architecture=%s: %w", src.ID, meta.ImageType, meta.Architecture, err)
 		}
 		if !inserted {
 			slog.InfoContext(ctx, "name collided on insert, retrying with another name",
@@ -311,7 +318,7 @@ func reparentComposes(ctx context.Context, tx pgx.Tx, orgID string, sourceID uui
 	for key, versionID := range childVersions {
 		tag, err := tx.Exec(ctx, sqlReparentComposes, versionID, sourceID, orgID, key.imageType, key.architecture)
 		if err != nil {
-			return reparented, err
+			return reparented, fmt.Errorf("reparent composes for image_type=%s architecture=%s: %w", key.imageType, key.architecture, err)
 		}
 		reparented += int(tag.RowsAffected())
 	}
@@ -388,7 +395,7 @@ func clipTo(name string, maxLen int) string {
 	return string([]rune(name)[:maxLen])
 }
 
-// preferredSplitNames returns "{name} - {type}" then "{name} - {type}-{arch}", clipped to 200 runes.
+// preferredSplitNames returns "{name} - {type}" then "{name} - {type}-{arch}", clipped to the database's 100-rune limit.
 func preferredSplitNames(srcName string, meta imageRequestMeta) (primary, secondary string) {
 	typeSuffix := " - " + meta.ImageType
 	archSuffix := fmt.Sprintf(" - %s-%s", meta.ImageType, meta.Architecture)
@@ -400,27 +407,35 @@ func preferredSplitNames(srcName string, meta imageRequestMeta) (primary, second
 // chooseSplitName tries the primary name, then the secondary.
 func chooseSplitName(ctx context.Context, tx pgx.Tx, src multiTargetBlueprint, meta imageRequestMeta, claimed map[string]struct{}) (string, error) {
 	primary, secondary := preferredSplitNames(src.Name, meta)
-	for _, name := range []string{primary, secondary} {
-		free, err := unusedSplitName(ctx, tx, src.OrgID, name, claimed)
-		if err != nil || free != "" {
-			return free, err
+	for _, candidate := range []struct{ label, name string }{
+		{label: "primary", name: primary},
+		{label: "secondary", name: secondary},
+	} {
+		name := candidate.name
+		if _, used := claimed[name]; used {
+			slog.WarnContext(ctx, "split name candidate unavailable",
+				"blueprint_id", src.ID, "org_id", src.OrgID, "source_name", src.Name,
+				"image_type", meta.ImageType, "architecture", meta.Architecture,
+				"candidate", candidate.label, "name", name, "reason", "already_claimed_for_source")
+			continue
 		}
+		existing, err := db.FindBlueprintByNameTx(ctx, tx, src.OrgID, name)
+		if err != nil {
+			return "", err
+		}
+		if existing == nil {
+			return name, nil
+		}
+		slog.WarnContext(ctx, "split name candidate unavailable",
+			"blueprint_id", src.ID, "org_id", src.OrgID, "source_name", src.Name,
+			"image_type", meta.ImageType, "architecture", meta.Architecture,
+			"candidate", candidate.label, "name", name, "reason", "name_already_exists",
+			"existing_blueprint_id", existing.Id)
 	}
-	return "", errNoUniqueName
-}
-
-// unusedSplitName checks one candidate. It returns the name if free, or ("", nil) if taken.
-func unusedSplitName(ctx context.Context, tx pgx.Tx, orgID, name string, claimed map[string]struct{}) (string, error) {
-	if _, used := claimed[name]; used {
-		return "", nil
-	}
-
-	existing, err := db.FindBlueprintByNameTx(ctx, tx, orgID, name)
-	if err != nil {
-		return "", err
-	}
-	if existing == nil {
-		return name, nil
-	}
-	return "", nil
+	slog.ErrorContext(ctx, "no usable name for split blueprint",
+		"blueprint_id", src.ID, "org_id", src.OrgID, "source_name", src.Name,
+		"image_type", meta.ImageType, "architecture", meta.Architecture,
+		"primary_name", primary, "secondary_name", secondary,
+		"reason", "all_name_candidates_unavailable")
+	return "", fmt.Errorf("%w: primary=%q secondary=%q", errNoUniqueName, primary, secondary)
 }

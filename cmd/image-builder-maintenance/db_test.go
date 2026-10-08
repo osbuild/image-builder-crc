@@ -516,7 +516,7 @@ func testSplitThreeTargets(ctx context.Context, t *testing.T) {
 	require.ElementsMatch(t, []string{"multi - aws", "multi - gcp", "multi - azure"}, blueprintNames(ctx, t, ORGID1))
 }
 
-// Names stay within VARCHAR(200).
+// Names stay within VARCHAR(100).
 func testSplitLongName(ctx context.Context, t *testing.T) {
 	connStr := tutils.ConnStr(t)
 	longName := strings.Repeat("a", blueprintNameMaxLen)
