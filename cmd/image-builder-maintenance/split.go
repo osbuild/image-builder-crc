@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	blueprintNameMaxLen = 200
+	blueprintNameMaxLen = 100
 	splitBatchSize      = 500
 )
 
