@@ -1560,6 +1560,11 @@ type Repository struct {
 
 // Services defines model for Services.
 type Services struct {
+	// DefaultTarget Default systemd target to boot into
+	//
+	// Example: multi-user.target
+	DefaultTarget *string `json:"default_target,omitempty"`
+
 	// Disabled List of services to disable by default
 	Disabled *[]string `json:"disabled,omitempty"`
 
