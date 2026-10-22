@@ -1596,9 +1596,10 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 
 	if cust.Services != nil {
 		res.Services = &composer.Services{
-			Disabled: cust.Services.Disabled,
-			Enabled:  cust.Services.Enabled,
-			Masked:   cust.Services.Masked,
+			Disabled:      cust.Services.Disabled,
+			Enabled:       cust.Services.Enabled,
+			Masked:        cust.Services.Masked,
+			DefaultTarget: cust.Services.DefaultTarget,
 		}
 	}
 

@@ -1822,6 +1822,9 @@ func TestComposeCustomizations(t *testing.T) {
 							Password: common.ToPtr("$6$password123"),
 						},
 					},
+					Services: &v1.Services{
+						DefaultTarget: common.ToPtr("graphical.target"),
+					},
 				},
 				Distribution: common.ToPtr(v1.Distributions("centos-9")),
 				ImageRequests: []v1.ImageRequest{
@@ -1910,6 +1913,9 @@ func TestComposeCustomizations(t *testing.T) {
 							Name:     "user3",
 							Password: common.ToPtr("$6$password123"),
 						},
+					},
+					Services: &composer.Services{
+						DefaultTarget: common.ToPtr("graphical.target"),
 					},
 				},
 				ImageRequest: &composer.ImageRequest{
