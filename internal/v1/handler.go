@@ -514,7 +514,7 @@ func parseComposeStatusError(ctx echo.Context, composeErr *composer.ComposeStatu
 			// Try to remarshal the details as another composer.ComposeStatusError
 			jsonDetails, err := json.Marshal(details)
 			if err != nil {
-				ctx.Logger().Error("Error processing compose status error details: %v", err)
+				ctx.Logger().Errorf("Error processing compose status error details: %v", err)
 				return fbErr
 			}
 			var newErr composer.ComposeStatusError
