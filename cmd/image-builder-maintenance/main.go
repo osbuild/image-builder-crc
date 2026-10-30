@@ -39,7 +39,6 @@ func main() {
 	conf := Config{
 		DryRun:                  true,
 		EnableDBMaintenance:     false,
-		EnableBlueprintSplit:    false,
 		ComposesRetentionMonths: 24,
 	}
 
@@ -86,18 +85,6 @@ func main() {
 			failed = true
 		} else {
 			slog.InfoContext(ctx, "🦀🦀🦀 dbqueue cleanup done 🦀🦀🦀")
-		}
-	}
-
-	if !conf.EnableBlueprintSplit {
-		slog.InfoContext(ctx, "🦀🦀🦀 blueprint split not enabled, skipping 🦀🦀🦀")
-	} else {
-		err = SplitMultiTargetBlueprints(ctx, dbURL, conf.DryRun)
-		if err != nil {
-			slog.ErrorContext(ctx, "error during blueprint split", "err", err)
-			failed = true
-		} else {
-			slog.InfoContext(ctx, "🦀🦀🦀 blueprint split done 🦀🦀🦀")
 		}
 	}
 
