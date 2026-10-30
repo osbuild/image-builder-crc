@@ -499,6 +499,9 @@ type AWSEC2UploadOptions struct {
 
 	// SnapshotName Example: my-snapshot
 	SnapshotName *string `json:"snapshot_name,omitempty"`
+
+	// Tags Optional tags applied to the AMI and snapshot.
+	Tags *[]AWSTag `json:"tags,omitempty"`
 }
 
 // AWSEC2UploadStatus defines model for AWSEC2UploadStatus.
@@ -527,6 +530,15 @@ type AWSS3UploadOptions struct {
 // AWSS3UploadStatus defines model for AWSS3UploadStatus.
 type AWSS3UploadStatus struct {
 	Url string `json:"url"`
+}
+
+// AWSTag defines model for AWSTag.
+type AWSTag struct {
+	// Key Example: environment
+	Key string `json:"key"`
+
+	// Value Example: production
+	Value string `json:"value"`
 }
 
 // ArchitectureInfo Architecture metadata from images library
