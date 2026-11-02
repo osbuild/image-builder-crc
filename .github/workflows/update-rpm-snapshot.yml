@@ -13,13 +13,13 @@ jobs:
       GH_TOKEN: ${{ secrets.SCHUTZBOT_GITHUB_ACCESS_TOKEN }}
     steps:
       - name: Clone rpmrepo repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: osbuild/rpmrepo
           path: rpmrepo
 
       - name: Clone image-builder-crc repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: osbuild/image-builder-crc
           path: rpmrepo/image-builder-crc
