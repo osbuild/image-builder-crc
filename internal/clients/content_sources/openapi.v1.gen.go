@@ -7,6 +7,24 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ApiRepositoryRequestOrigin.
+const (
+	External ApiRepositoryRequestOrigin = "external"
+	Upload   ApiRepositoryRequestOrigin = "upload"
+)
+
+// Valid indicates whether the value is a known member of the ApiRepositoryRequestOrigin enum.
+func (e ApiRepositoryRequestOrigin) Valid() bool {
+	switch e {
+	case External:
+		return true
+	case Upload:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SetUserPreferenceParamsLabel.
 const (
 	LightwellNotificationEnabled SetUserPreferenceParamsLabel = "lightwell-notification-enabled"
@@ -73,12 +91,93 @@ type ApiContentUnitSearchRequest struct {
 	Uuids *[]string `json:"uuids,omitempty"`
 }
 
+// ApiCoverageReportPackageCollectionResponse defines model for api.CoverageReportPackageCollectionResponse.
+type ApiCoverageReportPackageCollectionResponse struct {
+	// Data List of packages
+	Data *[]ApiCoverageReportPackageResponse `json:"data,omitempty"`
+
+	// Links Navigation links
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Pagination metadata
+	Meta *ApiResponseMetadata `json:"meta,omitempty"`
+}
+
+// ApiCoverageReportPackageResponse defines model for api.CoverageReportPackageResponse.
+type ApiCoverageReportPackageResponse struct {
+	// Covered Whether the package is covered (true = exact or partial match)
+	Covered *bool `json:"covered,omitempty"`
+
+	// CveCount Count of CVEs fixed in remediated repos for this package, by severity
+	CveCount *ApiCveCount `json:"cve_count,omitempty"`
+
+	// CveRange Min/max CVSS severity score across this package's CVEs; omitted when the package has no CVEs
+	CveRange *ApiCveRange `json:"cve_range,omitempty"`
+
+	// Ecosystem Ecosystem of the package
+	Ecosystem *string `json:"ecosystem,omitempty"`
+
+	// MatchStatus Match status of the package (exact, partial, none)
+	MatchStatus *string `json:"match_status,omitempty"`
+
+	// Name Package name from the manifest
+	Name *string `json:"name,omitempty"`
+
+	// Version Package version from the manifest
+	Version *string `json:"version,omitempty"`
+}
+
+// ApiCoverageReportResponse defines model for api.CoverageReportResponse.
+type ApiCoverageReportResponse struct {
+	// AnalysisTaskError Error if coverage analysis task failed
+	AnalysisTaskError *string `json:"analysis_task_error,omitempty"`
+
+	// AnalysisTaskUuid UUID of the coverage analysis task
+	AnalysisTaskUuid *string `json:"analysis_task_uuid,omitempty"`
+
+	// CompletedAt Timestamp when coverage analysis finished
+	CompletedAt *string `json:"completed_at,omitempty"`
+
+	// CreatedAt Timestamp when the report was created
+	CreatedAt *string `json:"created_at,omitempty"`
+
+	// CveSummary Count of CVEs fixed in remediated repos across covered packages, by severity
+	CveSummary *ApiCveCount `json:"cve_summary,omitempty"`
+
+	// EcosystemCoverageSummary Per-ecosystem breakdown
+	EcosystemCoverageSummary *[]ApiEcosystemCoverageSummary `json:"ecosystem_coverage_summary,omitempty"`
+
+	// ExactMatches Number of packages with name and version found
+	ExactMatches *int `json:"exact_matches,omitempty"`
+
+	// InputFormat Detected manifest format
+	InputFormat *string `json:"input_format,omitempty"`
+
+	// PartialMatches Number of packages with name found but not version
+	PartialMatches *int `json:"partial_matches,omitempty"`
+
+	// SkippedEntries Package entries skipped because no usable identity could be extracted; absent for older reports
+	SkippedEntries *int `json:"skipped_entries,omitempty"`
+
+	// Status Coverage analysis task status
+	Status *string `json:"status,omitempty"`
+
+	// Total Total packages parsed from the manifest
+	Total *int `json:"total,omitempty"`
+
+	// Unmatched Number of packages with name not found
+	Unmatched *int    `json:"unmatched,omitempty"`
+	Uuid      *string `json:"uuid,omitempty"`
+}
+
 // ApiCreateUploadRequest defines model for api.CreateUploadRequest.
 type ApiCreateUploadRequest struct {
 	// ChunkSize Size of the chunk
 	ChunkSize int `json:"chunk_size"`
 
-	// Resumable if true, returns an already existing upload matching the same sha256 and chunk_size
+	// Resumable If true, reuse an existing upload with the same sha256, chunk_size, and size. Recommended for large files. If omitted, treated as false.
+	//
+	// Example: true
 	Resumable *bool `json:"resumable,omitempty"`
 
 	// Sha256 SHA-256 checksum of the file
@@ -86,6 +185,35 @@ type ApiCreateUploadRequest struct {
 
 	// Size Size of the upload in bytes
 	Size int `json:"size"`
+}
+
+// ApiCveCount defines model for api.CveCount.
+type ApiCveCount struct {
+	Critical  *int `json:"critical,omitempty"`
+	Important *int `json:"important,omitempty"`
+	Low       *int `json:"low,omitempty"`
+	Moderate  *int `json:"moderate,omitempty"`
+}
+
+// ApiCveRange defines model for api.CveRange.
+type ApiCveRange struct {
+	// High Highest CVSS severity score among the package's CVEs
+	High *float32 `json:"high,omitempty"`
+
+	// Low Lowest CVSS severity score among the package's CVEs
+	Low *float32 `json:"low,omitempty"`
+}
+
+// ApiEcosystemCoverageSummary defines model for api.EcosystemCoverageSummary.
+type ApiEcosystemCoverageSummary struct {
+	Ecosystem      *string `json:"ecosystem,omitempty"`
+	ExactMatches   *int    `json:"exact_matches,omitempty"`
+	PartialMatches *int    `json:"partial_matches,omitempty"`
+
+	// Supported Whether the ecosystem is present in the Lightwell catalog.
+	Supported *bool `json:"supported,omitempty"`
+	Total     *int  `json:"total,omitempty"`
+	Unmatched *int  `json:"unmatched,omitempty"`
 }
 
 // ApiExtendedReleaseArchitecture defines model for api.ExtendedReleaseArchitecture.
@@ -109,6 +237,12 @@ type ApiFeature struct {
 
 	// Enabled Whether the feature is enabled on the running server
 	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// ApiFeatureProduct defines model for api.FeatureProduct.
+type ApiFeatureProduct struct {
+	Label *string `json:"label,omitempty"`
+	Name  *string `json:"name,omitempty"`
 }
 
 // ApiFeatureSet defines model for api.FeatureSet.
@@ -136,6 +270,212 @@ type ApiGenericAttributeValidationResponse struct {
 
 	// Valid Valid if not skipped and the provided attribute is valid
 	Valid *bool `json:"valid,omitempty"`
+}
+
+// ApiLightwellAdvisoryCollectionResponse defines model for api.LightwellAdvisoryCollectionResponse.
+type ApiLightwellAdvisoryCollectionResponse struct {
+	Data  *[]ApiLightwellAdvisoryResponse `json:"data,omitempty"`
+	Links *ApiLinks                       `json:"links,omitempty"`
+	Meta  *ApiResponseMetadata            `json:"meta,omitempty"`
+}
+
+// ApiLightwellAdvisoryResponse defines model for api.LightwellAdvisoryResponse.
+type ApiLightwellAdvisoryResponse struct {
+	AdvisoryId     *string   `json:"advisory_id,omitempty"`
+	AdvisoryName   *string   `json:"advisory_name,omitempty"`
+	Aliases        *[]string `json:"aliases,omitempty"`
+	CreatedAt      *string   `json:"created_at,omitempty"`
+	Details        *string   `json:"details,omitempty"`
+	FixedVersions  *[]string `json:"fixed_versions,omitempty"`
+	Modified       *string   `json:"modified,omitempty"`
+	PackageName    *string   `json:"package_name,omitempty"`
+	PackageVersion *string   `json:"package_version,omitempty"`
+	Published      *string   `json:"published,omitempty"`
+	ReferenceUrls  *[]string `json:"reference_urls,omitempty"`
+	Repository     *string   `json:"repository,omitempty"`
+	SchemaVersion  *string   `json:"schema_version,omitempty"`
+	Severity       *string   `json:"severity,omitempty"`
+	SeverityScore  *float32  `json:"severity_score,omitempty"`
+	Source         *string   `json:"source,omitempty"`
+	Summary        *string   `json:"summary,omitempty"`
+	UpdatedAt      *string   `json:"updated_at,omitempty"`
+}
+
+// ApiLightwellBeaconStatusResponse defines model for api.LightwellBeaconStatusResponse.
+type ApiLightwellBeaconStatusResponse struct {
+	// LastProcessedAt When the latest successful beacon sync started
+	LastProcessedAt *string `json:"last_processed_at,omitempty"`
+}
+
+// ApiLightwellCustomerIdsResponse defines model for api.LightwellCustomerIdsResponse.
+type ApiLightwellCustomerIdsResponse struct {
+	// Data Customer IDs
+	Data *[]string `json:"data,omitempty"`
+}
+
+// ApiLightwellLtwlsuptTicketIdsResponse defines model for api.LightwellLtwlsuptTicketIdsResponse.
+type ApiLightwellLtwlsuptTicketIdsResponse struct {
+	// Data Lightwell support ticket IDs
+	Data *[]string `json:"data,omitempty"`
+}
+
+// ApiLightwellPackageCollectionResponse defines model for api.LightwellPackageCollectionResponse.
+type ApiLightwellPackageCollectionResponse struct {
+	Data  *[]ApiLightwellPackageResponse `json:"data,omitempty"`
+	Links *ApiLinks                      `json:"links,omitempty"`
+	Meta  *ApiResponseMetadata           `json:"meta,omitempty"`
+}
+
+// ApiLightwellPackageResponse defines model for api.LightwellPackageResponse.
+type ApiLightwellPackageResponse struct {
+	Ecosystem *string `json:"ecosystem,omitempty"`
+	Group     *string `json:"group,omitempty"`
+
+	// LastPublication LastPublication is the most recent publish time across the package's versions.
+	LastPublication *string           `json:"last_publication,omitempty"`
+	LatestReleases  *[]ApiReleaseInfo `json:"latest_releases,omitempty"`
+	Name            *string           `json:"name,omitempty"`
+	Repository      *string           `json:"repository,omitempty"`
+	RepositoryUuid  *string           `json:"repository_uuid,omitempty"`
+	Versions        *[]string         `json:"versions,omitempty"`
+}
+
+// ApiLightwellPackageVersionCollectionResponse defines model for api.LightwellPackageVersionCollectionResponse.
+type ApiLightwellPackageVersionCollectionResponse struct {
+	Data  *[]ApiLightwellPackageVersionResponse `json:"data,omitempty"`
+	Links *ApiLinks                             `json:"links,omitempty"`
+	Meta  *ApiResponseMetadata                  `json:"meta,omitempty"`
+}
+
+// ApiLightwellPackageVersionResponse defines model for api.LightwellPackageVersionResponse.
+type ApiLightwellPackageVersionResponse struct {
+	Coordinates    *string `json:"coordinates,omitempty"`
+	CreatedAt      *string `json:"created_at,omitempty"`
+	Ecosystem      *string `json:"ecosystem,omitempty"`
+	Group          *string `json:"group,omitempty"`
+	Name           *string `json:"name,omitempty"`
+	Purl           *string `json:"purl,omitempty"`
+	Release        *string `json:"release,omitempty"`
+	Repository     *string `json:"repository,omitempty"`
+	RepositoryUuid *string `json:"repository_uuid,omitempty"`
+	Version        *string `json:"version,omitempty"`
+}
+
+// ApiLightwellVulnerabilityCollectionMeta defines model for api.LightwellVulnerabilityCollectionMeta.
+type ApiLightwellVulnerabilityCollectionMeta struct {
+	// Count Total count of results
+	Count *int `json:"count,omitempty"`
+
+	// CriticalCount Count of Critical severity rows matching filters
+	CriticalCount *int `json:"critical_count,omitempty"`
+
+	// EmbargoCount Count of embargoed rows matching filters
+	EmbargoCount *int `json:"embargo_count,omitempty"`
+
+	// Limit Limit of results used for the request
+	Limit *int `json:"limit,omitempty"`
+
+	// Offset Offset into results used for the request
+	Offset *int `json:"offset,omitempty"`
+
+	// StatusCounts Per-status counts matching filters
+	StatusCounts *map[string]int64 `json:"status_counts,omitempty"`
+}
+
+// ApiLightwellVulnerabilityCollectionResponse defines model for api.LightwellVulnerabilityCollectionResponse.
+type ApiLightwellVulnerabilityCollectionResponse struct {
+	// Data Requested Data
+	Data *[]ApiLightwellVulnerabilityResponse `json:"data,omitempty"`
+
+	// Links Links to other pages of results
+	Links *ApiLinks `json:"links,omitempty"`
+
+	// Meta Metadata about the request
+	Meta *ApiLightwellVulnerabilityCollectionMeta `json:"meta,omitempty"`
+}
+
+// ApiLightwellVulnerabilityResponse defines model for api.LightwellVulnerabilityResponse.
+type ApiLightwellVulnerabilityResponse struct {
+	// AgeDays UTC calendar days since submitted_date
+	AgeDays *int `json:"age_days,omitempty"`
+
+	// Complexity Standard, Complex, or Extensive
+	Complexity *string `json:"complexity,omitempty"`
+
+	// ComponentName Component / package name
+	ComponentName *string `json:"component_name,omitempty"`
+
+	// ComponentVersion Component version
+	ComponentVersion *string `json:"component_version,omitempty"`
+
+	// CustomerPriority Customer priority
+	CustomerPriority *string `json:"customer_priority,omitempty"`
+
+	// Cvss CVSS score
+	Cvss *float32 `json:"cvss,omitempty"`
+
+	// CvssVector CVSS vector string
+	CvssVector *string `json:"cvss_vector,omitempty"`
+
+	// Cwe CWE identifier
+	Cwe *string `json:"cwe,omitempty"`
+
+	// Description Vulnerability description
+	Description *string `json:"description,omitempty"`
+
+	// Duplicate Duplicate flag
+	Duplicate *bool `json:"duplicate,omitempty"`
+
+	// DuplicateOf Canonical vulnerability_id when duplicate
+	DuplicateOf *string `json:"duplicate_of,omitempty"`
+
+	// Ecosystem Derived ecosystem (java, python, javascript, csharp)
+	Ecosystem *string `json:"ecosystem,omitempty"`
+
+	// Embargo Embargo flag
+	Embargo *bool `json:"embargo,omitempty"`
+
+	// ExploitTested Whether an exploit was tested
+	ExploitTested *bool `json:"exploit_tested,omitempty"`
+
+	// LastUpdated Last update timestamp
+	LastUpdated *string `json:"last_updated,omitempty"`
+
+	// LtwlsuptTicketIds Lightwell support ticket IDs
+	LtwlsuptTicketIds *[]string `json:"ltwlsupt_ticket_ids,omitempty"`
+
+	// Package Alias of component_name
+	Package *string `json:"package,omitempty"`
+
+	// PublishedVersions Published package versions that fix this vulnerability
+	PublishedVersions *[]string `json:"published_versions,omitempty"`
+
+	// Purl Package URL
+	Purl *string `json:"purl,omitempty"`
+
+	// ReproducerIncluded Whether a reproducer is included
+	ReproducerIncluded *bool `json:"reproducer_included,omitempty"`
+
+	// ResolutionReason Explanation when a vulnerability is closed without a shipped fix
+	ResolutionReason *string `json:"resolution_reason,omitempty"`
+
+	// Severity Severity (Critical, Important, Moderate, Low)
+	Severity *string `json:"severity,omitempty"`
+
+	// Status Workflow status. A closure without a shipped fix is Unremediated
+	Status *string `json:"status,omitempty"`
+
+	// SubmittedDate Date the vulnerability was submitted
+	SubmittedDate *string `json:"submitted_date,omitempty"`
+
+	// Title Vulnerability title
+	Title *string `json:"title,omitempty"`
+
+	// Uuid UUID of the vulnerability
+	Uuid *string `json:"uuid,omitempty"`
+
+	// VulnerabilityId Business identifier (e.g. LWL-2026-4401)
+	VulnerabilityId *string `json:"vulnerability_id,omitempty"`
 }
 
 // ApiLinks defines model for api.Links.
@@ -170,14 +510,16 @@ type ApiListSnapshotByDateResponse struct {
 
 // ApiMavenPackageDetailResponse defines model for api.MavenPackageDetailResponse.
 type ApiMavenPackageDetailResponse struct {
-	Author     *string           `json:"author,omitempty"`
-	Builds     *[]ApiReleaseInfo `json:"builds,omitempty"`
-	Group      *string           `json:"group,omitempty"`
-	License    *string           `json:"license,omitempty"`
-	Name       *string           `json:"name,omitempty"`
-	ProjectUrl *string           `json:"project_url,omitempty"`
-	Summary    *string           `json:"summary,omitempty"`
-	Version    *string           `json:"version,omitempty"`
+	Author          *string           `json:"author,omitempty"`
+	Builds          *[]ApiReleaseInfo `json:"builds,omitempty"`
+	Group           *string           `json:"group,omitempty"`
+	LastUpdated     *string           `json:"last_updated,omitempty"`
+	License         *string           `json:"license,omitempty"`
+	Name            *string           `json:"name,omitempty"`
+	ProjectUrl      *string           `json:"project_url,omitempty"`
+	Summary         *string           `json:"summary,omitempty"`
+	UpstreamVersion *string           `json:"upstream_version,omitempty"`
+	Version         *string           `json:"version,omitempty"`
 }
 
 // ApiMavenPackageVersionsResponse defines model for api.MavenPackageVersionsResponse.
@@ -189,13 +531,13 @@ type ApiMavenPackageVersionsResponse struct {
 
 // ApiNpmPackageDetailResponse defines model for api.NpmPackageDetailResponse.
 type ApiNpmPackageDetailResponse struct {
-	CreatedAt        *string           `json:"created_at,omitempty"`
-	LatestVersions   *[]ApiReleaseInfo `json:"latest_versions,omitempty"`
-	Name             *string           `json:"name,omitempty"`
-	Scope            *string           `json:"scope,omitempty"`
-	Tarball          *ApiNpmTarball    `json:"tarball,omitempty"`
-	UpstreamVersions *[]string         `json:"upstream_versions,omitempty"`
-	Version          *string           `json:"version,omitempty"`
+	Builds          *[]ApiReleaseInfo `json:"builds,omitempty"`
+	LastUpdated     *string           `json:"last_updated,omitempty"`
+	Name            *string           `json:"name,omitempty"`
+	Scope           *string           `json:"scope,omitempty"`
+	Tarball         *ApiNpmTarball    `json:"tarball,omitempty"`
+	UpstreamVersion *string           `json:"upstream_version,omitempty"`
+	Version         *string           `json:"version,omitempty"`
 }
 
 // ApiNpmPackageVersionsResponse defines model for api.NpmPackageVersionsResponse.
@@ -215,10 +557,11 @@ type ApiNpmTarball struct {
 
 // ApiPackageItem defines model for api.PackageItem.
 type ApiPackageItem struct {
-	Group          *string           `json:"group,omitempty"`
-	LatestReleases *[]ApiReleaseInfo `json:"latest_releases,omitempty"`
-	Name           *string           `json:"name,omitempty"`
-	Versions       *[]string         `json:"versions,omitempty"`
+	Group            *string           `json:"group,omitempty"`
+	LatestReleases   *[]ApiReleaseInfo `json:"latest_releases,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	UpstreamVersions *[]string         `json:"upstream_versions,omitempty"`
+	Versions         *[]string         `json:"versions,omitempty"`
 }
 
 // ApiPackageResponse defines model for api.PackageResponse.
@@ -358,16 +701,17 @@ type ApiPythonPackageAuthor struct {
 
 // ApiPythonPackageDetailResponse defines model for api.PythonPackageDetailResponse.
 type ApiPythonPackageDetailResponse struct {
-	Author           *ApiPythonPackageAuthor  `json:"author,omitempty"`
-	Description      *string                  `json:"description,omitempty"`
-	Distributions    *[]ApiPythonDistribution `json:"distributions,omitempty"`
-	LastUpdated      *string                  `json:"last_updated,omitempty"`
-	License          *string                  `json:"license,omitempty"`
-	Name             *string                  `json:"name,omitempty"`
-	ProjectUrl       *string                  `json:"project_url,omitempty"`
-	Summary          *string                  `json:"summary,omitempty"`
-	UpstreamVersions *[]string                `json:"upstream_versions,omitempty"`
-	Version          *string                  `json:"version,omitempty"`
+	Author          *ApiPythonPackageAuthor  `json:"author,omitempty"`
+	Builds          *[]ApiReleaseInfo        `json:"builds,omitempty"`
+	Description     *string                  `json:"description,omitempty"`
+	Distributions   *[]ApiPythonDistribution `json:"distributions,omitempty"`
+	LastUpdated     *string                  `json:"last_updated,omitempty"`
+	License         *string                  `json:"license,omitempty"`
+	Name            *string                  `json:"name,omitempty"`
+	ProjectUrl      *string                  `json:"project_url,omitempty"`
+	Summary         *string                  `json:"summary,omitempty"`
+	UpstreamVersion *string                  `json:"upstream_version,omitempty"`
+	Version         *string                  `json:"version,omitempty"`
 }
 
 // ApiPythonPackageVersionsResponse defines model for api.PythonPackageVersionsResponse.
@@ -467,6 +811,9 @@ type ApiRepositoryImportResponse struct {
 	// AccountId Account ID of the owner
 	AccountId *string `json:"account_id,omitempty"`
 
+	// AdvisoryCount Lightwell: total security advisories
+	AdvisoryCount *int `json:"advisory_count,omitempty"`
+
 	// BuildCount Number of builds last read in the repository, not applicable to all repositories
 	BuildCount *int `json:"build_count,omitempty"`
 
@@ -563,6 +910,9 @@ type ApiRepositoryImportResponse struct {
 
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
+
+	// SnapshotPublishState Aggregate publish state across all snapshots (partner repos only)
+	SnapshotPublishState *ApiSnapshotPublishState `json:"snapshot_publish_state,omitempty"`
 
 	// Status Combined status of last introspection and snapshot of repository (Valid, Invalid, Unavailable, Pending)
 	Status *string `json:"status,omitempty"`
@@ -629,6 +979,9 @@ type ApiRepositoryParameterResponse struct {
 
 	// ExtendedReleaseStreams Extended release streams available
 	ExtendedReleaseStreams *[]ApiExtendedReleaseStream `json:"extended_release_streams,omitempty"`
+
+	// FeatureProducts Features available (Red Hat products)
+	FeatureProducts *[]ApiFeatureProduct `json:"feature_products,omitempty"`
 }
 
 // ApiRepositoryRequest defines model for api.RepositoryRequest.
@@ -655,8 +1008,8 @@ type ApiRepositoryRequest struct {
 	// Name Name of the remote yum repository
 	Name string `json:"name"`
 
-	// Origin Origin of the repository
-	Origin *string `json:"origin,omitempty"`
+	// Origin Origin of the repository (`external` or `upload`). Defaults to `external`. Set to `upload` for repositories that receive uploaded RPMs.
+	Origin *ApiRepositoryRequestOrigin `json:"origin,omitempty"`
 
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
@@ -665,10 +1018,16 @@ type ApiRepositoryRequest struct {
 	Url *string `json:"url,omitempty"`
 }
 
+// ApiRepositoryRequestOrigin Origin of the repository (`external` or `upload`). Defaults to `external`. Set to `upload` for repositories that receive uploaded RPMs.
+type ApiRepositoryRequestOrigin string
+
 // ApiRepositoryResponse defines model for api.RepositoryResponse.
 type ApiRepositoryResponse struct {
 	// AccountId Account ID of the owner
 	AccountId *string `json:"account_id,omitempty"`
+
+	// AdvisoryCount Lightwell: total security advisories
+	AdvisoryCount *int `json:"advisory_count,omitempty"`
 
 	// BuildCount Number of builds last read in the repository, not applicable to all repositories
 	BuildCount *int `json:"build_count,omitempty"`
@@ -767,6 +1126,9 @@ type ApiRepositoryResponse struct {
 	// Snapshot Enable snapshotting and hosting of this repository
 	Snapshot *bool `json:"snapshot,omitempty"`
 
+	// SnapshotPublishState Aggregate publish state across all snapshots (partner repos only)
+	SnapshotPublishState *ApiSnapshotPublishState `json:"snapshot_publish_state,omitempty"`
+
 	// Status Combined status of last introspection and snapshot of repository (Valid, Invalid, Unavailable, Pending)
 	Status *string `json:"status,omitempty"`
 
@@ -800,7 +1162,7 @@ type ApiRepositoryRpm struct {
 	// Summary The summary of the rpm
 	Summary *string `json:"summary,omitempty"`
 
-	// Uuid Identifier of the rpm
+	// Uuid Identifier of the rpm (not present for foreign partner repo rpms)
 	Uuid *string `json:"uuid,omitempty"`
 
 	// Version The version of the  rpm
@@ -1043,6 +1405,21 @@ type ApiSnapshotForDate struct {
 	RepositoryUuid *string `json:"repository_uuid,omitempty"`
 }
 
+// ApiSnapshotPublishState defines model for api.SnapshotPublishState.
+type ApiSnapshotPublishState struct {
+	// Published At least one snapshot is published with a completed publish task
+	Published *bool `json:"published,omitempty"`
+
+	// Publishing At least one snapshot with published=true has a pending/running task (publish in progress)
+	Publishing *bool `json:"publishing,omitempty"`
+
+	// Stopped At least one snapshot has a failed/canceled publish task
+	Stopped *bool `json:"stopped,omitempty"`
+
+	// Unpublishing At least one snapshot with published=false has a pending/running task (unpublish in progress)
+	Unpublishing *bool `json:"unpublishing,omitempty"`
+}
+
 // ApiSnapshotPublishedUpdateRequest defines model for api.SnapshotPublishedUpdateRequest.
 type ApiSnapshotPublishedUpdateRequest struct {
 	// Published Update snapshot published status to this value.
@@ -1062,6 +1439,12 @@ type ApiSnapshotResponse struct {
 
 	// DetectedOsVersion Release version of the repository (BaseOS)
 	DetectedOsVersion *string `json:"detected_os_version,omitempty"`
+
+	// LastPublishTaskUuid UUID of the publish/unpublish task
+	LastPublishTaskUuid *string `json:"last_publish_task_uuid,omitempty"`
+
+	// PublishTask Status of the publish/unpublish task
+	PublishTask *ApiTaskInfoResponse `json:"publish_task,omitempty"`
 
 	// Published Whether this snapshot is published for cross-org partner visibility
 	Published *bool `json:"published,omitempty"`
@@ -1344,6 +1727,13 @@ type ApiTemplateUpdateRequest struct {
 	UseLatest *bool `json:"use_latest,omitempty"`
 }
 
+// ApiTermsRequiredResponse defines model for api.TermsRequiredResponse.
+type ApiTermsRequiredResponse struct {
+	Events   *[]string `json:"events,omitempty"`
+	Required *bool     `json:"required,omitempty"`
+	Site     *string   `json:"site,omitempty"`
+}
+
 // ApiUUIDListRequest defines model for api.UUIDListRequest.
 type ApiUUIDListRequest struct {
 	Uuids []string `json:"uuids"`
@@ -1456,6 +1846,159 @@ type ErrorsHandlerError struct {
 
 	// Title A summary of the problem
 	Title *string `json:"title,omitempty"`
+}
+
+// CreateCoverageReportMultipartBody defines parameters for CreateCoverageReport.
+type CreateCoverageReportMultipartBody struct {
+	// CatalogSource Catalog source for analysis: pulp (default) or db
+	CatalogSource *string `json:"catalog_source,omitempty"`
+
+	// File Manifest file (CycloneDX, SPDX, etc.)
+	File openapi_types.File `json:"file"`
+}
+
+// ListCoverageReportPackagesParams defines parameters for ListCoverageReportPackages.
+type ListCoverageReportPackagesParams struct {
+	// Search Filter by package name
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// Ecosystem A comma separated list of ecosystems to filter on
+	Ecosystem *string `form:"ecosystem,omitempty" json:"ecosystem,omitempty"`
+
+	// MatchStatus A comma separated list of match statuses to filter on (exact, partial, none)
+	MatchStatus *string `form:"match_status,omitempty" json:"match_status,omitempty"`
+
+	// Offset Starting point for pagination. Default: 0
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Limit Number of items per page. Default: 100
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListLightwellAdvisoriesParams defines parameters for ListLightwellAdvisories.
+type ListLightwellAdvisoriesParams struct {
+	// Repository Filter by repository name
+	Repository *string `form:"repository,omitempty" json:"repository,omitempty"`
+
+	// PackageName Filter by package name (exact match)
+	PackageName *string `form:"package_name,omitempty" json:"package_name,omitempty"`
+
+	// PackageVersion Filter by package version (exact match)
+	PackageVersion *string `form:"package_version,omitempty" json:"package_version,omitempty"`
+
+	// Name Filter by advisory id or alias (substring match)
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// SeverityMin Minimum severity level (low, moderate, important, critical)
+	SeverityMin *string `form:"severity_min,omitempty" json:"severity_min,omitempty"`
+
+	// CveId Filter by CVE ID (exact match)
+	CveId *string `form:"cve_id,omitempty" json:"cve_id,omitempty"`
+
+	// LatestRelease When true, return only advisories from the highest Lightwell rebuild (baseline, then novel, then hotfix) of the package/version. Requires package_name and package_version.
+	LatestRelease *bool `form:"latest_release,omitempty" json:"latest_release,omitempty"`
+
+	// Limit Limit of results to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Offset into results
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// ListLightwellVulnerabilitiesParams defines parameters for ListLightwellVulnerabilities.
+type ListLightwellVulnerabilitiesParams struct {
+	// CustomerId Customer ID (required).
+	CustomerId string `form:"customer_id" json:"customer_id"`
+
+	// Severity Comma-separated severities to filter on.
+	Severity *string `form:"severity,omitempty" json:"severity,omitempty"`
+
+	// Status Comma-separated statuses to filter on.
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+
+	// Complexity Comma-separated complexities to filter on (Standard, Complex, Extensive).
+	Complexity *string `form:"complexity,omitempty" json:"complexity,omitempty"`
+
+	// LtwlsuptTicketId Comma-separated Lightwell support ticket IDs to filter on.
+	LtwlsuptTicketId *string `form:"ltwlsupt_ticket_id,omitempty" json:"ltwlsupt_ticket_id,omitempty"`
+
+	// Flag Comma-separated flags to filter on (embargo, duplicate).
+	Flag *string `form:"flag,omitempty" json:"flag,omitempty"`
+
+	// Search Search vulnerability_id, component_name, and title. Minimum 2 characters.
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// Offset Starting point for retrieving a subset of results. Default value:`0`.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Limit Number of items to include in response. Default value: `100`. Maximum: `200`.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListLightwellLtwlsuptTicketIdsParams defines parameters for ListLightwellLtwlsuptTicketIds.
+type ListLightwellLtwlsuptTicketIdsParams struct {
+	// CustomerId Customer ID (required).
+	CustomerId string `form:"customer_id" json:"customer_id"`
+}
+
+// ListLightwellPackageVersionsParams defines parameters for ListLightwellPackageVersions.
+type ListLightwellPackageVersionsParams struct {
+	// Ecosystem Filter by ecosystem (maven, python, npm)
+	Ecosystem *string `form:"ecosystem,omitempty" json:"ecosystem,omitempty"`
+
+	// Name Filter by package name (substring match)
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// SecurityLevel Filter by security level (validated, remediated)
+	SecurityLevel *string `form:"security_level,omitempty" json:"security_level,omitempty"`
+
+	// Repository Filter by repository name
+	Repository *string `form:"repository,omitempty" json:"repository,omitempty"`
+
+	// ResolvesCveId Show only packages that resolve this CVE
+	ResolvesCveId *string `form:"resolves_cve_id,omitempty" json:"resolves_cve_id,omitempty"`
+
+	// VulnerableToCveId Show only packages vulnerable to this CVE
+	VulnerableToCveId *string `form:"vulnerable_to_cve_id,omitempty" json:"vulnerable_to_cve_id,omitempty"`
+
+	// Demo Return demo repositories instead of production ones (default false)
+	Demo *bool `form:"demo,omitempty" json:"demo,omitempty"`
+
+	// Limit Limit of results to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Offset into results
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// ListLightwellPackagesParams defines parameters for ListLightwellPackages.
+type ListLightwellPackagesParams struct {
+	// Ecosystem Filter by ecosystem (maven, python, npm)
+	Ecosystem *string `form:"ecosystem,omitempty" json:"ecosystem,omitempty"`
+
+	// Name Filter by package name (substring match)
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// Search Filter by package name or group/scope (substring match)
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// SortBy Sort the results. Valid fields: group/name, name, scope/name, last_publication. Each may be suffixed with :asc or :desc (default asc).
+	SortBy *string `form:"sort_by,omitempty" json:"sort_by,omitempty"`
+
+	// Repository Filter by repository name
+	Repository *string `form:"repository,omitempty" json:"repository,omitempty"`
+
+	// SecurityLevel Filter by security level (validated, remediated)
+	SecurityLevel *string `form:"security_level,omitempty" json:"security_level,omitempty"`
+
+	// Demo Return demo repositories instead of production ones (default false)
+	Demo *bool `form:"demo,omitempty" json:"demo,omitempty"`
+
+	// Limit Limit of results to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Offset into results
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
 // ListPopularRepositoriesParams defines parameters for ListPopularRepositories.
@@ -1597,6 +2140,9 @@ type ListPackagesParams struct {
 
 	// Search Term to filter and retrieve items that match the specified search criteria. For Maven, search term can include name or group. For Python and npm, search term can include name (including scoped names like @types/).
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// SortBy Sort field. Valid fields are name and last_updated. Append :asc or :desc. name defaults to asc. last_updated defaults to desc.
+	SortBy *string `form:"sort_by,omitempty" json:"sort_by,omitempty"`
 }
 
 // ListRepositoriesRpmsParams defines parameters for ListRepositoriesRpms.
@@ -1778,6 +2324,9 @@ type SetUserPreferenceJSONBody = string
 
 // SetUserPreferenceParamsLabel defines parameters for SetUserPreference.
 type SetUserPreferenceParamsLabel string
+
+// CreateCoverageReportMultipartRequestBody defines body for CreateCoverageReport for multipart/form-data ContentType.
+type CreateCoverageReportMultipartRequestBody CreateCoverageReportMultipartBody
 
 // SearchEnvironmentsJSONRequestBody defines body for SearchEnvironments for application/json ContentType.
 type SearchEnvironmentsJSONRequestBody = ApiContentUnitSearchRequest

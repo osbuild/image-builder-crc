@@ -273,6 +273,7 @@ const (
 	ImageTypesAws                        ImageTypes = "aws"
 	ImageTypesAwsCvm                     ImageTypes = "aws-cvm"
 	ImageTypesAwsHaRhui                  ImageTypes = "aws-ha-rhui"
+	ImageTypesAwsNvidia                  ImageTypes = "aws-nvidia"
 	ImageTypesAwsRhui                    ImageTypes = "aws-rhui"
 	ImageTypesAwsSapRhui                 ImageTypes = "aws-sap-rhui"
 	ImageTypesAzure                      ImageTypes = "azure"
@@ -290,7 +291,6 @@ const (
 	ImageTypesGcpRhui                    ImageTypes = "gcp-rhui"
 	ImageTypesGuestImage                 ImageTypes = "guest-image"
 	ImageTypesImageInstaller             ImageTypes = "image-installer"
-	ImageTypesIotBootableContainer       ImageTypes = "iot-bootable-container"
 	ImageTypesIotCommit                  ImageTypes = "iot-commit"
 	ImageTypesIotContainer               ImageTypes = "iot-container"
 	ImageTypesIotInstaller               ImageTypes = "iot-installer"
@@ -315,6 +315,8 @@ func (e ImageTypes) Valid() bool {
 	case ImageTypesAwsCvm:
 		return true
 	case ImageTypesAwsHaRhui:
+		return true
+	case ImageTypesAwsNvidia:
 		return true
 	case ImageTypesAwsRhui:
 		return true
@@ -349,8 +351,6 @@ func (e ImageTypes) Valid() bool {
 	case ImageTypesGuestImage:
 		return true
 	case ImageTypesImageInstaller:
-		return true
-	case ImageTypesIotBootableContainer:
 		return true
 	case ImageTypesIotCommit:
 		return true
@@ -2091,6 +2091,11 @@ type SearchPackagesResponse struct {
 
 // Services defines model for Services.
 type Services struct {
+	// DefaultTarget Default systemd target to boot into
+	//
+	// Example: multi-user.target
+	DefaultTarget *string `json:"default_target,omitempty"`
+
 	// Disabled List of services to disable by default
 	Disabled *[]string `json:"disabled,omitempty"`
 
