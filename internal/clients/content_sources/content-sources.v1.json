@@ -87,6 +87,142 @@
                 },
                 "type": "object"
             },
+            "api.CoverageReportPackageCollectionResponse": {
+                "properties": {
+                    "data": {
+                        "description": "List of packages",
+                        "items": {
+                            "$ref": "#/components/schemas/api.CoverageReportPackageResponse"
+                        },
+                        "type": "array"
+                    },
+                    "links": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Navigation links"
+                    },
+                    "meta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.ResponseMetadata"
+                            }
+                        ],
+                        "description": "Pagination metadata"
+                    }
+                },
+                "type": "object"
+            },
+            "api.CoverageReportPackageResponse": {
+                "properties": {
+                    "covered": {
+                        "description": "Whether the package is covered (true = exact or partial match)",
+                        "type": "boolean"
+                    },
+                    "cve_count": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.CveCount"
+                            }
+                        ],
+                        "description": "Count of CVEs fixed in remediated repos for this package, by severity"
+                    },
+                    "cve_range": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.CveRange"
+                            }
+                        ],
+                        "description": "Min/max CVSS severity score across this package's CVEs; omitted when the package has no CVEs"
+                    },
+                    "ecosystem": {
+                        "description": "Ecosystem of the package",
+                        "type": "string"
+                    },
+                    "match_status": {
+                        "description": "Match status of the package (exact, partial, none)",
+                        "type": "string"
+                    },
+                    "name": {
+                        "description": "Package name from the manifest",
+                        "type": "string"
+                    },
+                    "version": {
+                        "description": "Package version from the manifest",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "api.CoverageReportResponse": {
+                "properties": {
+                    "analysis_task_error": {
+                        "description": "Error if coverage analysis task failed",
+                        "type": "string"
+                    },
+                    "analysis_task_uuid": {
+                        "description": "UUID of the coverage analysis task",
+                        "type": "string"
+                    },
+                    "completed_at": {
+                        "description": "Timestamp when coverage analysis finished",
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the report was created",
+                        "type": "string"
+                    },
+                    "cve_summary": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.CveCount"
+                            }
+                        ],
+                        "description": "Count of CVEs fixed in remediated repos across covered packages, by severity"
+                    },
+                    "ecosystem_coverage_summary": {
+                        "description": "Per-ecosystem breakdown",
+                        "items": {
+                            "$ref": "#/components/schemas/api.EcosystemCoverageSummary"
+                        },
+                        "type": "array"
+                    },
+                    "exact_matches": {
+                        "description": "Number of packages with name and version found",
+                        "type": "integer"
+                    },
+                    "input_format": {
+                        "description": "Detected manifest format",
+                        "type": "string"
+                    },
+                    "partial_matches": {
+                        "description": "Number of packages with name found but not version",
+                        "type": "integer"
+                    },
+                    "skipped_entries": {
+                        "description": "Package entries skipped because no usable identity could be extracted; absent for older reports",
+                        "type": "integer"
+                    },
+                    "status": {
+                        "description": "Coverage analysis task status",
+                        "type": "string"
+                    },
+                    "total": {
+                        "description": "Total packages parsed from the manifest",
+                        "type": "integer"
+                    },
+                    "unmatched": {
+                        "description": "Number of packages with name not found",
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "api.CreateUploadRequest": {
                 "properties": {
                     "chunk_size": {
@@ -94,7 +230,8 @@
                         "type": "integer"
                     },
                     "resumable": {
-                        "description": "if true, returns an already existing upload matching the same sha256 and chunk_size",
+                        "description": "If true, reuse an existing upload with the same sha256, chunk_size, and size. Recommended for large files. If omitted, treated as false.",
+                        "example": true,
                         "type": "boolean"
                     },
                     "sha256": {
@@ -111,6 +248,60 @@
                     "sha256",
                     "size"
                 ],
+                "type": "object"
+            },
+            "api.CveCount": {
+                "properties": {
+                    "critical": {
+                        "type": "integer"
+                    },
+                    "important": {
+                        "type": "integer"
+                    },
+                    "low": {
+                        "type": "integer"
+                    },
+                    "moderate": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "api.CveRange": {
+                "properties": {
+                    "high": {
+                        "description": "Highest CVSS severity score among the package's CVEs",
+                        "type": "number"
+                    },
+                    "low": {
+                        "description": "Lowest CVSS severity score among the package's CVEs",
+                        "type": "number"
+                    }
+                },
+                "type": "object"
+            },
+            "api.EcosystemCoverageSummary": {
+                "properties": {
+                    "ecosystem": {
+                        "type": "string"
+                    },
+                    "exact_matches": {
+                        "type": "integer"
+                    },
+                    "partial_matches": {
+                        "type": "integer"
+                    },
+                    "supported": {
+                        "description": "Whether the ecosystem is present in the Lightwell catalog.",
+                        "type": "boolean"
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "unmatched": {
+                        "type": "integer"
+                    }
+                },
                 "type": "object"
             },
             "api.ExtendedReleaseArchitecture": {
@@ -157,6 +348,17 @@
                 },
                 "type": "object"
             },
+            "api.FeatureProduct": {
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "api.FeatureSet": {
                 "additionalProperties": {
                     "$ref": "#/components/schemas/api.Feature"
@@ -197,6 +399,409 @@
                     "valid": {
                         "description": "Valid if not skipped and the provided attribute is valid",
                         "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellAdvisoryCollectionResponse": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.LightwellAdvisoryResponse"
+                        },
+                        "type": "array"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/api.Links"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellAdvisoryResponse": {
+                "properties": {
+                    "advisory_id": {
+                        "type": "string"
+                    },
+                    "advisory_name": {
+                        "type": "string"
+                    },
+                    "aliases": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "details": {
+                        "type": "string"
+                    },
+                    "fixed_versions": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "modified": {
+                        "type": "string"
+                    },
+                    "package_name": {
+                        "type": "string"
+                    },
+                    "package_version": {
+                        "type": "string"
+                    },
+                    "published": {
+                        "type": "string"
+                    },
+                    "reference_urls": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "repository": {
+                        "type": "string"
+                    },
+                    "schema_version": {
+                        "type": "string"
+                    },
+                    "severity": {
+                        "type": "string"
+                    },
+                    "severity_score": {
+                        "type": "number"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellBeaconStatusResponse": {
+                "properties": {
+                    "last_processed_at": {
+                        "description": "When the latest successful beacon sync started",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellCustomerIdsResponse": {
+                "properties": {
+                    "data": {
+                        "description": "Customer IDs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellLtwlsuptTicketIdsResponse": {
+                "properties": {
+                    "data": {
+                        "description": "Lightwell support ticket IDs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellPackageCollectionResponse": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.LightwellPackageResponse"
+                        },
+                        "type": "array"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/api.Links"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellPackageResponse": {
+                "properties": {
+                    "ecosystem": {
+                        "type": "string"
+                    },
+                    "group": {
+                        "type": "string"
+                    },
+                    "last_publication": {
+                        "description": "LastPublication is the most recent publish time across the package's versions.",
+                        "type": "string"
+                    },
+                    "latest_releases": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.ReleaseInfo"
+                        },
+                        "type": "array"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "repository": {
+                        "type": "string"
+                    },
+                    "repository_uuid": {
+                        "type": "string"
+                    },
+                    "versions": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellPackageVersionCollectionResponse": {
+                "properties": {
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.LightwellPackageVersionResponse"
+                        },
+                        "type": "array"
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/api.Links"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/api.ResponseMetadata"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellPackageVersionResponse": {
+                "properties": {
+                    "coordinates": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "ecosystem": {
+                        "type": "string"
+                    },
+                    "group": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "purl": {
+                        "type": "string"
+                    },
+                    "release": {
+                        "type": "string"
+                    },
+                    "repository": {
+                        "type": "string"
+                    },
+                    "repository_uuid": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellVulnerabilityCollectionMeta": {
+                "properties": {
+                    "count": {
+                        "description": "Total count of results",
+                        "type": "integer"
+                    },
+                    "critical_count": {
+                        "description": "Count of Critical severity rows matching filters",
+                        "type": "integer"
+                    },
+                    "embargo_count": {
+                        "description": "Count of embargoed rows matching filters",
+                        "type": "integer"
+                    },
+                    "limit": {
+                        "description": "Limit of results used for the request",
+                        "type": "integer"
+                    },
+                    "offset": {
+                        "description": "Offset into results used for the request",
+                        "type": "integer"
+                    },
+                    "status_counts": {
+                        "additionalProperties": {
+                            "format": "int64",
+                            "type": "integer"
+                        },
+                        "description": "Per-status counts matching filters",
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellVulnerabilityCollectionResponse": {
+                "properties": {
+                    "data": {
+                        "description": "Requested Data",
+                        "items": {
+                            "$ref": "#/components/schemas/api.LightwellVulnerabilityResponse"
+                        },
+                        "type": "array"
+                    },
+                    "links": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.Links"
+                            }
+                        ],
+                        "description": "Links to other pages of results"
+                    },
+                    "meta": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.LightwellVulnerabilityCollectionMeta"
+                            }
+                        ],
+                        "description": "Metadata about the request"
+                    }
+                },
+                "type": "object"
+            },
+            "api.LightwellVulnerabilityResponse": {
+                "properties": {
+                    "age_days": {
+                        "description": "UTC calendar days since submitted_date",
+                        "type": "integer"
+                    },
+                    "complexity": {
+                        "description": "Standard, Complex, or Extensive",
+                        "type": "string"
+                    },
+                    "component_name": {
+                        "description": "Component / package name",
+                        "type": "string"
+                    },
+                    "component_version": {
+                        "description": "Component version",
+                        "type": "string"
+                    },
+                    "customer_priority": {
+                        "description": "Customer priority",
+                        "type": "string"
+                    },
+                    "cvss": {
+                        "description": "CVSS score",
+                        "type": "number"
+                    },
+                    "cvss_vector": {
+                        "description": "CVSS vector string",
+                        "type": "string"
+                    },
+                    "cwe": {
+                        "description": "CWE identifier",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Vulnerability description",
+                        "type": "string"
+                    },
+                    "duplicate": {
+                        "description": "Duplicate flag",
+                        "type": "boolean"
+                    },
+                    "duplicate_of": {
+                        "description": "Canonical vulnerability_id when duplicate",
+                        "type": "string"
+                    },
+                    "ecosystem": {
+                        "description": "Derived ecosystem (java, python, javascript, csharp)",
+                        "type": "string"
+                    },
+                    "embargo": {
+                        "description": "Embargo flag",
+                        "type": "boolean"
+                    },
+                    "exploit_tested": {
+                        "description": "Whether an exploit was tested",
+                        "type": "boolean"
+                    },
+                    "last_updated": {
+                        "description": "Last update timestamp",
+                        "type": "string"
+                    },
+                    "ltwlsupt_ticket_ids": {
+                        "description": "Lightwell support ticket IDs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "package": {
+                        "description": "Alias of component_name",
+                        "type": "string"
+                    },
+                    "published_versions": {
+                        "description": "Published package versions that fix this vulnerability",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "purl": {
+                        "description": "Package URL",
+                        "type": "string"
+                    },
+                    "reproducer_included": {
+                        "description": "Whether a reproducer is included",
+                        "type": "boolean"
+                    },
+                    "resolution_reason": {
+                        "description": "Explanation when a vulnerability is closed without a shipped fix",
+                        "type": "string"
+                    },
+                    "severity": {
+                        "description": "Severity (Critical, Important, Moderate, Low)",
+                        "type": "string"
+                    },
+                    "status": {
+                        "description": "Workflow status. A closure without a shipped fix is Unremediated",
+                        "type": "string"
+                    },
+                    "submitted_date": {
+                        "description": "Date the vulnerability was submitted",
+                        "type": "string"
+                    },
+                    "title": {
+                        "description": "Vulnerability title",
+                        "type": "string"
+                    },
+                    "uuid": {
+                        "description": "UUID of the vulnerability",
+                        "type": "string"
+                    },
+                    "vulnerability_id": {
+                        "description": "Business identifier (e.g. LWL-2026-4401)",
+                        "type": "string"
                     }
                 },
                 "type": "object"
@@ -268,6 +873,9 @@
                     "group": {
                         "type": "string"
                     },
+                    "last_updated": {
+                        "type": "string"
+                    },
                     "license": {
                         "type": "string"
                     },
@@ -278,6 +886,9 @@
                         "type": "string"
                     },
                     "summary": {
+                        "type": "string"
+                    },
+                    "upstream_version": {
                         "type": "string"
                     },
                     "version": {
@@ -305,14 +916,14 @@
             },
             "api.NpmPackageDetailResponse": {
                 "properties": {
-                    "created_at": {
-                        "type": "string"
-                    },
-                    "latest_versions": {
+                    "builds": {
                         "items": {
                             "$ref": "#/components/schemas/api.ReleaseInfo"
                         },
                         "type": "array"
+                    },
+                    "last_updated": {
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -323,11 +934,8 @@
                     "tarball": {
                         "$ref": "#/components/schemas/api.NpmTarball"
                     },
-                    "upstream_versions": {
-                        "items": {
-                            "type": "string"
-                        },
-                        "type": "array"
+                    "upstream_version": {
+                        "type": "string"
                     },
                     "version": {
                         "type": "string"
@@ -382,6 +990,12 @@
                     },
                     "name": {
                         "type": "string"
+                    },
+                    "upstream_versions": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
                     },
                     "versions": {
                         "items": {
@@ -631,6 +1245,12 @@
                     "author": {
                         "$ref": "#/components/schemas/api.PythonPackageAuthor"
                     },
+                    "builds": {
+                        "items": {
+                            "$ref": "#/components/schemas/api.ReleaseInfo"
+                        },
+                        "type": "array"
+                    },
                     "description": {
                         "type": "string"
                     },
@@ -655,11 +1275,8 @@
                     "summary": {
                         "type": "string"
                     },
-                    "upstream_versions": {
-                        "items": {
-                            "type": "string"
-                        },
-                        "type": "array"
+                    "upstream_version": {
+                        "type": "string"
                     },
                     "version": {
                         "type": "string"
@@ -842,6 +1459,11 @@
                         "readOnly": true,
                         "type": "string"
                     },
+                    "advisory_count": {
+                        "description": "Lightwell: total security advisories",
+                        "readOnly": true,
+                        "type": "integer"
+                    },
                     "build_count": {
                         "description": "Number of builds last read in the repository, not applicable to all repositories",
                         "type": "integer"
@@ -985,6 +1607,15 @@
                     "snapshot": {
                         "description": "Enable snapshotting and hosting of this repository",
                         "type": "boolean"
+                    },
+                    "snapshot_publish_state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.SnapshotPublishState"
+                            }
+                        ],
+                        "description": "Aggregate publish state across all snapshots (partner repos only)",
+                        "readOnly": true
                     },
                     "status": {
                         "description": "Combined status of last introspection and snapshot of repository (Valid, Invalid, Unavailable, Pending)",
@@ -1108,6 +1739,13 @@
                             "$ref": "#/components/schemas/api.ExtendedReleaseStream"
                         },
                         "type": "array"
+                    },
+                    "feature_products": {
+                        "description": "Features available (Red Hat products)",
+                        "items": {
+                            "$ref": "#/components/schemas/api.FeatureProduct"
+                        },
+                        "type": "array"
                     }
                 },
                 "type": "object"
@@ -1147,8 +1785,11 @@
                         "type": "string"
                     },
                     "origin": {
-                        "description": "Origin of the repository",
-                        "readOnly": true,
+                        "description": "Origin of the repository (`external` or `upload`). Defaults to `external`. Set to `upload` for repositories that receive uploaded RPMs.",
+                        "enum": [
+                            "external",
+                            "upload"
+                        ],
                         "type": "string"
                     },
                     "snapshot": {
@@ -1171,6 +1812,11 @@
                         "description": "Account ID of the owner",
                         "readOnly": true,
                         "type": "string"
+                    },
+                    "advisory_count": {
+                        "description": "Lightwell: total security advisories",
+                        "readOnly": true,
+                        "type": "integer"
                     },
                     "build_count": {
                         "description": "Number of builds last read in the repository, not applicable to all repositories",
@@ -1316,6 +1962,15 @@
                         "description": "Enable snapshotting and hosting of this repository",
                         "type": "boolean"
                     },
+                    "snapshot_publish_state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.SnapshotPublishState"
+                            }
+                        ],
+                        "description": "Aggregate publish state across all snapshots (partner repos only)",
+                        "readOnly": true
+                    },
                     "status": {
                         "description": "Combined status of last introspection and snapshot of repository (Valid, Invalid, Unavailable, Pending)",
                         "type": "string"
@@ -1363,7 +2018,7 @@
                         "type": "string"
                     },
                     "uuid": {
-                        "description": "Identifier of the rpm",
+                        "description": "Identifier of the rpm (not present for foreign partner repo rpms)",
                         "type": "string"
                     },
                     "version": {
@@ -1792,6 +2447,27 @@
                 },
                 "type": "object"
             },
+            "api.SnapshotPublishState": {
+                "properties": {
+                    "published": {
+                        "description": "At least one snapshot is published with a completed publish task",
+                        "type": "boolean"
+                    },
+                    "publishing": {
+                        "description": "At least one snapshot with published=true has a pending/running task (publish in progress)",
+                        "type": "boolean"
+                    },
+                    "stopped": {
+                        "description": "At least one snapshot has a failed/canceled publish task",
+                        "type": "boolean"
+                    },
+                    "unpublishing": {
+                        "description": "At least one snapshot with published=false has a pending/running task (unpublish in progress)",
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
             "api.SnapshotPublishedUpdateRequest": {
                 "properties": {
                     "published": {
@@ -1829,6 +2505,18 @@
                     "detected_os_version": {
                         "description": "Release version of the repository (BaseOS)",
                         "type": "string"
+                    },
+                    "last_publish_task_uuid": {
+                        "description": "UUID of the publish/unpublish task",
+                        "type": "string"
+                    },
+                    "publish_task": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/api.TaskInfoResponse"
+                            }
+                        ],
+                        "description": "Status of the publish/unpublish task"
                     },
                     "published": {
                         "description": "Whether this snapshot is published for cross-org partner visibility",
@@ -2308,6 +2996,23 @@
                 },
                 "type": "object"
             },
+            "api.TermsRequiredResponse": {
+                "properties": {
+                    "events": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "site": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "api.UUIDListRequest": {
                 "properties": {
                     "uuids": {
@@ -2512,6 +3217,269 @@
     },
     "openapi": "3.0.3",
     "paths": {
+        "/coverage_reports/": {
+            "post": {
+                "description": "Upload a manifest file and start coverage analysis.",
+                "operationId": "createCoverageReport",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "catalog_source": {
+                                        "description": "Catalog source for analysis: pulp (default) or db",
+                                        "type": "string",
+                                        "x-formData-name": "catalog_source"
+                                    },
+                                    "file": {
+                                        "description": "Manifest file (CycloneDX, SPDX, etc.)",
+                                        "format": "binary",
+                                        "type": "string",
+                                        "x-formData-name": "file"
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.CoverageReportResponse"
+                                }
+                            }
+                        },
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Create coverage report",
+                "tags": [
+                    "coverage_reports"
+                ]
+            }
+        },
+        "/coverage_reports/{uuid}": {
+            "get": {
+                "description": "Return a coverage report by UUID.",
+                "operationId": "getCoverageReport",
+                "parameters": [
+                    {
+                        "description": "Coverage report UUID",
+                        "in": "path",
+                        "name": "uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.CoverageReportResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Get coverage report",
+                "tags": [
+                    "coverage_reports"
+                ]
+            }
+        },
+        "/coverage_reports/{uuid}/packages": {
+            "get": {
+                "description": "Return paginated packages for a completed coverage report.",
+                "operationId": "listCoverageReportPackages",
+                "parameters": [
+                    {
+                        "description": "Coverage report UUID",
+                        "in": "path",
+                        "name": "uuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by package name",
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "A comma separated list of ecosystems to filter on",
+                        "in": "query",
+                        "name": "ecosystem",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "A comma separated list of match statuses to filter on (exact, partial, none)",
+                        "in": "query",
+                        "name": "match_status",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Starting point for pagination. Default: 0",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page. Default: 100",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.CoverageReportPackageCollectionResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List coverage report packages",
+                "tags": [
+                    "coverage_reports"
+                ]
+            }
+        },
         "/environments/names": {
             "post": {
                 "description": "This enables users to search for environments in a given list of repositories.",
@@ -2618,6 +3586,740 @@
                 "summary": "List Features within the application, whether they are enabled, and whether the requesting user can use them",
                 "tags": [
                     "features"
+                ]
+            }
+        },
+        "/lightwell/advisories": {
+            "get": {
+                "description": "List security advisories for Lightwell remediated packages with optional filtering.",
+                "operationId": "listLightwellAdvisories",
+                "parameters": [
+                    {
+                        "description": "Filter by repository name",
+                        "in": "query",
+                        "name": "repository",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by package name (exact match)",
+                        "in": "query",
+                        "name": "package_name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by package version (exact match)",
+                        "in": "query",
+                        "name": "package_version",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by advisory id or alias (substring match)",
+                        "in": "query",
+                        "name": "name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Minimum severity level (low, moderate, important, critical)",
+                        "in": "query",
+                        "name": "severity_min",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by CVE ID (exact match)",
+                        "in": "query",
+                        "name": "cve_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "When true, return only advisories from the highest Lightwell rebuild (baseline, then novel, then hotfix) of the package/version. Requires package_name and package_version.",
+                        "in": "query",
+                        "name": "latest_release",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Limit of results to return",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Offset into results",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellAdvisoryCollectionResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Lightwell Advisories",
+                "tags": [
+                    "lightwell"
+                ]
+            }
+        },
+        "/lightwell/beacon/status/": {
+            "get": {
+                "description": "Return when the latest successful beacon sync started. The timestamp is omitted until the first successful sync.",
+                "operationId": "getLightwellBeaconStatus",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellBeaconStatusResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Get Lightwell beacon status",
+                "tags": [
+                    "lightwell_vulnerabilities"
+                ]
+            }
+        },
+        "/lightwell/beacon/vulnerabilities/": {
+            "get": {
+                "description": "List Lightwell vulnerabilities for a customer, with filters, pagination, and aggregate counts.",
+                "operationId": "listLightwellVulnerabilities",
+                "parameters": [
+                    {
+                        "description": "Customer ID (required).",
+                        "in": "query",
+                        "name": "customer_id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Comma-separated severities to filter on.",
+                        "in": "query",
+                        "name": "severity",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Comma-separated statuses to filter on.",
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Comma-separated complexities to filter on (Standard, Complex, Extensive).",
+                        "in": "query",
+                        "name": "complexity",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Comma-separated Lightwell support ticket IDs to filter on.",
+                        "in": "query",
+                        "name": "ltwlsupt_ticket_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Comma-separated flags to filter on (embargo, duplicate).",
+                        "in": "query",
+                        "name": "flag",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Search vulnerability_id, component_name, and title. Minimum 2 characters.",
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Starting point for retrieving a subset of results. Default value:`0`.",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Number of items to include in response. Default value: `100`. Maximum: `200`.",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellVulnerabilityCollectionResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Lightwell vulnerabilities",
+                "tags": [
+                    "lightwell_vulnerabilities"
+                ]
+            }
+        },
+        "/lightwell/beacon/vulnerabilities/customers/": {
+            "get": {
+                "description": "List distinct customer IDs that have Lightwell vulnerabilities.",
+                "operationId": "listLightwellCustomerIds",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellCustomerIdsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Lightwell customer IDs",
+                "tags": [
+                    "lightwell_vulnerabilities"
+                ]
+            }
+        },
+        "/lightwell/beacon/vulnerabilities/ltwlsupt-ticket-ids/": {
+            "get": {
+                "description": "List distinct Lightwell support ticket IDs for a customer.",
+                "operationId": "listLightwellLtwlsuptTicketIds",
+                "parameters": [
+                    {
+                        "description": "Customer ID (required).",
+                        "in": "query",
+                        "name": "customer_id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellLtwlsuptTicketIdsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Lightwell support ticket IDs",
+                "tags": [
+                    "lightwell_vulnerabilities"
+                ]
+            }
+        },
+        "/lightwell/package_versions": {
+            "get": {
+                "description": "List individual package versions aggregated across all Lightwell repositories, with optional CVE-based filtering.",
+                "operationId": "listLightwellPackageVersions",
+                "parameters": [
+                    {
+                        "description": "Filter by ecosystem (maven, python, npm)",
+                        "in": "query",
+                        "name": "ecosystem",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by package name (substring match)",
+                        "in": "query",
+                        "name": "name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by security level (validated, remediated)",
+                        "in": "query",
+                        "name": "security_level",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by repository name",
+                        "in": "query",
+                        "name": "repository",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Show only packages that resolve this CVE",
+                        "in": "query",
+                        "name": "resolves_cve_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Show only packages vulnerable to this CVE",
+                        "in": "query",
+                        "name": "vulnerable_to_cve_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Return demo repositories instead of production ones (default false)",
+                        "in": "query",
+                        "name": "demo",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Limit of results to return",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Offset into results",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellPackageVersionCollectionResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Lightwell Package Versions (cross-repo)",
+                "tags": [
+                    "lightwell"
+                ]
+            }
+        },
+        "/lightwell/packages": {
+            "get": {
+                "description": "List packages aggregated across all Lightwell repositories, with optional filtering by ecosystem, name, and security level.",
+                "operationId": "listLightwellPackages",
+                "parameters": [
+                    {
+                        "description": "Filter by ecosystem (maven, python, npm)",
+                        "in": "query",
+                        "name": "ecosystem",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by package name (substring match)",
+                        "in": "query",
+                        "name": "name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by package name or group/scope (substring match)",
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Sort the results. Valid fields: group/name, name, scope/name, last_publication. Each may be suffixed with :asc or :desc (default asc).",
+                        "in": "query",
+                        "name": "sort_by",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by repository name",
+                        "in": "query",
+                        "name": "repository",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by security level (validated, remediated)",
+                        "in": "query",
+                        "name": "security_level",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Return demo repositories instead of production ones (default false)",
+                        "in": "query",
+                        "name": "demo",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Limit of results to return",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Offset into results",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.LightwellPackageCollectionResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "List Lightwell Packages (cross-repo)",
+                "tags": [
+                    "lightwell"
+                ]
+            }
+        },
+        "/lightwell/terms/required": {
+            "get": {
+                "description": "Check whether the current user must accept Lightwell terms before access.",
+                "operationId": "getLightwellTermsRequired",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/api.TermsRequiredResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "Check if Lightwell terms acceptance is required",
+                "tags": [
+                    "lightwell"
                 ]
             }
         },
@@ -3636,7 +5338,7 @@
                     "x-originalParamName": "body"
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3644,7 +5346,7 @@
                                 }
                             }
                         },
-                        "description": "OK"
+                        "description": "Created"
                     },
                     "400": {
                         "content": {
@@ -3734,7 +5436,7 @@
                     }
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3742,7 +5444,7 @@
                                 }
                             }
                         },
-                        "description": "OK"
+                        "description": "Created"
                     },
                     "400": {
                         "content": {
@@ -4389,7 +6091,7 @@
                     "x-originalParamName": "body"
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4397,7 +6099,7 @@
                                 }
                             }
                         },
-                        "description": "OK"
+                        "description": "Created"
                     },
                     "400": {
                         "content": {
@@ -4697,10 +6399,10 @@
                 ]
             }
         },
-        "/repositories/{uuid}/maven_packages/{group}/{name}": {
+        "/repositories/{uuid}/java_packages/{group}/{name}": {
             "get": {
-                "description": "List all versions (builds) for a specific Maven package by group and name.",
-                "operationId": "listMavenPackageVersions",
+                "description": "List all versions (builds) for a specific Java package by group and name.",
+                "operationId": "listJavaPackageVersions",
                 "parameters": [
                     {
                         "description": "Repository UUID",
@@ -4712,7 +6414,7 @@
                         }
                     },
                     {
-                        "description": "Maven package group ID",
+                        "description": "Java package group ID",
                         "in": "path",
                         "name": "group",
                         "required": true,
@@ -4721,7 +6423,7 @@
                         }
                     },
                     {
-                        "description": "Maven package artifact ID",
+                        "description": "Java package artifact ID",
                         "in": "path",
                         "name": "name",
                         "required": true,
@@ -4761,6 +6463,16 @@
                         },
                         "description": "Not Found"
                     },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
                     "500": {
                         "content": {
                             "application/json": {
@@ -4772,16 +6484,16 @@
                         "description": "Internal Server Error"
                     }
                 },
-                "summary": "List Maven Package Versions",
+                "summary": "List Java Package Versions",
                 "tags": [
                     "packages"
                 ]
             }
         },
-        "/repositories/{uuid}/maven_packages/{group}/{name}/{version}": {
+        "/repositories/{uuid}/java_packages/{group}/{name}/{version}": {
             "get": {
-                "description": "Get builds for a specific Maven package by group, name, and version.",
-                "operationId": "getPackageDetail",
+                "description": "Get builds for a specific Java package by group, name, and version.",
+                "operationId": "getJavaPackageDetail",
                 "parameters": [
                     {
                         "description": "Repository UUID",
@@ -4793,7 +6505,7 @@
                         }
                     },
                     {
-                        "description": "Maven package group ID",
+                        "description": "Java package group ID",
                         "in": "path",
                         "name": "group",
                         "required": true,
@@ -4802,7 +6514,7 @@
                         }
                     },
                     {
-                        "description": "Maven package artifact ID",
+                        "description": "Java package artifact ID",
                         "in": "path",
                         "name": "name",
                         "required": true,
@@ -4811,7 +6523,7 @@
                         }
                     },
                     {
-                        "description": "Maven package version",
+                        "description": "Java package version",
                         "in": "path",
                         "name": "version",
                         "required": true,
@@ -4851,6 +6563,16 @@
                         },
                         "description": "Not Found"
                     },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
                     "500": {
                         "content": {
                             "application/json": {
@@ -4862,16 +6584,16 @@
                         "description": "Internal Server Error"
                     }
                 },
-                "summary": "Get Maven Package Detail",
+                "summary": "Get Java Package Detail",
                 "tags": [
                     "packages"
                 ]
             }
         },
-        "/repositories/{uuid}/npm_packages/{scope}/{name}": {
+        "/repositories/{uuid}/js_packages/{scope}/{name}": {
             "get": {
-                "description": "Get tarball info for all versions of an npm package by scope and name. Use \"-\" as the scope for unscoped packages.",
-                "operationId": "getNpmPackageVersions",
+                "description": "List versions for a JavaScript package by scope and name. The version is the upstream version, and builds lists each rebuild. Use \"-\" as the scope for unscoped packages.",
+                "operationId": "getJsPackageVersions",
                 "parameters": [
                     {
                         "description": "Repository UUID",
@@ -4883,7 +6605,7 @@
                         }
                     },
                     {
-                        "description": "NPM package scope (e.g. @types). Use - for unscoped packages.",
+                        "description": "JS package scope (e.g. @types). Use - for unscoped packages.",
                         "in": "path",
                         "name": "scope",
                         "required": true,
@@ -4892,7 +6614,7 @@
                         }
                     },
                     {
-                        "description": "NPM package name",
+                        "description": "JS package name",
                         "in": "path",
                         "name": "name",
                         "required": true,
@@ -4932,6 +6654,16 @@
                         },
                         "description": "Not Found"
                     },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
                     "500": {
                         "content": {
                             "application/json": {
@@ -4943,16 +6675,16 @@
                         "description": "Internal Server Error"
                     }
                 },
-                "summary": "Get NPM Package Versions",
+                "summary": "Get JS Package Versions",
                 "tags": [
                     "packages"
                 ]
             }
         },
-        "/repositories/{uuid}/npm_packages/{scope}/{name}/{version}": {
+        "/repositories/{uuid}/js_packages/{scope}/{name}/{version}": {
             "get": {
-                "description": "Get tarball info for a specific npm package by scope, name, and version. Use \"-\" as the scope for unscoped packages.",
-                "operationId": "getNpmPackageDetail",
+                "description": "Get a JavaScript package version by scope, name, and upstream version. builds lists each rebuild. Use \"-\" as the scope for unscoped packages.",
+                "operationId": "getJsPackageDetail",
                 "parameters": [
                     {
                         "description": "Repository UUID",
@@ -4964,7 +6696,7 @@
                         }
                     },
                     {
-                        "description": "NPM package scope (e.g. @types). Use - for unscoped packages.",
+                        "description": "JS package scope (e.g. @types). Use - for unscoped packages.",
                         "in": "path",
                         "name": "scope",
                         "required": true,
@@ -4973,7 +6705,7 @@
                         }
                     },
                     {
-                        "description": "NPM package name",
+                        "description": "JS package name",
                         "in": "path",
                         "name": "name",
                         "required": true,
@@ -4982,7 +6714,7 @@
                         }
                     },
                     {
-                        "description": "NPM package version",
+                        "description": "JS package upstream version",
                         "in": "path",
                         "name": "version",
                         "required": true,
@@ -5022,6 +6754,16 @@
                         },
                         "description": "Not Found"
                     },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
                     "500": {
                         "content": {
                             "application/json": {
@@ -5033,7 +6775,7 @@
                         "description": "Internal Server Error"
                     }
                 },
-                "summary": "Get NPM Package Detail",
+                "summary": "Get JS Package Detail",
                 "tags": [
                     "packages"
                 ]
@@ -5181,6 +6923,14 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "description": "Sort field. Valid fields are name and last_updated. Append :asc or :desc. name defaults to asc. last_updated defaults to desc.",
+                        "in": "query",
+                        "name": "sort_by",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -5214,6 +6964,16 @@
                         },
                         "description": "Not Found"
                     },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
                     "500": {
                         "content": {
                             "application/json": {
@@ -5233,7 +6993,7 @@
         },
         "/repositories/{uuid}/python_packages/{name}": {
             "get": {
-                "description": "Get metadata and distributions for all versions of a Python package by name.",
+                "description": "List versions for a Python package by name. The version is the upstream version, and builds lists each rebuild.",
                 "operationId": "getPythonPackageVersions",
                 "parameters": [
                     {
@@ -5286,6 +7046,16 @@
                         },
                         "description": "Not Found"
                     },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
+                    },
                     "500": {
                         "content": {
                             "application/json": {
@@ -5305,7 +7075,7 @@
         },
         "/repositories/{uuid}/python_packages/{name}/{version}": {
             "get": {
-                "description": "Get metadata and distributions for a specific Python package by name and version.",
+                "description": "Get metadata and builds for a specific Python package by name and version.",
                 "operationId": "getPythonPackageDetail",
                 "parameters": [
                     {
@@ -5366,6 +7136,16 @@
                             }
                         },
                         "description": "Not Found"
+                    },
+                    "428": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/errors.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Precondition Required"
                     },
                     "500": {
                         "content": {
