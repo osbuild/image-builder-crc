@@ -44,3 +44,12 @@ finish:
     - shell
   script:
     - schutzbot/update_github_status.sh finish
+
+fail:
+  stage: finish
+  when: on_failure
+  tags:
+    - shell
+  script:
+    - schutzbot/update_github_status.sh fail
+    - exit 1  # make the fail obvious in this step too
