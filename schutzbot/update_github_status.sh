@@ -10,12 +10,12 @@ elif [[ $1 == "update" ]]; then
   if [[ $CI_JOB_STATUS == "canceled" ]]; then
     GITHUB_NEW_STATE="failure"
     GITHUB_NEW_DESC="Someone told me to cancel this test run."
-  elif [[ $CI_JOB_STATUS == "failed" ]]; then
-    GITHUB_NEW_STATE="failure"
-    GITHUB_NEW_DESC="I'm sorry, something is odd about this commit."
   else
     exit 0
   fi
+elif [[ $1 == "fail" ]]; then
+  GITHUB_NEW_STATE="failure"
+  GITHUB_NEW_DESC="I'm sorry, something is odd about this commit."
 else
   echo "unknown command"
   exit 1
