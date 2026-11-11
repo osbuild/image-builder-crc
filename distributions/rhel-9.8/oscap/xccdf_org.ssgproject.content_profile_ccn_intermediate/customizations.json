@@ -19,6 +19,7 @@
       "firewalld"
     ],
     "masked": [
+      "kdump",
       "nftables"
     ]
   }

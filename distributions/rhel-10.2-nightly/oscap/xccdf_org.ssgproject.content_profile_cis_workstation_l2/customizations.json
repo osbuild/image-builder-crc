@@ -36,11 +36,13 @@
   "packages": [
     "aide",
     "sudo",
+    "sequoia-sq",
     "libpwquality",
     "systemd-journal-remote",
     "firewalld",
     "libselinux",
     "cronie",
+    "postfix",
     "audit-libs",
     "audit"
   ],

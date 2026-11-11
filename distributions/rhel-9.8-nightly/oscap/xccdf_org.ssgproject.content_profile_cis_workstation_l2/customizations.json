@@ -42,6 +42,7 @@
     "nftables",
     "libselinux",
     "cronie",
+    "postfix",
     "chrony",
     "audit-libs",
     "audit"
