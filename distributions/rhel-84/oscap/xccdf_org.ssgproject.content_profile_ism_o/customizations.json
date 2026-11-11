@@ -14,6 +14,7 @@
     "aide",
     "sudo",
     "rear",
+    "rsyslog-gnutls",
     "rsyslog",
     "firewalld",
     "fapolicyd",
@@ -33,6 +34,7 @@
       "snmpd",
       "squid",
       "xinetd",
+      "kdump",
       "avahi-daemon"
     ]
   }
