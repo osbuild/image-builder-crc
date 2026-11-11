@@ -1820,6 +1820,7 @@ func TestComposeCustomizations(t *testing.T) {
 						{
 							Name:     "user3",
 							Password: common.ToPtr("$6$password123"),
+							Uid:      common.ToPtr(1001),
 						},
 					},
 					Services: &v1.Services{
@@ -1912,6 +1913,7 @@ func TestComposeCustomizations(t *testing.T) {
 						{
 							Name:     "user3",
 							Password: common.ToPtr("$6$password123"),
+							Uid:      common.ToPtr(1001),
 						},
 					},
 					Services: &composer.Services{
