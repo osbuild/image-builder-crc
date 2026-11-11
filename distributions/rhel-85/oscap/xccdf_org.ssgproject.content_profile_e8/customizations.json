@@ -23,6 +23,7 @@
     "masked": [
       "squid",
       "xinetd",
+      "kdump",
       "avahi-daemon"
     ]
   }

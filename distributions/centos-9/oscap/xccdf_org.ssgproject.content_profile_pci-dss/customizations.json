@@ -16,6 +16,7 @@
     "nftables",
     "libselinux",
     "cronie",
+    "postfix",
     "chrony",
     "audispd-plugins",
     "audit"

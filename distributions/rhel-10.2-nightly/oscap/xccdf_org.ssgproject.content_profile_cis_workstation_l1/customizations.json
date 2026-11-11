@@ -16,6 +16,7 @@
   "packages": [
     "aide",
     "sudo",
+    "sequoia-sq",
     "libpwquality",
     "systemd-journal-remote",
     "firewalld",
