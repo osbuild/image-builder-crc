@@ -28,14 +28,18 @@ jobs:
         run: go run ./cmd/oscap ./distributions
 
       - name: Check if there are any changes
+        id: check_changes
         run: |
           if [ -z "$(git status --porcelain)" ]; then
             echo
             echo "OpenSCAP configs are up-to-date"
-            exit "0"
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create Pull Request
+        if: steps.check_changes.outputs.up_to_date != 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           branch: update-openscap
