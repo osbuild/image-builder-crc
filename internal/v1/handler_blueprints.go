@@ -141,6 +141,9 @@ func (u *User) MergeExisting(other User) {
 	if u.SshKey == nil {
 		u.SshKey = other.SshKey
 	}
+	if u.Uid == nil {
+		u.Uid = other.Uid
+	}
 }
 
 var ErrMissingUserName = errors.New("missing user name")

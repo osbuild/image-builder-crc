@@ -408,8 +408,8 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	err := json.Unmarshal([]byte(responseBody), &result)
 	require.NoError(t, err)
 
-	// Add new user with password = SUCCESS
-	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": "test"}}}
+	// Add new user with password and uid = SUCCESS
+	body["customizations"] = map[string]any{"users": []map[string]any{{"name": "test", "password": "test", "uid": 1001}}}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
 	require.Equal(t, http.StatusCreated, statusCode)
 
@@ -419,6 +419,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, (*updatedBlueprint.Customizations.Users)[0].Password) // hashed, can't compare with plaintext value
 	require.Nil(t, (*updatedBlueprint.Customizations.Users)[0].SshKey)
+	require.Equal(t, common.ToPtr(1001), (*updatedBlueprint.Customizations.Users)[0].Uid)
 
 	// Update with hashed password = SUCCESS
 	userHashedPassword := "$6$foo"
@@ -474,7 +475,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	// add new user with password and ssh_key = SUCCESS
 	users = []map[string]any{
 		{"name": "test"}, // keep old values
-		{"name": "test2", "password": "test", "ssh_key": "ssh key"},
+		{"name": "test2", "password": "test", "ssh_key": "ssh key", "uid": 1002},
 	}
 	body["customizations"] = map[string]any{"users": users}
 	statusCode, _ = tutils.PutResponseBody(t, fmt.Sprintf("%s/api/image-builder/v1/blueprints/%s", srvURL, result.Id), body)
@@ -494,6 +495,7 @@ func TestHandlers_UpdateBlueprint_CustomizationUser(t *testing.T) {
 	require.Equal(t, "test2", user2.Name)
 	require.NotNil(t, user2.Password)
 	require.NotNil(t, user2.SshKey)
+	require.Equal(t, common.ToPtr(1002), user2.Uid)
 }
 
 func TestHandlers_UpdateBlueprint(t *testing.T) {

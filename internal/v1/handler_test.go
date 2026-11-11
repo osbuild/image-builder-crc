@@ -242,6 +242,7 @@ func TestGetComposes(t *testing.T) {
 					Name:     "user",
 					SshKey:   common.ToPtr("ssh-rsa AAAAB3NzaC2"),
 					Password: common.ToPtr("$6$password123"),
+					Uid:      common.ToPtr(1001),
 				},
 			},
 		}}

@@ -1680,6 +1680,9 @@ type User struct {
 
 	// SshKey Example: ssh-rsa AAAAB3NzaC1
 	SshKey *string `json:"ssh_key,omitempty"`
+
+	// Uid User id to use instead of the default
+	Uid *int `json:"uid,omitempty"`
 }
 
 // Version defines model for Version.
