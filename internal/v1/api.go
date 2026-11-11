@@ -182,6 +182,7 @@ const (
 	Rhel101Nightly Distributions = "rhel-10.1-nightly"
 	Rhel102        Distributions = "rhel-10.2"
 	Rhel102Nightly Distributions = "rhel-10.2-nightly"
+	Rhel103        Distributions = "rhel-10.3"
 	Rhel103Nightly Distributions = "rhel-10.3-nightly"
 	Rhel104Nightly Distributions = "rhel-10.4-nightly"
 	Rhel10Beta     Distributions = "rhel-10-beta"
@@ -209,6 +210,7 @@ const (
 	Rhel97Nightly  Distributions = "rhel-9.7-nightly"
 	Rhel98         Distributions = "rhel-9.8"
 	Rhel98Nightly  Distributions = "rhel-9.8-nightly"
+	Rhel99         Distributions = "rhel-9.9"
 	Rhel99Nightly  Distributions = "rhel-9.9-nightly"
 	Rhel9Beta      Distributions = "rhel-9-beta"
 	Rhel9Nightly   Distributions = "rhel-9-nightly"
@@ -254,6 +256,8 @@ func (e Distributions) Valid() bool {
 	case Rhel102:
 		return true
 	case Rhel102Nightly:
+		return true
+	case Rhel103:
 		return true
 	case Rhel103Nightly:
 		return true
@@ -308,6 +312,8 @@ func (e Distributions) Valid() bool {
 	case Rhel98:
 		return true
 	case Rhel98Nightly:
+		return true
+	case Rhel99:
 		return true
 	case Rhel99Nightly:
 		return true
