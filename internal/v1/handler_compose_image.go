@@ -1413,6 +1413,7 @@ func (h *Handlers) buildCustomizations(ctx echo.Context, cr *ComposeRequest, d *
 				Key:      u.SshKey,
 				Password: u.Password,
 				Groups:   u.Groups,
+				Uid:      u.Uid,
 			})
 		}
 		res.Users = &users
