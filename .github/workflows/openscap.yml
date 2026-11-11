@@ -29,7 +29,7 @@ jobs:
 
       - name: Check if there are any changes
         run: |
-          if [ "$(git status --porcelain)" ]; then
+          if [ -z "$(git status --porcelain)" ]; then
             echo
             echo "OpenSCAP configs are up-to-date"
             exit "0"
