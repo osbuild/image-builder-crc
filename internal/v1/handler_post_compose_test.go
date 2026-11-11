@@ -844,7 +844,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// basic without payload or custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -858,7 +858,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -893,7 +893,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// basic with old snapshotting date format
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -907,7 +907,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -942,7 +942,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload 2 custom repositories
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -980,7 +980,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1041,7 +1041,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 2 payload 1 custom repository
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1078,7 +1078,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1137,7 +1137,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// repositories by uuid
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1173,7 +1173,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1234,7 +1234,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// gcp
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1268,7 +1268,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGcp,
@@ -1334,7 +1334,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload & custom repository with an empty, but not-nil gpg key
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1360,7 +1360,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1411,7 +1411,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 1 payload and custom repository from shared epel repos
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1437,7 +1437,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -1492,7 +1492,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 		// 2 payload & custom non-base rhel repos, 1 payload & custom non-rhel repo
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -1548,7 +1548,7 @@ func TestComposeWithSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3410,7 +3410,7 @@ WantedBy=basic.target
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
 						Insights:            true,
@@ -3503,7 +3503,7 @@ WantedBy=basic.target
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
 						Insights:            true,
@@ -3615,7 +3615,7 @@ WantedBy=basic.target
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				Customizations: &composer.Customizations{
 					Subscription: &composer.Subscription{
 						Insights:            true,
@@ -3714,10 +3714,10 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 		imageBuilderRequest v1.ComposeRequest
 		composerRequest     composer.ComposeRequest
 	}{
-		// RHEL 9.8 without SnapshotDate uses latest snapshots
+		// RHEL 9.9 without SnapshotDate uses latest snapshots
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3731,7 +3731,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGuestImage,
@@ -3795,10 +3795,10 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 				},
 			},
 		},
-		// RHEL 9.6 GCP image with mix of CDN and non-CDN repos
+		// RHEL 9.9 GCP image with mix of CDN and non-CDN repos
 		{
 			imageBuilderRequest: v1.ComposeRequest{
-				Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+				Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 				ImageRequests: []v1.ImageRequest{
 					{
 						Architecture: "x86_64",
@@ -3811,7 +3811,7 @@ func TestComposeWithLatestSnapshots(t *testing.T) {
 				},
 			},
 			composerRequest: composer.ComposeRequest{
-				Distribution: common.ToPtr("rhel-9.8"),
+				Distribution: common.ToPtr("rhel-9.9"),
 				ImageRequest: &composer.ImageRequest{
 					Architecture: "x86_64",
 					ImageType:    composer.ImageTypesGcp,
@@ -3880,7 +3880,7 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 	defer apiSrv.Close()
 
 	// Use a CS mock that reports detected_os_version "9.4" for snapshots.
-	// The user requests "rhel-9" which normally maps to composer distribution "rhel-9.8",
+	// The user requests "rhel-9" which normally maps to composer distribution "rhel-9.9",
 	// but the detected version should override it to "rhel-94".
 	srv := startServer(t, &testServerClientsConf{
 		ComposerURL: apiSrv.URL,
@@ -3910,7 +3910,7 @@ func TestComposeWithSnapshotDetectedOsVersion(t *testing.T) {
 	require.Equal(t, http.StatusCreated, respStatusCode, "body: %s", body)
 
 	// The compose request should use "rhel-94" (the 9.4 minor-version distribution),
-	// NOT "rhel-9.8" which is what "rhel-9" would normally resolve to.
+	// NOT "rhel-9.9" which is what "rhel-9" would normally resolve to.
 	require.Equal(t, common.ToPtr("rhel-94"), composerRequest.Distribution)
 }
 
@@ -3959,8 +3959,8 @@ func TestComposeWithSnapshotEmptyDetectedOsVersion(t *testing.T) {
 	require.Equal(t, http.StatusCreated, respStatusCode, "body: %s", body)
 
 	// Empty detected_os_version should be ignored — the compose should use the
-	// default "rhel-9.8" distribution, not attempt to look up an empty version.
-	require.Equal(t, common.ToPtr("rhel-9.8"), composerRequest.Distribution)
+	// default "rhel-9.9" distribution, not attempt to look up an empty version.
+	require.Equal(t, common.ToPtr("rhel-9.9"), composerRequest.Distribution)
 }
 
 func TestComposeContentSourcesUnauthorized(t *testing.T) {
@@ -3982,7 +3982,7 @@ func TestComposeContentSourcesUnauthorized(t *testing.T) {
 	var uo v1.UploadRequest_Options
 	require.NoError(t, uo.FromAWSS3UploadRequestOptions(v1.AWSS3UploadRequestOptions{}))
 	payload := v1.ComposeRequest{
-		Distribution: common.ToPtr(v1.Distributions("rhel-9.8")),
+		Distribution: common.ToPtr(v1.Distributions("rhel-9.9")),
 		ImageRequests: []v1.ImageRequest{
 			{
 				Architecture: "x86_64",
