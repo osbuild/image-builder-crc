@@ -165,7 +165,7 @@ func (h *Handlers) handleCommonCompose(ctx echo.Context, composeRequest ComposeR
 		}
 	}
 
-	uploadOptions, imageType, err := h.buildUploadOptions(ctx, composeRequest.ImageRequests[0].UploadRequest, composeRequest.ImageRequests[0].ImageType)
+	uploadOptions, imageType, err := h.buildUploadOptions(ctx, composeRequest.ImageRequests[0].UploadRequest, composeRequest.ImageRequests[0].ImageType, composeRequest.ImageName)
 	if err != nil {
 		return ComposeResponse{}, err
 	}
@@ -927,7 +927,7 @@ func (h *Handlers) buildTemplateRepositories(ctx echo.Context, templateID string
 	return payloadRepositories, customRepositories, rhRepositories, detectedOsVersion, nil
 }
 
-func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it ImageTypes) (composer.UploadOptions, composer.ImageTypes, error) {
+func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it ImageTypes, imageName *string) (composer.UploadOptions, composer.ImageTypes, error) {
 	var uploadOptions composer.UploadOptions
 	switch ur.Type {
 	case UploadTypesAws:
@@ -977,9 +977,28 @@ func (h *Handlers) buildUploadOptions(ctx echo.Context, ur UploadRequest, it Ima
 				shareWithAccounts = append(shareWithAccounts, *uploadInfo.Aws.AccountId)
 			}
 		}
+		var snapshotName *string
+		if imageName != nil && strings.TrimSpace(*imageName) != "" {
+			snapshotName = imageName
+		}
+
+		var tags *[]composer.AWSTag
+		if uo.Tags != nil && len(*uo.Tags) > 0 {
+			converted := make([]composer.AWSTag, 0, len(*uo.Tags))
+			for _, tag := range *uo.Tags {
+				converted = append(converted, composer.AWSTag{
+					Key:   tag.Key,
+					Value: tag.Value,
+				})
+			}
+			tags = &converted
+		}
+
 		err = uploadOptions.FromAWSEC2UploadOptions(composer.AWSEC2UploadOptions{
 			Region:            h.server.aws.Region,
 			ShareWithAccounts: shareWithAccounts,
+			SnapshotName:      snapshotName,
+			Tags:              tags,
 		})
 		if err != nil {
 			return uploadOptions, "", err
