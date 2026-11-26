@@ -27,8 +27,9 @@ func (e ApiRepositoryRequestOrigin) Valid() bool {
 
 // Defines values for SetUserPreferenceParamsLabel.
 const (
-	LightwellNotificationEnabled SetUserPreferenceParamsLabel = "lightwell-notification-enabled"
-	LightwellNotificationMinimum SetUserPreferenceParamsLabel = "lightwell-notification-minimum"
+	LightwellNotificationEnabled       SetUserPreferenceParamsLabel = "lightwell-notification-enabled"
+	LightwellNotificationMinimum       SetUserPreferenceParamsLabel = "lightwell-notification-minimum"
+	LightwellTechPreviewAlertDismissed SetUserPreferenceParamsLabel = "lightwell-tech-preview-alert-dismissed"
 )
 
 // Valid indicates whether the value is a known member of the SetUserPreferenceParamsLabel enum.
@@ -37,6 +38,8 @@ func (e SetUserPreferenceParamsLabel) Valid() bool {
 	case LightwellNotificationEnabled:
 		return true
 	case LightwellNotificationMinimum:
+		return true
+	case LightwellTechPreviewAlertDismissed:
 		return true
 	default:
 		return false
@@ -282,7 +285,6 @@ type ApiLightwellAdvisoryCollectionResponse struct {
 // ApiLightwellAdvisoryResponse defines model for api.LightwellAdvisoryResponse.
 type ApiLightwellAdvisoryResponse struct {
 	AdvisoryId     *string   `json:"advisory_id,omitempty"`
-	AdvisoryName   *string   `json:"advisory_name,omitempty"`
 	Aliases        *[]string `json:"aliases,omitempty"`
 	CreatedAt      *string   `json:"created_at,omitempty"`
 	Details        *string   `json:"details,omitempty"`
@@ -296,9 +298,9 @@ type ApiLightwellAdvisoryResponse struct {
 	SchemaVersion  *string   `json:"schema_version,omitempty"`
 	Severity       *string   `json:"severity,omitempty"`
 	SeverityScore  *float32  `json:"severity_score,omitempty"`
-	Source         *string   `json:"source,omitempty"`
 	Summary        *string   `json:"summary,omitempty"`
 	UpdatedAt      *string   `json:"updated_at,omitempty"`
+	Upstream       *[]string `json:"upstream,omitempty"`
 }
 
 // ApiLightwellBeaconStatusResponse defines model for api.LightwellBeaconStatusResponse.
@@ -423,11 +425,14 @@ type ApiLightwellVulnerabilityResponse struct {
 	// Description Vulnerability description
 	Description *string `json:"description,omitempty"`
 
-	// Duplicate Duplicate flag
+	// Duplicate True when this finding duplicates another tracker
 	Duplicate *bool `json:"duplicate,omitempty"`
 
-	// DuplicateOf Canonical vulnerability_id when duplicate
+	// DuplicateOf Canonical Jira issue key this finding duplicates
 	DuplicateOf *string `json:"duplicate_of,omitempty"`
+
+	// DuplicateOfStatus Beacon status of the canonical tracker, read from that stored issue
+	DuplicateOfStatus *string `json:"duplicate_of_status,omitempty"`
 
 	// Ecosystem Derived ecosystem (java, python, javascript, csharp)
 	Ecosystem *string `json:"ecosystem,omitempty"`
@@ -443,6 +448,9 @@ type ApiLightwellVulnerabilityResponse struct {
 
 	// LtwlsuptTicketIds Lightwell support ticket IDs
 	LtwlsuptTicketIds *[]string `json:"ltwlsupt_ticket_ids,omitempty"`
+
+	// OnHoldReasons Customer-facing reasons an On Hold vulnerability is blocked
+	OnHoldReasons *[]string `json:"on_hold_reasons,omitempty"`
 
 	// Package Alias of component_name
 	Package *string `json:"package,omitempty"`
@@ -1871,7 +1879,7 @@ type ListCoverageReportPackagesParams struct {
 	// Offset Starting point for pagination. Default: 0
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Limit Number of items per page. Default: 100
+	// Limit Number of items per page. Default: 100, maximum: 1000
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -1886,13 +1894,16 @@ type ListLightwellAdvisoriesParams struct {
 	// PackageVersion Filter by package version (exact match)
 	PackageVersion *string `form:"package_version,omitempty" json:"package_version,omitempty"`
 
-	// Name Filter by advisory id or alias (substring match)
+	// Name Deprecated. Substring match on advisory id or upstream ids
 	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// AdvisoryId Filter by advisory id (exact match)
+	AdvisoryId *string `form:"advisory_id,omitempty" json:"advisory_id,omitempty"`
 
 	// SeverityMin Minimum severity level (low, moderate, important, critical)
 	SeverityMin *string `form:"severity_min,omitempty" json:"severity_min,omitempty"`
 
-	// CveId Filter by CVE ID (exact match)
+	// CveId Filter by an exact CVE id
 	CveId *string `form:"cve_id,omitempty" json:"cve_id,omitempty"`
 
 	// LatestRelease When true, return only advisories from the highest Lightwell rebuild (baseline, then novel, then hotfix) of the package/version. Requires package_name and package_version.
@@ -1933,6 +1944,9 @@ type ListLightwellVulnerabilitiesParams struct {
 
 	// Limit Number of items to include in response. Default value: `100`. Maximum: `200`.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// SortBy Sort the results as `field:direction`. Fields: `last_updated`, `submitted_date`, `cvss`, `severity`, `status`, `vulnerability_id`. Directions: `asc`, `desc`. Default value: `last_updated:desc`.
+	SortBy *string `form:"sort_by,omitempty" json:"sort_by,omitempty"`
 }
 
 // ListLightwellLtwlsuptTicketIdsParams defines parameters for ListLightwellLtwlsuptTicketIds.

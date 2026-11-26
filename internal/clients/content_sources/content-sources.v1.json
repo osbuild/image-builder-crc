@@ -425,9 +425,6 @@
                     "advisory_id": {
                         "type": "string"
                     },
-                    "advisory_name": {
-                        "type": "string"
-                    },
                     "aliases": {
                         "items": {
                             "type": "string"
@@ -476,14 +473,17 @@
                     "severity_score": {
                         "type": "number"
                     },
-                    "source": {
-                        "type": "string"
-                    },
                     "summary": {
                         "type": "string"
                     },
                     "updated_at": {
                         "type": "string"
+                    },
+                    "upstream": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
                     }
                 },
                 "type": "object"
@@ -726,11 +726,15 @@
                         "type": "string"
                     },
                     "duplicate": {
-                        "description": "Duplicate flag",
+                        "description": "True when this finding duplicates another tracker",
                         "type": "boolean"
                     },
                     "duplicate_of": {
-                        "description": "Canonical vulnerability_id when duplicate",
+                        "description": "Canonical Jira issue key this finding duplicates",
+                        "type": "string"
+                    },
+                    "duplicate_of_status": {
+                        "description": "Beacon status of the canonical tracker, read from that stored issue",
                         "type": "string"
                     },
                     "ecosystem": {
@@ -751,6 +755,13 @@
                     },
                     "ltwlsupt_ticket_ids": {
                         "description": "Lightwell support ticket IDs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "on_hold_reasons": {
+                        "description": "Customer-facing reasons an On Hold vulnerability is blocked",
                         "items": {
                             "type": "string"
                         },
@@ -3414,7 +3425,7 @@
                         }
                     },
                     {
-                        "description": "Number of items per page. Default: 100",
+                        "description": "Number of items per page. Default: 100, maximum: 1000",
                         "in": "query",
                         "name": "limit",
                         "schema": {
@@ -3619,9 +3630,17 @@
                         }
                     },
                     {
-                        "description": "Filter by advisory id or alias (substring match)",
+                        "description": "Deprecated. Substring match on advisory id or upstream ids",
                         "in": "query",
                         "name": "name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Filter by advisory id (exact match)",
+                        "in": "query",
+                        "name": "advisory_id",
                         "schema": {
                             "type": "string"
                         }
@@ -3635,7 +3654,7 @@
                         }
                     },
                     {
-                        "description": "Filter by CVE ID (exact match)",
+                        "description": "Filter by an exact CVE id",
                         "in": "query",
                         "name": "cve_id",
                         "schema": {
@@ -3853,6 +3872,14 @@
                         "name": "limit",
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Sort the results as `field:direction`. Fields: `last_updated`, `submitted_date`, `cvss`, `severity`, `status`, `vulnerability_id`. Directions: `asc`, `desc`. Default value: `last_updated:desc`.",
+                        "in": "query",
+                        "name": "sort_by",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
@@ -6590,7 +6617,7 @@
                 ]
             }
         },
-        "/repositories/{uuid}/js_packages/{scope}/{name}": {
+        "/repositories/{uuid}/javascript_packages/{scope}/{name}": {
             "get": {
                 "description": "List versions for a JavaScript package by scope and name. The version is the upstream version, and builds lists each rebuild. Use \"-\" as the scope for unscoped packages.",
                 "operationId": "getJsPackageVersions",
@@ -6681,7 +6708,7 @@
                 ]
             }
         },
-        "/repositories/{uuid}/js_packages/{scope}/{name}/{version}": {
+        "/repositories/{uuid}/javascript_packages/{scope}/{name}/{version}": {
             "get": {
                 "description": "Get a JavaScript package version by scope, name, and upstream version. builds lists each rebuild. Use \"-\" as the scope for unscoped packages.",
                 "operationId": "getJsPackageDetail",
@@ -9910,7 +9937,8 @@
                         "schema": {
                             "enum": [
                                 "lightwell-notification-enabled",
-                                "lightwell-notification-minimum"
+                                "lightwell-notification-minimum",
+                                "lightwell-tech-preview-alert-dismissed"
                             ],
                             "type": "string"
                         }
