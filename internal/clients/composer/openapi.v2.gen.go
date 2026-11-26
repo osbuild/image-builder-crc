@@ -2245,6 +2245,9 @@ type User struct {
 	// an encrypted password. Otherwise it will be treated as a plain text
 	// password.
 	Password *string `json:"password,omitempty"`
+
+	// Uid User id to use instead of the default
+	Uid *int `json:"uid,omitempty"`
 }
 
 // VolumeGroup defines model for VolumeGroup.

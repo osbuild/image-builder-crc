@@ -425,11 +425,14 @@ type ApiLightwellVulnerabilityResponse struct {
 	// Description Vulnerability description
 	Description *string `json:"description,omitempty"`
 
-	// Duplicate Duplicate flag
+	// Duplicate True when this finding duplicates another tracker
 	Duplicate *bool `json:"duplicate,omitempty"`
 
-	// DuplicateOf Canonical vulnerability_id when duplicate
+	// DuplicateOf Canonical Jira issue key this finding duplicates
 	DuplicateOf *string `json:"duplicate_of,omitempty"`
+
+	// DuplicateOfStatus Beacon status of the canonical tracker, read from that stored issue
+	DuplicateOfStatus *string `json:"duplicate_of_status,omitempty"`
 
 	// Ecosystem Derived ecosystem (java, python, javascript, csharp)
 	Ecosystem *string `json:"ecosystem,omitempty"`
@@ -445,6 +448,9 @@ type ApiLightwellVulnerabilityResponse struct {
 
 	// LtwlsuptTicketIds Lightwell support ticket IDs
 	LtwlsuptTicketIds *[]string `json:"ltwlsupt_ticket_ids,omitempty"`
+
+	// OnHoldReasons Customer-facing reasons an On Hold vulnerability is blocked
+	OnHoldReasons *[]string `json:"on_hold_reasons,omitempty"`
 
 	// Package Alias of component_name
 	Package *string `json:"package,omitempty"`
